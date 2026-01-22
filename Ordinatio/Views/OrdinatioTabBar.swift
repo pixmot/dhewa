@@ -3,6 +3,7 @@ import SwiftUI
 enum OrdinatioTab: Hashable {
     case log
     case insights
+    case add
     case budgets
     case settings
 
@@ -10,6 +11,7 @@ enum OrdinatioTab: Hashable {
         switch self {
         case .log: return "Log"
         case .insights: return "Insights"
+        case .add: return "Add"
         case .budgets: return "Budgets"
         case .settings: return "Settings"
         }
@@ -19,6 +21,7 @@ enum OrdinatioTab: Hashable {
         switch self {
         case .log: return "list.bullet"
         case .insights: return "chart.bar.xaxis"
+        case .add: return "plus"
         case .budgets: return "square.grid.2x2"
         case .settings: return "gearshape"
         }

@@ -7,6 +7,7 @@ struct MainTabView: View {
     let defaultCurrencyCode: String
 
     @State private var selection: OrdinatioTab = .log
+    @State private var lastNonAddSelection: OrdinatioTab = .log
     @State private var sheet: Sheet?
 
     enum Sheet: Identifiable {
@@ -23,9 +24,15 @@ struct MainTabView: View {
                 defaultCurrencyCode: defaultCurrencyCode
             )
             .tag(OrdinatioTab.log)
+            .tabItem { Label(OrdinatioTab.log.title, systemImage: OrdinatioTab.log.symbolName) }
 
             InsightsView()
                 .tag(OrdinatioTab.insights)
+                .tabItem { Label(OrdinatioTab.insights.title, systemImage: OrdinatioTab.insights.symbolName) }
+
+            Color.clear
+                .tag(OrdinatioTab.add)
+                .tabItem { Label(OrdinatioTab.add.title, systemImage: OrdinatioTab.add.symbolName) }
 
             BudgetsView(
                 database: database,
@@ -33,18 +40,19 @@ struct MainTabView: View {
                 defaultCurrencyCode: defaultCurrencyCode
             )
             .tag(OrdinatioTab.budgets)
+            .tabItem { Label(OrdinatioTab.budgets.title, systemImage: OrdinatioTab.budgets.symbolName) }
 
             SettingsView(database: database, householdId: householdId)
                 .tag(OrdinatioTab.settings)
+                .tabItem { Label(OrdinatioTab.settings.title, systemImage: OrdinatioTab.settings.symbolName) }
         }
-        .toolbar(.hidden, for: .tabBar)
-        .safeAreaInset(edge: .bottom) {
-            OrdinatioTabBar(selection: $selection) {
+        .onChange(of: selection) { newValue in
+            if newValue == .add {
+                selection = lastNonAddSelection
                 sheet = .addTransaction
+            } else {
+                lastNonAddSelection = newValue
             }
-            .padding(.horizontal, OrdinatioMetric.tabBarHorizontalPadding)
-            .padding(.bottom, 8)
-            .padding(.top, 6)
         }
         .fullScreenCover(item: $sheet) { sheet in
             switch sheet {
