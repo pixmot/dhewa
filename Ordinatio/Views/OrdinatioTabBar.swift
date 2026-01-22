@@ -85,11 +85,11 @@ struct OrdinatioTabBar: View {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(OrdinatioColor.background)
-                        .accessibilityLabel("Add Transaction")
+                        .accessibilityHidden(true)
                 }
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Add Transaction")
     }
 }
-
