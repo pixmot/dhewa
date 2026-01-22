@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 60;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -38,8 +38,8 @@
 		EA615A4E82E74F0BAFCA2C21 /* OrdinatioIconTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */; };
 		EDA762607523C0AA9A8852F3 /* OrdinatioCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0CDCB89DDF71AEE00B9CE5EA /* OrdinatioCore */; };
 		EFC0CDF6CB5980EC45810A14 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0D0BF8AF3D2FB46750C01F /* SettingsView.swift */; };
-		F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778724BAAC304E89800FD36B /* InsightsView.swift */; };
 		F081B0CDB665894B52C0D9B8 /* TransactionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */; };
+		F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778724BAAC304E89800FD36B /* InsightsView.swift */; };
 		FA8076E045A99F218F241A19 /* CategoriesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -77,12 +77,12 @@
 		59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MainTabView.swift; path = Ordinatio/Views/MainTabView.swift; sourceTree = "<group>"; };
 		65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionSection.swift; path = Ordinatio/Views/Transactions/TransactionSection.swift; sourceTree = "<group>"; };
 		6D0D0BF8AF3D2FB46750C01F /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = Ordinatio/Views/Settings/SettingsView.swift; sourceTree = "<group>"; };
-		778724BAAC304E89800FD36B /* InsightsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = InsightsView.swift; path = Ordinatio/Views/InsightsView.swift; sourceTree = "<group>"; };
 		75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabasePaths.swift; path = Ordinatio/Support/DatabasePaths.swift; sourceTree = "<group>"; };
-		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
+		778724BAAC304E89800FD36B /* InsightsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = InsightsView.swift; path = Ordinatio/Views/InsightsView.swift; sourceTree = "<group>"; };
 		912C69A153E16DDB0462B9A4 /* OrdinatioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		99EC185E8AC170C041440F89 /* ShareSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShareSheet.swift; path = Ordinatio/Views/Settings/ShareSheet.swift; sourceTree = "<group>"; };
 		A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioApp.swift; path = Ordinatio/OrdinatioApp.swift; sourceTree = "<group>"; };
+		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
 		A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionFiltersView.swift; path = Ordinatio/Views/Transactions/TransactionFiltersView.swift; sourceTree = "<group>"; };
 		AA068AF33369D8111517766B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Ordinatio/Assets.xcassets; sourceTree = "<group>"; };
 		B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesView.swift; path = Ordinatio/Views/Categories/CategoriesView.swift; sourceTree = "<group>"; };
@@ -293,11 +293,9 @@
 				en,
 			);
 			mainGroup = 1B018C5304A92121A3EFB914;
-			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
 				249D47C394201370E30173DF /* XCLocalSwiftPackageReference "OrdinatioCore" */,
 			);
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 31840C4EC7481A45B711D702 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -496,9 +494,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VDXRGQ52R7;
 				INFOPLIST_FILE = Ordinatio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio;
 				SDKROOT = iphoneos;
@@ -513,7 +515,11 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.tests;
 				SDKROOT = iphoneos;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ordinatio.app/Ordinatio";
@@ -528,9 +534,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VDXRGQ52R7;
 				INFOPLIST_FILE = Ordinatio/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 0.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio;
 				SDKROOT = iphoneos;
@@ -546,7 +556,11 @@
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.tests;
 				SDKROOT = iphoneos;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ordinatio.app/Ordinatio";
