@@ -11,44 +11,85 @@ final class OrdinatioUITests: XCTestCase {
         return app.textViews["TransactionNoteField"]
     }
 
+    private func dismissKeyboard(in app: XCUIApplication) {
+        let toolbarDone = app.buttons["Done"]
+        if toolbarDone.waitForExistence(timeout: 1), toolbarDone.isHittable {
+            toolbarDone.tap()
+            return
+        }
+
+        let keyboardDone = app.keyboards.buttons["Done"]
+        if keyboardDone.exists {
+            keyboardDone.tap()
+            return
+        }
+
+        app.tap()
+    }
+
+    private func enterAmount(_ value: String, in app: XCUIApplication) {
+        for character in value {
+            let key: XCUIElement
+            switch character {
+            case ".":
+                key = app.buttons["TransactionKeypadDecimal"]
+            case "0"..."9":
+                key = app.buttons["TransactionKeypadDigit\(character)"]
+            default:
+                XCTFail("Unsupported amount character: \(character)")
+                return
+            }
+            XCTAssertTrue(key.waitForExistence(timeout: 5))
+            key.tap()
+        }
+    }
+
     func testAddAndEditTransactionFlow() throws {
         let app = XCUIApplication()
         app.launchArguments.append("--uitesting")
         app.launch()
 
-        let transactionsNavBar = app.navigationBars["Transactions"]
-        XCTAssertTrue(transactionsNavBar.waitForExistence(timeout: 10))
+        let logNavBar = app.navigationBars["Log"]
+        XCTAssertTrue(logNavBar.waitForExistence(timeout: 10))
 
-        transactionsNavBar.buttons["Add Transaction"].tap()
+        let addButton = app.buttons["Add Transaction"]
+        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
+        addButton.tap()
 
-        let amountField = app.textFields["TransactionAmountField"]
-        XCTAssertTrue(amountField.waitForExistence(timeout: 5))
-        amountField.tap()
-        amountField.typeText("12.34")
+        enterAmount("12.34", in: app)
 
-        let noteField = noteField(in: app)
-        XCTAssertTrue(noteField.waitForExistence(timeout: 5))
-        noteField.tap()
-        noteField.typeText("UITest Transaction 1")
+        let noteInput = noteField(in: app)
+        XCTAssertTrue(noteInput.waitForExistence(timeout: 5))
+        noteInput.tap()
+        noteInput.typeText("UITest Transaction 1")
+        dismissKeyboard(in: app)
 
-        app.navigationBars.buttons["Save"].tap()
+        let saveButton = app.buttons["TransactionKeypadSave"]
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        saveButton.tap()
 
-        let createdCell = app.staticTexts["UITest Transaction 1"]
+        let createdCell = app.staticTexts["UITest Transaction 1"].firstMatch
         XCTAssertTrue(createdCell.waitForExistence(timeout: 10))
 
         createdCell.tap()
 
-        let noteField2 = noteField(in: app)
-        XCTAssertTrue(noteField2.waitForExistence(timeout: 5))
-        noteField2.tap()
-        if let currentValue = noteField2.value as? String, !currentValue.isEmpty {
+        let noteInput2 = noteField(in: app)
+        XCTAssertTrue(noteInput2.waitForExistence(timeout: 5))
+        noteInput2.tap()
+
+        let clearNoteButton = app.buttons["Clear note"]
+        if clearNoteButton.waitForExistence(timeout: 1) {
+            clearNoteButton.tap()
+        } else if let currentValue = noteInput2.value as? String, !currentValue.isEmpty {
             let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: currentValue.count)
-            noteField2.typeText(deleteString)
+            noteInput2.typeText(deleteString)
         }
-        noteField2.typeText("UITest Transaction 2")
+        noteInput2.typeText("UITest Transaction 2")
+        dismissKeyboard(in: app)
 
-        app.navigationBars.buttons["Save"].tap()
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
+        saveButton.tap()
 
-        XCTAssertTrue(app.staticTexts["UITest Transaction 2"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["UITest Transaction 2"].firstMatch.waitForExistence(timeout: 10))
     }
 }
