@@ -4,8 +4,8 @@ Offline-first iOS finance tracker (Milestone 1: local-only app).
 
 ## Requirements
 
-- Xcode (26.2+)
-- iOS Simulator runtime installed (example: iOS 26.2)
+- Xcode (recent version)
+- An iOS Simulator runtime installed
 
 ## Run (Xcode)
 
@@ -13,29 +13,23 @@ Offline-first iOS finance tracker (Milestone 1: local-only app).
 
 ## Run (CLI)
 
-### 1) Install an iOS Simulator runtime (one-time)
-
-Apple Silicon:
+### 1) Pick and boot a simulator
 
 ```sh
-xcodebuild -downloadPlatform iOS -buildVersion 26.2 -architectureVariant arm64
-```
+xcrun simctl list devices
 
-### 2) Boot a simulator
-
-```sh
-xcrun simctl boot "iPhone 17 Pro" || true
-xcrun simctl bootstatus "iPhone 17 Pro" -b
+xcrun simctl boot "<Device Name>" || true
+xcrun simctl bootstatus "<Device Name>" -b
 open -a Simulator
 ```
 
-### 3) Build, install, launch
+### 2) Build, install, launch
 
 ```sh
 xcodebuild \
   -project Ordinatio.xcodeproj \
   -scheme Ordinatio \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+  -destination 'platform=iOS Simulator,name=<Device Name>' \
   -configuration Debug \
   -derivedDataPath /tmp/OrdinatioDerivedData \
   CODE_SIGNING_ALLOWED=NO \
@@ -59,7 +53,7 @@ iOS unit + UI tests:
 xcodebuild \
   -project Ordinatio.xcodeproj \
   -scheme Ordinatio \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.2' \
+  -destination 'platform=iOS Simulator,name=<Device Name>' \
   -configuration Debug \
   CODE_SIGNING_ALLOWED=NO \
   test
