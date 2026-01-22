@@ -1,0 +1,667 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01262AC25B641911CBDBA76D /* BudgetsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D269609938FDC4D9B0D54CA0 /* BudgetsViewModel.swift */; };
+		01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */; };
+		1E7559FF2FF663F910C8FE9C /* OrdinatioUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */; };
+		2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */; };
+		255E6A56E0007E8A283AEF0A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
+		282B4A9754BC58271A45064F /* TransactionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */; };
+		3B1776B23B1F396C8379329C /* TransactionFiltersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */; };
+		46E79D4E5DC349BF0123E43E /* OrdinatioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */; };
+		4E355B5C1E497E77CFDD5646 /* TransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0683CCB132CED99871D6D3C4 /* TransactionsView.swift */; };
+		53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */; };
+		55CBB47B0D6839037EC74CCF /* PreferencesKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */; };
+		55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */; };
+		5757CFC78BC53A4328A9569A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */; };
+		5A2117B4A5E922E44E3124B8 /* OrdinatioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */; };
+		695663D5B4C9D4A4D2A40997 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA068AF33369D8111517766B /* Assets.xcassets */; };
+		6AD3067605F331E1CEA8EC94 /* CategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */; };
+		7320260C5FAFB84F9B565302 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */; };
+		759F2C84BDB23789185E0BA3 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99EC185E8AC170C041440F89 /* ShareSheet.swift */; };
+		87CF52B74200C173A11F1CBF /* TransactionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276564BB119D28FBF8D020E7 /* TransactionRowView.swift */; };
+		8DECF483A3427092CE3CEA29 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0299EE8A7846BA17681A1BA1 /* ExportService.swift */; };
+		8F8F93803EC9B12CDD1A4B2E /* TransactionListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2313A8EFEE8A70C497DE1119 /* TransactionListViewModel.swift */; };
+		918B87429E7454CA0A472E55 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
+		9837A98E95D48156F9A28DDC /* DatabasePaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */; };
+		A01DD4675F6B12C0C077CA66 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517963F4AAC521C0D9F1868C /* RootView.swift */; };
+		A11DEB7360BEBBA321401336 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560723CAD7438BC7547B10B7 /* AppState.swift */; };
+		B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */; };
+		B97BE05BC6EED2FCEC2C2FF3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
+		D7BCDA2CB65CD1F11EF01317 /* OrdinatioCoreExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */; };
+		EA615A4E82E74F0BAFCA2C21 /* OrdinatioIconTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */; };
+		EDA762607523C0AA9A8852F3 /* OrdinatioCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0CDCB89DDF71AEE00B9CE5EA /* OrdinatioCore */; };
+		EFC0CDF6CB5980EC45810A14 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D0D0BF8AF3D2FB46750C01F /* SettingsView.swift */; };
+		F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778724BAAC304E89800FD36B /* InsightsView.swift */; };
+		F081B0CDB665894B52C0D9B8 /* TransactionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */; };
+		FA8076E045A99F218F241A19 /* CategoriesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		18DF573D8914721A9B8A38F5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0ECF7F7DAF384F144779A42 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 504A63579F14310C45EDB761;
+			remoteInfo = Ordinatio;
+		};
+		E9D8C823037297B91B78BC73 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D0ECF7F7DAF384F144779A42 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 504A63579F14310C45EDB761;
+			remoteInfo = Ordinatio;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0299EE8A7846BA17681A1BA1 /* ExportService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExportService.swift; path = Ordinatio/Views/Settings/ExportService.swift; sourceTree = "<group>"; };
+		0683CCB132CED99871D6D3C4 /* TransactionsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionsView.swift; path = Ordinatio/Views/Transactions/TransactionsView.swift; sourceTree = "<group>"; };
+		132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioDesignSystem.swift; path = Ordinatio/DesignSystem/OrdinatioDesignSystem.swift; sourceTree = "<group>"; };
+		16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioUITests.swift; path = OrdinatioUITests/OrdinatioUITests.swift; sourceTree = "<group>"; };
+		1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionEditorView.swift; path = Ordinatio/Views/Transactions/TransactionEditorView.swift; sourceTree = "<group>"; };
+		2313A8EFEE8A70C497DE1119 /* TransactionListViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionListViewModel.swift; path = Ordinatio/Views/Transactions/TransactionListViewModel.swift; sourceTree = "<group>"; };
+		276564BB119D28FBF8D020E7 /* TransactionRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionRowView.swift; path = Ordinatio/Views/Transactions/TransactionRowView.swift; sourceTree = "<group>"; };
+		3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetsView.swift; path = Ordinatio/Views/Budgets/BudgetsView.swift; sourceTree = "<group>"; };
+		4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetEditorView.swift; path = Ordinatio/Views/Budgets/BudgetEditorView.swift; sourceTree = "<group>"; };
+		4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesViewModel.swift; path = Ordinatio/Views/Categories/CategoriesViewModel.swift; sourceTree = "<group>"; };
+		506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioIconTile.swift; path = Ordinatio/DesignSystem/OrdinatioIconTile.swift; sourceTree = "<group>"; };
+		517963F4AAC521C0D9F1868C /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = Ordinatio/Views/RootView.swift; sourceTree = "<group>"; };
+		560723CAD7438BC7547B10B7 /* AppState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppState.swift; path = Ordinatio/AppState.swift; sourceTree = "<group>"; };
+		59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MainTabView.swift; path = Ordinatio/Views/MainTabView.swift; sourceTree = "<group>"; };
+		65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionSection.swift; path = Ordinatio/Views/Transactions/TransactionSection.swift; sourceTree = "<group>"; };
+		6D0D0BF8AF3D2FB46750C01F /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = Ordinatio/Views/Settings/SettingsView.swift; sourceTree = "<group>"; };
+		778724BAAC304E89800FD36B /* InsightsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = InsightsView.swift; path = Ordinatio/Views/InsightsView.swift; sourceTree = "<group>"; };
+		75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DatabasePaths.swift; path = Ordinatio/Support/DatabasePaths.swift; sourceTree = "<group>"; };
+		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
+		912C69A153E16DDB0462B9A4 /* OrdinatioUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		99EC185E8AC170C041440F89 /* ShareSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ShareSheet.swift; path = Ordinatio/Views/Settings/ShareSheet.swift; sourceTree = "<group>"; };
+		A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioApp.swift; path = Ordinatio/OrdinatioApp.swift; sourceTree = "<group>"; };
+		A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionFiltersView.swift; path = Ordinatio/Views/Transactions/TransactionFiltersView.swift; sourceTree = "<group>"; };
+		AA068AF33369D8111517766B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Ordinatio/Assets.xcassets; sourceTree = "<group>"; };
+		B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesView.swift; path = Ordinatio/Views/Categories/CategoriesView.swift; sourceTree = "<group>"; };
+		BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreferencesKeys.swift; path = Ordinatio/Support/PreferencesKeys.swift; sourceTree = "<group>"; };
+		BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoryEditorView.swift; path = Ordinatio/Views/Categories/CategoryEditorView.swift; sourceTree = "<group>"; };
+		BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTests.swift; path = OrdinatioTests/OrdinatioTests.swift; sourceTree = "<group>"; };
+		D269609938FDC4D9B0D54CA0 /* BudgetsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetsViewModel.swift; path = Ordinatio/Views/Budgets/BudgetsViewModel.swift; sourceTree = "<group>"; };
+		DFD8031083ADDB4E09E35EF4 /* Ordinatio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ordinatio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E93C5510F5A1ADFCD448577F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioCoreExtensions.swift; path = Ordinatio/Support/OrdinatioCoreExtensions.swift; sourceTree = "<group>"; };
+		F855B598B0D962344637ADD4 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = Info.plist; path = Ordinatio/Info.plist; sourceTree = "<group>"; };
+		FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OnboardingView.swift; path = Ordinatio/Views/OnboardingView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		41DAFD5DB78DE98F144571A3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				255E6A56E0007E8A283AEF0A /* Foundation.framework in Frameworks */,
+				EDA762607523C0AA9A8852F3 /* OrdinatioCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8D7F2D133CB98B4C8F20C30D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				918B87429E7454CA0A472E55 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B85EC963900A489A4194EF07 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B97BE05BC6EED2FCEC2C2FF3 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		067A5A36AA608638615CC09A /* OrdinatioTests */ = {
+			isa = PBXGroup;
+			children = (
+				C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */,
+			);
+			name = OrdinatioTests;
+			sourceTree = "<group>";
+		};
+		1B018C5304A92121A3EFB914 = {
+			isa = PBXGroup;
+			children = (
+				31840C4EC7481A45B711D702 /* Products */,
+				4E4F912819743B3BC3EBBE29 /* Frameworks */,
+				6FCA9BBC19BB06028BBAD199 /* Ordinatio */,
+				067A5A36AA608638615CC09A /* OrdinatioTests */,
+				3CF0C8281ED7DBFBE12980BF /* OrdinatioUITests */,
+			);
+			sourceTree = "<group>";
+		};
+		31840C4EC7481A45B711D702 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DFD8031083ADDB4E09E35EF4 /* Ordinatio.app */,
+				BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */,
+				912C69A153E16DDB0462B9A4 /* OrdinatioUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		3CF0C8281ED7DBFBE12980BF /* OrdinatioUITests */ = {
+			isa = PBXGroup;
+			children = (
+				16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */,
+			);
+			name = OrdinatioUITests;
+			sourceTree = "<group>";
+		};
+		4D9E8265B65067A2F240E348 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				E93C5510F5A1ADFCD448577F /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		4E4F912819743B3BC3EBBE29 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				4D9E8265B65067A2F240E348 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		6FCA9BBC19BB06028BBAD199 /* Ordinatio */ = {
+			isa = PBXGroup;
+			children = (
+				560723CAD7438BC7547B10B7 /* AppState.swift */,
+				A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */,
+				75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */,
+				F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */,
+				BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */,
+				132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */,
+				506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */,
+				4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */,
+				3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */,
+				D269609938FDC4D9B0D54CA0 /* BudgetsViewModel.swift */,
+				B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */,
+				4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */,
+				BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */,
+				59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */,
+				A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */,
+				FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */,
+				517963F4AAC521C0D9F1868C /* RootView.swift */,
+				778724BAAC304E89800FD36B /* InsightsView.swift */,
+				0299EE8A7846BA17681A1BA1 /* ExportService.swift */,
+				6D0D0BF8AF3D2FB46750C01F /* SettingsView.swift */,
+				99EC185E8AC170C041440F89 /* ShareSheet.swift */,
+				1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */,
+				A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */,
+				2313A8EFEE8A70C497DE1119 /* TransactionListViewModel.swift */,
+				276564BB119D28FBF8D020E7 /* TransactionRowView.swift */,
+				65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */,
+				0683CCB132CED99871D6D3C4 /* TransactionsView.swift */,
+				AA068AF33369D8111517766B /* Assets.xcassets */,
+				F855B598B0D962344637ADD4 /* Info.plist */,
+			);
+			name = Ordinatio;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		504A63579F14310C45EDB761 /* Ordinatio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2C4011B4D5EAF03BFA80EA5D /* Build configuration list for PBXNativeTarget "Ordinatio" */;
+			buildPhases = (
+				69C3A99F2312F9D339D79296 /* Sources */,
+				41DAFD5DB78DE98F144571A3 /* Frameworks */,
+				FF6AEA55057F79E2E1B9ACD8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Ordinatio;
+			packageProductDependencies = (
+				0CDCB89DDF71AEE00B9CE5EA /* OrdinatioCore */,
+			);
+			productName = Ordinatio;
+			productReference = DFD8031083ADDB4E09E35EF4 /* Ordinatio.app */;
+			productType = "com.apple.product-type.application";
+		};
+		9AD796506972085AE75F50A6 /* OrdinatioTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D94FACA850E0B4C51DAA9098 /* Build configuration list for PBXNativeTarget "OrdinatioTests" */;
+			buildPhases = (
+				1564DAEC7B8D8E57AA997602 /* Sources */,
+				8D7F2D133CB98B4C8F20C30D /* Frameworks */,
+				68B3F94C3BB37A44ADC7CA42 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				47654D5585CF4F9174EC6493 /* PBXTargetDependency */,
+			);
+			name = OrdinatioTests;
+			productName = OrdinatioTests;
+			productReference = BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D02B9311372DA472D8949B18 /* OrdinatioUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E8D0DB375258B6538836E718 /* Build configuration list for PBXNativeTarget "OrdinatioUITests" */;
+			buildPhases = (
+				E4640887CFDD89F943AFA518 /* Sources */,
+				B85EC963900A489A4194EF07 /* Frameworks */,
+				7C4EDB9224E831A5E44C7AF7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AC66D09B8AA6AD1639DA795F /* PBXTargetDependency */,
+			);
+			name = OrdinatioUITests;
+			productName = OrdinatioUITests;
+			productReference = 912C69A153E16DDB0462B9A4 /* OrdinatioUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D0ECF7F7DAF384F144779A42 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				ORGANIZATIONNAME = Ordinatio;
+			};
+			buildConfigurationList = C8960AD3C2AA936ED56D52DC /* Build configuration list for PBXProject "Ordinatio" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 1B018C5304A92121A3EFB914;
+			minimizedProjectReferenceProxies = 0;
+			packageReferences = (
+				249D47C394201370E30173DF /* XCLocalSwiftPackageReference "OrdinatioCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 31840C4EC7481A45B711D702 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				504A63579F14310C45EDB761 /* Ordinatio */,
+				9AD796506972085AE75F50A6 /* OrdinatioTests */,
+				D02B9311372DA472D8949B18 /* OrdinatioUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		68B3F94C3BB37A44ADC7CA42 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7C4EDB9224E831A5E44C7AF7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FF6AEA55057F79E2E1B9ACD8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				695663D5B4C9D4A4D2A40997 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1564DAEC7B8D8E57AA997602 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5A2117B4A5E922E44E3124B8 /* OrdinatioTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		69C3A99F2312F9D339D79296 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A11DEB7360BEBBA321401336 /* AppState.swift in Sources */,
+				46E79D4E5DC349BF0123E43E /* OrdinatioApp.swift in Sources */,
+				9837A98E95D48156F9A28DDC /* DatabasePaths.swift in Sources */,
+				D7BCDA2CB65CD1F11EF01317 /* OrdinatioCoreExtensions.swift in Sources */,
+				55CBB47B0D6839037EC74CCF /* PreferencesKeys.swift in Sources */,
+				2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */,
+				EA615A4E82E74F0BAFCA2C21 /* OrdinatioIconTile.swift in Sources */,
+				53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */,
+				55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */,
+				01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */,
+				01262AC25B641911CBDBA76D /* BudgetsViewModel.swift in Sources */,
+				6AD3067605F331E1CEA8EC94 /* CategoriesView.swift in Sources */,
+				FA8076E045A99F218F241A19 /* CategoriesViewModel.swift in Sources */,
+				B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */,
+				5757CFC78BC53A4328A9569A /* MainTabView.swift in Sources */,
+				7320260C5FAFB84F9B565302 /* OnboardingView.swift in Sources */,
+				A01DD4675F6B12C0C077CA66 /* RootView.swift in Sources */,
+				F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */,
+				8DECF483A3427092CE3CEA29 /* ExportService.swift in Sources */,
+				EFC0CDF6CB5980EC45810A14 /* SettingsView.swift in Sources */,
+				759F2C84BDB23789185E0BA3 /* ShareSheet.swift in Sources */,
+				282B4A9754BC58271A45064F /* TransactionEditorView.swift in Sources */,
+				3B1776B23B1F396C8379329C /* TransactionFiltersView.swift in Sources */,
+				8F8F93803EC9B12CDD1A4B2E /* TransactionListViewModel.swift in Sources */,
+				87CF52B74200C173A11F1CBF /* TransactionRowView.swift in Sources */,
+				F081B0CDB665894B52C0D9B8 /* TransactionSection.swift in Sources */,
+				4E355B5C1E497E77CFDD5646 /* TransactionsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E4640887CFDD89F943AFA518 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1E7559FF2FF663F910C8FE9C /* OrdinatioUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		47654D5585CF4F9174EC6493 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Ordinatio;
+			target = 504A63579F14310C45EDB761 /* Ordinatio */;
+			targetProxy = 18DF573D8914721A9B8A38F5 /* PBXContainerItemProxy */;
+		};
+		AC66D09B8AA6AD1639DA795F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Ordinatio;
+			target = 504A63579F14310C45EDB761 /* Ordinatio */;
+			targetProxy = E9D8C823037297B91B78BC73 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		2245B50637B9F9C9855FB570 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		26D9862318F71C15CBFA74B7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.uitests;
+				SDKROOT = iphoneos;
+				TEST_TARGET_NAME = Ordinatio;
+			};
+			name = Debug;
+		};
+		2F504A61865B03299C03DA05 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.uitests;
+				SDKROOT = iphoneos;
+				TEST_TARGET_NAME = Ordinatio;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		4C45398DDB85A0E8B81D2A18 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Ordinatio/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		56D24752DAB8BA251807E00F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.tests;
+				SDKROOT = iphoneos;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ordinatio.app/Ordinatio";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		929108B618FA4400880B3C42 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_FILE = Ordinatio/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		9A3E1E9F80164362521F32F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.tests;
+				SDKROOT = iphoneos;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ordinatio.app/Ordinatio";
+			};
+			name = Debug;
+		};
+		9F733EE53C2C2B75A79D6726 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2C4011B4D5EAF03BFA80EA5D /* Build configuration list for PBXNativeTarget "Ordinatio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				929108B618FA4400880B3C42 /* Release */,
+				4C45398DDB85A0E8B81D2A18 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C8960AD3C2AA936ED56D52DC /* Build configuration list for PBXProject "Ordinatio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2245B50637B9F9C9855FB570 /* Debug */,
+				9F733EE53C2C2B75A79D6726 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D94FACA850E0B4C51DAA9098 /* Build configuration list for PBXNativeTarget "OrdinatioTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				56D24752DAB8BA251807E00F /* Release */,
+				9A3E1E9F80164362521F32F0 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E8D0DB375258B6538836E718 /* Build configuration list for PBXNativeTarget "OrdinatioUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2F504A61865B03299C03DA05 /* Release */,
+				26D9862318F71C15CBFA74B7 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		249D47C394201370E30173DF /* XCLocalSwiftPackageReference "OrdinatioCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = OrdinatioCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0CDCB89DDF71AEE00B9CE5EA /* OrdinatioCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 249D47C394201370E30173DF /* XCLocalSwiftPackageReference "OrdinatioCore" */;
+			productName = OrdinatioCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D0ECF7F7DAF384F144779A42 /* Project object */;
+}
