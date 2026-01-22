@@ -315,11 +315,6 @@ struct TransactionEditorView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    topBar
-                        .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.top, 12)
-                        .padding(.bottom, 10)
-
                     ScrollView {
                         VStack(spacing: 18) {
                             amountRow
@@ -341,7 +336,7 @@ struct TransactionEditorView: View {
                     }
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
             .animation(.easeInOut(duration: 0.20), value: focusedField)
             .task { loadCategories() }
             .sheet(isPresented: $showingCategoryPicker) {
@@ -384,70 +379,50 @@ struct TransactionEditorView: View {
                 Text(errorMessage ?? "")
             }
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(role: .cancel) {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel("Close")
+                }
+
+                ToolbarItem(placement: .principal) {
+                    Picker("Type", selection: $isExpense) {
+                        Text("Expense").tag(true)
+                        Text("Income").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 220)
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            showingCurrencyPicker = true
+                        } label: {
+                            Label("Currency", systemImage: "dollarsign.circle")
+                        }
+
+                        if case .edit = mode {
+                            Button(role: .destructive) {
+                                confirmDelete = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.2.circlepath")
+                    }
+                    .accessibilityLabel("More")
+                }
+
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") { focusedField = nil }
                 }
             }
-        }
-    }
-
-    private var topBar: some View {
-        HStack(spacing: 12) {
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OrdinatioColor.textPrimary)
-                    .frame(width: 40, height: 40)
-                    .background {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(OrdinatioColor.surface)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(OrdinatioColor.separator.opacity(0.8), lineWidth: 1)
-                    }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close")
-
-            Picker("Type", selection: $isExpense) {
-                Text("Expense").tag(true)
-                Text("Income").tag(false)
-            }
-            .pickerStyle(.segmented)
-
-            Menu {
-                Button {
-                    showingCurrencyPicker = true
-                } label: {
-                    Label("Currency", systemImage: "dollarsign.circle")
-                }
-
-                if case .edit = mode {
-                    Button(role: .destructive) {
-                        confirmDelete = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-            } label: {
-                Image(systemName: "arrow.2.circlepath")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OrdinatioColor.textPrimary)
-                    .frame(width: 40, height: 40)
-                    .background {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(OrdinatioColor.surface)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(OrdinatioColor.separator.opacity(0.8), lineWidth: 1)
-                    }
-            }
-            .accessibilityLabel("More")
         }
     }
 
