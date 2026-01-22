@@ -590,20 +590,25 @@ struct TransactionEditorView: View {
             keypadNumberRow([7, 8, 9])
 
             keypadButton(title: ".", role: .secondary) { appendDecimalSeparator() }
+                .accessibilityIdentifier("TransactionKeypadDecimal")
                 .disabled(MoneyFormat.fractionDigits(for: currencyCode) == 0)
 
             keypadButton(title: "0", role: .secondary) { appendDigit(0) }
+                .accessibilityIdentifier("TransactionKeypadDigit0")
 
             keypadButton(systemImage: "checkmark", role: .primary) { save() }
+                .accessibilityIdentifier("TransactionKeypadSave")
                 .disabled(!canSave)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Keypad")
+        .accessibilityIdentifier("TransactionKeypad")
     }
 
     private func keypadNumberRow(_ digits: [Int]) -> some View {
         ForEach(digits, id: \.self) { digit in
             keypadButton(title: "\(digit)", role: .secondary) { appendDigit(digit) }
+                .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
         }
     }
 
