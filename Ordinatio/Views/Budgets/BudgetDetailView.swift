@@ -40,7 +40,12 @@ struct BudgetDetailView: View {
     }
 
     private func presentComposer(_ route: BudgetComposerRoute) {
-        composerDetent = .medium
+        switch route {
+        case .create:
+            composerDetent = .fraction(0.67)
+        case .edit:
+            composerDetent = .medium
+        }
         composerRoute = route
     }
 
@@ -116,7 +121,7 @@ struct BudgetDetailView: View {
                         }
                     }
                 )
-                .presentationDetents([.medium, .large], selection: $composerDetent)
+                .presentationDetents([.medium, .fraction(0.67), .large], selection: $composerDetent)
                 .presentationDragIndicator(.visible)
             }
         .fullScreenCover(item: $editingTransaction) { row in
