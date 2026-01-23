@@ -11,7 +11,7 @@ struct BudgetsView: View {
     @AppStorage(PreferencesKeys.budgetRows) private var budgetRows = false
 
     @State private var composerRoute: BudgetComposerRoute?
-    @State private var composerDetent: PresentationDetent = .medium
+    @State private var composerDetent: PresentationDetent = .fraction(0.9)
     @State private var pendingDelete: BudgetSnapshot?
 
     init(database: AppDatabase, householdId: String, defaultCurrencyCode: String) {
@@ -24,9 +24,9 @@ struct BudgetsView: View {
     private func presentComposer(_ route: BudgetComposerRoute) {
         switch route {
         case .create:
-            composerDetent = .fraction(0.67)
+            composerDetent = .fraction(0.9)
         case .edit:
-            composerDetent = .medium
+            composerDetent = .fraction(0.9)
         }
         composerRoute = route
     }
@@ -197,7 +197,7 @@ struct BudgetsView: View {
                         }
                     }
                 )
-                .presentationDetents([.medium, .fraction(0.67), .large], selection: $composerDetent)
+                .presentationDetents([.fraction(0.9), .large], selection: $composerDetent)
                 .presentationDragIndicator(.visible)
             }
             .fullScreenCover(item: $pendingDelete) { snapshot in
