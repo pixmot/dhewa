@@ -33,9 +33,7 @@ struct BudgetsView: View {
                         .ignoresSafeArea(.all)
                 } else {
                     VStack(spacing: 0) {
-                        BudgetsHeaderView(onAdd: {
-                            composerRoute = .create(overallExists: viewModel.overallSnapshot != nil)
-                        })
+                        BudgetsHeaderView()
                         .padding(.top, 20)
                         .padding(.horizontal, 30)
                         .padding(.bottom, 20)
@@ -146,6 +144,14 @@ struct BudgetsView: View {
                         }
                     }
                 }
+
+            }
+            .overlay(alignment: .bottomLeading) {
+                BudgetCreateButton {
+                    composerRoute = .create(overallExists: viewModel.overallSnapshot != nil)
+                }
+                .padding(.leading, 20)
+                .padding(.bottom, 12)
             }
             .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $composerRoute) { route in
@@ -221,8 +227,6 @@ enum BudgetComposerRoute: Identifiable {
 }
 
 private struct BudgetsHeaderView: View {
-    var onAdd: () -> Void
-
     var body: some View {
         HStack(spacing: 10) {
             Text("Budgets")
@@ -230,18 +234,61 @@ private struct BudgetsHeaderView: View {
                 .foregroundStyle(OrdinatioColor.textPrimary)
                 .accessibility(addTraits: .isHeader)
 
-            Button(action: onAdd) {
-                Image(systemName: "sparkles")
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
-                    .padding(4)
-                    .background(OrdinatioColor.surfaceElevated, in: Circle())
-                    .contentShape(Circle())
-            }
-            .accessibilityLabel("Add Budget")
-
             Spacer()
         }
+    }
+}
+
+private struct BudgetCreateButton: View {
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label("Create Budget", systemImage: "plus")
+                .font(.system(.headline, design: .rounded).weight(.semibold))
+                .foregroundStyle(OrdinatioColor.textPrimary)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 12)
+                .background(LiquidGlassCapsule())
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct LiquidGlassCapsule: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Capsule(style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                Capsule(style: .continuous)
+                    .strokeBorder(
+                        Color.white.opacity(colorScheme == .dark ? 0.18 : 0.55),
+                        lineWidth: 1
+                    )
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(colorScheme == .dark ? 0.12 : 0.45),
+                                Color.white.opacity(0.08),
+                                Color.clear,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.plusLighter)
+            )
+            .shadow(
+                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.12),
+                radius: 10,
+                x: 0,
+                y: 6
+            )
     }
 }
 
