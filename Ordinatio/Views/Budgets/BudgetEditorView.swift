@@ -36,7 +36,6 @@ struct BudgetComposerView: View {
 
     @State private var categoryBudget: Bool
     @State private var selectedCategoryId: String?
-    @State private var categorySearchText = ""
 
     @State private var budgetTimeFrame: BudgetTimeFrame
     @State private var chosenDayWeek: Int
@@ -198,12 +197,6 @@ private extension BudgetComposerView {
             return true
         }
     }
-
-    var filteredCategoryOptions: [OrdinatioCore.Category] {
-        let query = categorySearchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !query.isEmpty else { return availableCategoryOptions }
-        return availableCategoryOptions.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
 }
 
 private extension BudgetComposerView {
@@ -329,10 +322,6 @@ private extension BudgetComposerView {
                 return (icon: "tray.full.fill", message: "No remaining\ncategories.")
             }
 
-            if filteredCategoryOptions.isEmpty {
-                return (icon: "magnifyingglass", message: "No matching\ncategories.")
-            }
-
             return nil
         }()
 
@@ -354,7 +343,7 @@ private extension BudgetComposerView {
             } else {
                 ScrollView(showsIndicators: false) {
                     FlowLayout(spacing: 10) {
-                        ForEach(filteredCategoryOptions) { category in
+                        ForEach(availableCategoryOptions) { category in
                             BudgetCategoryChip(
                                 category: category,
                                 selected: selectedCategoryId == category.id,
@@ -375,53 +364,10 @@ private extension BudgetComposerView {
 
             Spacer(minLength: 0)
 
-            categorySearchControls
+            categoryAddButton
                 .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    var categorySearchBarContent: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(OrdinatioColor.textSecondary)
-
-            TextField("Search categories", text: $categorySearchText)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.search)
-                .foregroundStyle(OrdinatioColor.textPrimary)
-
-            if !categorySearchText.isEmpty {
-                Button {
-                    categorySearchText = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                }
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity)
-    }
-
-    @ViewBuilder
-    var categorySearchBar: some View {
-        if #available(iOS 26, *) {
-            categorySearchBarContent
-                .glassEffect(
-                    .regular.tint(OrdinatioColor.surfaceElevated.opacity(0.25)).interactive(),
-                    in: .rect(cornerRadius: 18)
-                )
-        } else {
-            categorySearchBarContent
-                .background(
-                    .ultraThinMaterial,
-                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
-                )
-        }
     }
 
     @ViewBuilder
@@ -429,44 +375,28 @@ private extension BudgetComposerView {
         let button = Button {
             showingCategoryCreator = true
         } label: {
-            Image(systemName: "plus")
+            Text("+ create category")
                 .font(.system(.headline, design: .rounded).weight(.semibold))
                 .foregroundStyle(OrdinatioColor.textPrimary)
-                .frame(width: 44, height: 44)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
-        .contentShape(Circle())
-        .accessibilityLabel("New Category")
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .accessibilityLabel("Create Category")
 
         if #available(iOS 26, *) {
             button.glassEffect(
                 .regular.tint(OrdinatioColor.surfaceElevated.opacity(0.25)).interactive(),
-                in: .circle
+                in: .rect(cornerRadius: 18)
             )
         } else {
             button
-                .background(.ultraThinMaterial, in: Circle())
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
-                    Circle()
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(OrdinatioColor.separator.opacity(0.5), lineWidth: 1)
                 )
-        }
-    }
-
-    @ViewBuilder
-    var categorySearchControls: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 12) {
-                HStack(spacing: 12) {
-                    categorySearchBar
-                    categoryAddButton
-                }
-            }
-        } else {
-            HStack(spacing: 12) {
-                categorySearchBar
-                categoryAddButton
-            }
         }
     }
 
