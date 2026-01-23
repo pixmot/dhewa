@@ -25,7 +25,7 @@ final class CategoriesViewModel: ObservableObject {
             .publisher(in: database.dbQueue)
             .sink { [weak self] completion in
                 if case let .failure(error) = completion {
-                    self?.errorMessage = error.localizedDescription
+                    self?.errorMessage = ErrorDisplay.message(error)
                 }
             } receiveValue: { [weak self] categories in
                 self?.categories = categories
@@ -40,7 +40,7 @@ final class CategoriesViewModel: ObservableObject {
                 _ = try CategoryRepository.createCategory(in: db, householdId: householdId, name: trimmed)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -52,7 +52,7 @@ final class CategoriesViewModel: ObservableObject {
                 try CategoryRepository.updateCategoryName(in: db, categoryId: categoryId, name: trimmed)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -62,7 +62,7 @@ final class CategoriesViewModel: ObservableObject {
                 try CategoryRepository.deleteCategory(in: db, categoryId: categoryId)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -75,7 +75,7 @@ final class CategoriesViewModel: ObservableObject {
                 try CategoryRepository.reorderCategories(in: db, householdId: householdId, orderedCategoryIds: orderedIds)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 }

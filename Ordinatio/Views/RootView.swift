@@ -37,7 +37,7 @@ struct RootView: View {
                             do {
                                 activeHouseholdId = try appState.ensureSeedData()
                             } catch {
-                                bootErrorMessage = error.localizedDescription
+                                bootErrorMessage = ErrorDisplay.message(error)
                             }
                         }
                 } else {
@@ -56,7 +56,7 @@ struct RootView: View {
                             activeHouseholdId = try appState.ensureSeedData()
                             hasOnboarded = true
                         } catch {
-                            bootErrorMessage = error.localizedDescription
+                            bootErrorMessage = ErrorDisplay.message(error)
                         }
                     }
                 )

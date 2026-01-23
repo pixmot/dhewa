@@ -18,3 +18,12 @@ enum DatabasePaths {
     }
 }
 
+enum ErrorDisplay {
+    static func message(_ error: Error) -> String {
+#if DEBUG
+        String(describing: error)
+#else
+        error.localizedDescription
+#endif
+    }
+}

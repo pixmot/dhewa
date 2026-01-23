@@ -50,7 +50,7 @@ final class TransactionListViewModel: ObservableObject {
             .publisher(in: database.dbQueue)
             .sink { [weak self] completion in
                 if case let .failure(error) = completion {
-                    self?.errorMessage = error.localizedDescription
+                    self?.errorMessage = ErrorDisplay.message(error)
                 }
             } receiveValue: { [weak self] categories in
                 self?.categories = categories
@@ -70,7 +70,7 @@ final class TransactionListViewModel: ObservableObject {
             .publisher(in: database.dbQueue)
             .sink { [weak self] completion in
                 if case let .failure(error) = completion {
-                    self?.errorMessage = error.localizedDescription
+                    self?.errorMessage = ErrorDisplay.message(error)
                 }
             } receiveValue: { [weak self] rows in
                 self?.updateFromRows(rows)
