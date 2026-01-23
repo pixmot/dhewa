@@ -36,6 +36,7 @@ struct BudgetComposerView: View {
 
     @State private var categoryBudget: Bool
     @State private var selectedCategoryId: String?
+    @State private var categorySearchText = ""
 
     @State private var budgetTimeFrame: BudgetTimeFrame
     @State private var chosenDayWeek: Int
@@ -196,6 +197,12 @@ private extension BudgetComposerView {
             }
             return true
         }
+    }
+
+    var filteredCategoryOptions: [OrdinatioCore.Category] {
+        let query = categorySearchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return availableCategoryOptions }
+        return availableCategoryOptions.filter { $0.name.localizedCaseInsensitiveContains(query) }
     }
 }
 
@@ -362,27 +369,37 @@ private extension BudgetComposerView {
     }
 
     var categoryStage: some View {
-        VStack {
+        let emptyMessage: String? = {
             if availableCategoryOptions.isEmpty {
+                return "No remaining\ncategories."
+            }
+
+            if filteredCategoryOptions.isEmpty {
+                return "No matching\ncategories."
+            }
+
+            return nil
+        }()
+
+        return VStack(spacing: 12) {
+            if let emptyMessage {
                 VStack(spacing: 12) {
                     Image(systemName: "tray.full.fill")
                         .font(.system(.largeTitle, design: .rounded))
                         .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
                         .padding(.top, 20)
 
-                    Text("No remaining\ncategories.")
+                    Text(emptyMessage)
                         .font(.system(.title3, design: .rounded).weight(.medium))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
                         .padding(.bottom, 20)
-
-                    Spacer()
                 }
                 .frame(maxHeight: .infinity)
             } else {
                 ScrollView(showsIndicators: false) {
                     FlowLayout(spacing: 10) {
-                        ForEach(availableCategoryOptions) { category in
+                        ForEach(filteredCategoryOptions) { category in
                             BudgetCategoryChip(
                                 category: category,
                                 selected: selectedCategoryId == category.id,
@@ -399,12 +416,56 @@ private extension BudgetComposerView {
                     .padding(15)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.bottom, 15)
             }
 
-            Spacer()
+            Spacer(minLength: 0)
+
+            categorySearchBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    var categorySearchBarContent: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(OrdinatioColor.textSecondary)
+
+            TextField("Search categories", text: $categorySearchText)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .foregroundStyle(OrdinatioColor.textPrimary)
+
+            if !categorySearchText.isEmpty {
+                Button {
+                    categorySearchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                }
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    var categorySearchBar: some View {
+        if #available(iOS 26, *) {
+            categorySearchBarContent
+                .glassEffect(
+                    .regular.tint(OrdinatioColor.surfaceElevated.opacity(0.25)).interactive(),
+                    in: .rect(cornerRadius: 18)
+                )
+        } else {
+            categorySearchBarContent
+                .background(
+                    .ultraThinMaterial,
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+                )
+        }
     }
 
     var timeFrameStage: some View {
@@ -934,10 +995,16 @@ private struct BudgetGlassProgress: View {
         let height: CGFloat = 8
 
         if useGlass {
-            Capsule()
-                .fill(Color.clear)
-                .frame(width: width, height: height)
-                .glassEffect(.regular.tint(fill), in: .capsule)
+            if #available(iOS 26, *) {
+                Capsule()
+                    .fill(Color.clear)
+                    .frame(width: width, height: height)
+                    .glassEffect(.regular.tint(fill), in: .capsule)
+            } else {
+                Capsule()
+                    .fill(fill)
+                    .frame(width: width, height: height)
+            }
         } else {
             Capsule()
                 .fill(fill)
