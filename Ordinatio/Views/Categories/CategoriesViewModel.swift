@@ -69,6 +69,7 @@ final class CategoriesViewModel: ObservableObject {
     func move(from source: IndexSet, to destination: Int) {
         var updated = categories
         updated.move(fromOffsets: source, toOffset: destination)
+        categories = updated
         let orderedIds = updated.map(\.id)
         do {
             try database.write { db in
