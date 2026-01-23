@@ -146,11 +146,11 @@ struct BudgetsView: View {
                 }
 
             }
-            .overlay(alignment: .bottomLeading) {
+            .overlay(alignment: .bottomTrailing) {
                 BudgetCreateButton {
                     composerRoute = .create(overallExists: viewModel.overallSnapshot != nil)
                 }
-                .padding(.leading, 20)
+                .padding(.trailing, 20)
                 .padding(.bottom, 12)
             }
             .toolbar(.hidden, for: .navigationBar)
