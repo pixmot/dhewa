@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		01262AC25B641911CBDBA76D /* BudgetsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D269609938FDC4D9B0D54CA0 /* BudgetsViewModel.swift */; };
 		01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* BudgetModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6B2C3A4D5E6F7890A1B2C3D /* BudgetModels.swift */; };
+		B2C3D4E5F6A7B8C9D0E1F2A3 /* BudgetTransactionsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D8E7F6A5B4C3D2E1F0A9B8 /* BudgetTransactionsViewModel.swift */; };
+		F2B3C4D5E6F7A8B9C0D1E2F3 /* BudgetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A0D49D6F6A4C94A0B2E1A1 /* BudgetDetailView.swift */; };
 		1E7559FF2FF663F910C8FE9C /* OrdinatioUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */; };
 		2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */; };
 		255E6A56E0007E8A283AEF0A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
@@ -70,6 +73,9 @@
 		276564BB119D28FBF8D020E7 /* TransactionRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionRowView.swift; path = Ordinatio/Views/Transactions/TransactionRowView.swift; sourceTree = "<group>"; };
 		3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetsView.swift; path = Ordinatio/Views/Budgets/BudgetsView.swift; sourceTree = "<group>"; };
 		4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetEditorView.swift; path = Ordinatio/Views/Budgets/BudgetEditorView.swift; sourceTree = "<group>"; };
+		C9D8E7F6A5B4C3D2E1F0A9B8 /* BudgetTransactionsViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetTransactionsViewModel.swift; path = Ordinatio/Views/Budgets/BudgetTransactionsViewModel.swift; sourceTree = "<group>"; };
+		E6B2C3A4D5E6F7890A1B2C3D /* BudgetModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetModels.swift; path = Ordinatio/Views/Budgets/BudgetModels.swift; sourceTree = "<group>"; };
+		F1A0D49D6F6A4C94A0B2E1A1 /* BudgetDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetDetailView.swift; path = Ordinatio/Views/Budgets/BudgetDetailView.swift; sourceTree = "<group>"; };
 		4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesViewModel.swift; path = Ordinatio/Views/Categories/CategoriesViewModel.swift; sourceTree = "<group>"; };
 		506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioIconTile.swift; path = Ordinatio/DesignSystem/OrdinatioIconTile.swift; sourceTree = "<group>"; };
 		517963F4AAC521C0D9F1868C /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = Ordinatio/Views/RootView.swift; sourceTree = "<group>"; };
@@ -191,6 +197,9 @@
 				132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */,
 				506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */,
 				4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */,
+				E6B2C3A4D5E6F7890A1B2C3D /* BudgetModels.swift */,
+				F1A0D49D6F6A4C94A0B2E1A1 /* BudgetDetailView.swift */,
+				C9D8E7F6A5B4C3D2E1F0A9B8 /* BudgetTransactionsViewModel.swift */,
 				3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */,
 				D269609938FDC4D9B0D54CA0 /* BudgetsViewModel.swift */,
 				B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */,
@@ -354,6 +363,9 @@
 				EA615A4E82E74F0BAFCA2C21 /* OrdinatioIconTile.swift in Sources */,
 				53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */,
 				55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* BudgetModels.swift in Sources */,
+				F2B3C4D5E6F7A8B9C0D1E2F3 /* BudgetDetailView.swift in Sources */,
+				B2C3D4E5F6A7B8C9D0E1F2A3 /* BudgetTransactionsViewModel.swift in Sources */,
 				01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */,
 				01262AC25B641911CBDBA76D /* BudgetsViewModel.swift in Sources */,
 				6AD3067605F331E1CEA8EC94 /* CategoriesView.swift in Sources */,
@@ -467,7 +479,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.uitests;
 				SDKROOT = iphoneos;
 				TEST_TARGET_NAME = Ordinatio;
@@ -479,7 +491,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.example.ordinatio.uitests;
 				SDKROOT = iphoneos;
 				TEST_TARGET_NAME = Ordinatio;
@@ -496,7 +508,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VDXRGQ52R7;
 				INFOPLIST_FILE = Ordinatio/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -514,7 +526,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -536,7 +548,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = VDXRGQ52R7;
 				INFOPLIST_FILE = Ordinatio/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -555,7 +567,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
