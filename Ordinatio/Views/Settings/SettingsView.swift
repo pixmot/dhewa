@@ -7,6 +7,7 @@ struct SettingsView: View {
 
     @AppStorage(PreferencesKeys.hasOnboarded) private var hasOnboarded = false
     @AppStorage(PreferencesKeys.activeHouseholdId) private var activeHouseholdId = ""
+    @AppStorage(PreferencesKeys.budgetRows) private var budgetRows = false
 
     @State private var showResetConfirm = false
     @State private var showCategories = false
@@ -19,7 +20,7 @@ struct SettingsView: View {
             exportURL = try ExportService.exportTransactionsCSV(database: database, householdId: householdId)
             showShareSheet = true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -29,7 +30,7 @@ struct SettingsView: View {
             activeHouseholdId = ""
             hasOnboarded = false
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -46,6 +47,15 @@ struct SettingsView: View {
                     }
                 } header: {
                     Text("Manage")
+                }
+
+                Section {
+                    Toggle(isOn: $budgetRows) {
+                        Text("Budget Rows")
+                            .foregroundStyle(OrdinatioColor.textPrimary)
+                    }
+                } header: {
+                    Text("Budgets")
                 }
 
                 Section {
