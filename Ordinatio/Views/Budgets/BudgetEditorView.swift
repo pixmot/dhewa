@@ -226,13 +226,13 @@ private extension BudgetComposerView {
 
             Spacer()
 
-            BudgetGlassProgress(
+            BudgetStepProgress(
                 currentStep: progressStepIndex,
                 totalSteps: progressStepCount,
                 accent: OrdinatioColor.actionBlue,
                 track: OrdinatioColor.surfaceElevated
             )
-            .frame(width: 120, height: 30)
+            .frame(height: 24)
         }
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -294,59 +294,27 @@ private extension BudgetComposerView {
 private extension BudgetComposerView {
     var typeStage: some View {
         VStack(spacing: 16) {
-            if #available(iOS 26, *) {
-                GlassEffectContainer(spacing: 16) {
-                    VStack(spacing: 16) {
-                        BudgetTypeBlock(
-                            title: "Overall Budget",
-                            subtitle: "One limit across all spending.",
-                            symbol: "chart.pie.fill",
-                            accent: OrdinatioColor.actionBlue,
-                            selected: !categoryBudget
-                        ) {
-                            withAnimation(.easeIn(duration: 0.15)) {
-                                categoryBudget = false
-                            }
-                        }
-
-                        BudgetTypeBlock(
-                            title: "Category Budget",
-                            subtitle: "A limit for one category.",
-                            symbol: "square.grid.2x2.fill",
-                            accent: OrdinatioColor.actionOrange,
-                            selected: categoryBudget
-                        ) {
-                            withAnimation(.easeIn(duration: 0.15)) {
-                                categoryBudget = true
-                            }
-                        }
-                    }
+            BudgetTypeBlock(
+                title: "Overall Budget",
+                subtitle: "One limit across all spending.",
+                symbol: "chart.pie.fill",
+                accent: OrdinatioColor.actionBlue,
+                selected: !categoryBudget
+            ) {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    categoryBudget = false
                 }
-            } else {
-                VStack(spacing: 16) {
-                    BudgetTypeBlock(
-                        title: "Overall Budget",
-                        subtitle: "One limit across all spending.",
-                        symbol: "chart.pie.fill",
-                        accent: OrdinatioColor.actionBlue,
-                        selected: !categoryBudget
-                    ) {
-                        withAnimation(.easeIn(duration: 0.15)) {
-                            categoryBudget = false
-                        }
-                    }
+            }
 
-                    BudgetTypeBlock(
-                        title: "Category Budget",
-                        subtitle: "A limit for one category.",
-                        symbol: "square.grid.2x2.fill",
-                        accent: OrdinatioColor.actionOrange,
-                        selected: categoryBudget
-                    ) {
-                        withAnimation(.easeIn(duration: 0.15)) {
-                            categoryBudget = true
-                        }
-                    }
+            BudgetTypeBlock(
+                title: "Category Budget",
+                subtitle: "A limit for one category.",
+                symbol: "square.grid.2x2.fill",
+                accent: OrdinatioColor.actionOrange,
+                selected: categoryBudget
+            ) {
+                withAnimation(.easeIn(duration: 0.15)) {
+                    categoryBudget = true
                 }
             }
 
@@ -872,10 +840,6 @@ private struct BudgetTypeBlock: View {
         RoundedRectangle(cornerRadius: 18, style: .continuous)
     }
 
-    private var glassTint: Color {
-        selected ? accent.opacity(0.25) : OrdinatioColor.surfaceElevated.opacity(0.85)
-    }
-
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
@@ -907,15 +871,7 @@ private struct BudgetTypeBlock: View {
             }
             .padding(18)
             .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
-            .background {
-                if #available(iOS 26, *) {
-                    cardShape
-                        .fill(Color.clear)
-                        .glassEffect(.regular.tint(glassTint), in: .rect(cornerRadius: 18))
-                } else {
-                    cardShape.fill(OrdinatioColor.surfaceElevated)
-                }
-            }
+            .background(cardShape.fill(OrdinatioColor.surfaceElevated))
             .overlay {
                 cardShape
                     .strokeBorder(
@@ -923,6 +879,13 @@ private struct BudgetTypeBlock: View {
                         lineWidth: selected ? 2 : 1
                     )
             }
+            .overlay {
+                if selected {
+                    cardShape
+                        .fill(accent.opacity(0.08))
+                }
+            }
+            .contentShape(cardShape)
         }
         .buttonStyle(BouncyButtonStyle(duration: 0.2, scale: 0.98))
     }
@@ -982,7 +945,7 @@ private struct BudgetPickerStyle: ViewModifier {
     }
 }
 
-private struct BudgetGlassProgress: View {
+private struct BudgetStepProgress: View {
     let currentStep: Int
     let totalSteps: Int
     let accent: Color
@@ -997,52 +960,36 @@ private struct BudgetGlassProgress: View {
     }
 
     var body: some View {
-        if #available(iOS 26, *) {
-            GlassEffectContainer(spacing: 6) {
+        HStack(spacing: 6) {
+            ForEach(1 ... clampedTotal, id: \.self) { step in
                 HStack(spacing: 6) {
-                    ForEach(0 ..< clampedTotal, id: \.self) { index in
-                        progressSegment(isActive: index < clampedCurrent, useGlass: true)
+                    ZStack {
+                        Circle()
+                            .fill(step <= clampedCurrent ? accent : track.opacity(0.6))
+
+                        if clampedTotal > 1 {
+                            Text("\(step)")
+                                .font(.system(.caption2, design: .rounded).weight(.semibold))
+                                .foregroundStyle(step <= clampedCurrent ? OrdinatioColor.lightIcon : OrdinatioColor.textSecondary)
+                        }
+                    }
+                    .frame(width: 18, height: 18)
+                    .overlay {
+                        Circle()
+                            .strokeBorder(OrdinatioColor.separator, lineWidth: step <= clampedCurrent ? 0 : 1)
+                    }
+
+                    if step < clampedTotal {
+                        RoundedRectangle(cornerRadius: 2, style: .continuous)
+                            .fill(step < clampedCurrent ? accent.opacity(0.8) : track.opacity(0.5))
+                            .frame(width: 14, height: 3)
                     }
                 }
-                .padding(6)
-                .background {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.clear)
-                        .glassEffect(.regular.tint(track), in: .rect(cornerRadius: 12))
-                }
             }
-        } else {
-            HStack(spacing: 6) {
-                ForEach(0 ..< clampedTotal, id: \.self) { index in
-                    progressSegment(isActive: index < clampedCurrent, useGlass: false)
-                }
-            }
-            .padding(6)
-            .background(OrdinatioColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
-    }
-
-    @ViewBuilder
-    private func progressSegment(isActive: Bool, useGlass: Bool) -> some View {
-        let fill = isActive ? accent : track.opacity(0.7)
-        let width: CGFloat = isActive ? 22 : 14
-        let height: CGFloat = 8
-
-        if useGlass {
-            if #available(iOS 26, *) {
-                Capsule()
-                    .fill(Color.clear)
-                    .frame(width: width, height: height)
-                    .glassEffect(.regular.tint(fill), in: .capsule)
-            } else {
-                Capsule()
-                    .fill(fill)
-                    .frame(width: width, height: height)
-            }
-        } else {
-            Capsule()
-                .fill(fill)
-                .frame(width: width, height: height)
+        .padding(.horizontal, 6)
+        .transaction { transaction in
+            transaction.animation = nil
         }
     }
 }
