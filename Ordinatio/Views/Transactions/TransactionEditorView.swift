@@ -12,6 +12,8 @@ struct TransactionEditorView: View {
     let householdId: String
     let defaultCurrencyCode: String
     let mode: TransactionEditorMode
+    let showsDismissButton: Bool
+    let prefilledCategoryId: String?
 
     @Environment(\.dismiss) private var dismiss
 
@@ -39,12 +41,16 @@ struct TransactionEditorView: View {
         database: AppDatabase,
         householdId: String,
         defaultCurrencyCode: String,
-        mode: TransactionEditorMode
+        mode: TransactionEditorMode,
+        showsDismissButton: Bool = true,
+        prefilledCategoryId: String? = nil
     ) {
         self.database = database
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
         self.mode = mode
+        self.showsDismissButton = showsDismissButton
+        self.prefilledCategoryId = prefilledCategoryId
 
         switch mode {
         case .create:
@@ -52,7 +58,7 @@ struct TransactionEditorView: View {
             _amountText = State(initialValue: "")
             _currencyCode = State(initialValue: defaultCurrencyCode.uppercased())
             _dateTime = State(initialValue: Date())
-            _categoryId = State(initialValue: nil)
+            _categoryId = State(initialValue: prefilledCategoryId)
             _note = State(initialValue: "")
         case let .edit(row):
             _isExpense = State(initialValue: row.amountMinor < 0)
@@ -277,7 +283,7 @@ struct TransactionEditorView: View {
 
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -289,7 +295,7 @@ struct TransactionEditorView: View {
             }
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -304,7 +310,7 @@ struct TransactionEditorView: View {
                     .fetchAll(db)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = ErrorDisplay.message(error)
         }
     }
 
@@ -379,13 +385,15 @@ struct TransactionEditorView: View {
                 Text(errorMessage ?? "")
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .cancel) {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
+                if showsDismissButton {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .accessibilityLabel("Close")
                     }
-                    .accessibilityLabel("Close")
                 }
 
                 ToolbarItem(placement: .principal) {
