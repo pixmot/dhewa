@@ -14,6 +14,7 @@ struct BudgetDetailView: View {
 
     @State private var selectedStartDate: Date = Date()
     @State private var composerRoute: BudgetComposerRoute?
+    @State private var composerDetent: PresentationDetent = .medium
     @State private var showDeleteConfirm = false
     @State private var showAddTransaction = false
     @State private var editingTransaction: TransactionListRow?
@@ -36,6 +37,11 @@ struct BudgetDetailView: View {
 
     private var snapshot: BudgetSnapshot? {
         viewModel.snapshots.first { $0.budget.id == budgetId }
+    }
+
+    private func presentComposer(_ route: BudgetComposerRoute) {
+        composerDetent = .medium
+        composerRoute = route
     }
 
     var body: some View {
@@ -80,37 +86,39 @@ struct BudgetDetailView: View {
         }
         .sheet(item: $composerRoute) { route in
             let existingCategoryBudgetIds = Set(viewModel.categorySnapshots.compactMap { $0.budget.categoryId })
-            BudgetComposerView(
-                route: route,
-                database: database,
-                householdId: householdId,
-                categories: viewModel.categories,
-                existingCategoryBudgetIds: existingCategoryBudgetIds,
-                defaultCurrencyCode: defaultCurrencyCode,
-                onSave: { draft in
-                    if let budgetId = draft.budgetId {
-                        viewModel.updateBudget(
-                            budgetId: budgetId,
-                            isOverall: draft.isOverall,
-                            categoryId: draft.categoryId,
-                            timeFrame: draft.timeFrame,
-                            startDate: draft.startDate,
-                            currencyCode: draft.currencyCode,
-                            amountMinor: draft.amountMinor
-                        )
-                    } else {
-                        viewModel.upsertBudget(
-                            isOverall: draft.isOverall,
-                            categoryId: draft.categoryId,
-                            timeFrame: draft.timeFrame,
-                            startDate: draft.startDate,
-                            currencyCode: draft.currencyCode,
-                            amountMinor: draft.amountMinor
-                        )
+                BudgetComposerView(
+                    route: route,
+                    database: database,
+                    householdId: householdId,
+                    categories: viewModel.categories,
+                    existingCategoryBudgetIds: existingCategoryBudgetIds,
+                    defaultCurrencyCode: defaultCurrencyCode,
+                    onSave: { draft in
+                        if let budgetId = draft.budgetId {
+                            viewModel.updateBudget(
+                                budgetId: budgetId,
+                                isOverall: draft.isOverall,
+                                categoryId: draft.categoryId,
+                                timeFrame: draft.timeFrame,
+                                startDate: draft.startDate,
+                                currencyCode: draft.currencyCode,
+                                amountMinor: draft.amountMinor
+                            )
+                        } else {
+                            viewModel.upsertBudget(
+                                isOverall: draft.isOverall,
+                                categoryId: draft.categoryId,
+                                timeFrame: draft.timeFrame,
+                                startDate: draft.startDate,
+                                currencyCode: draft.currencyCode,
+                                amountMinor: draft.amountMinor
+                            )
+                        }
                     }
-                }
-            )
-        }
+                )
+                .presentationDetents([.medium, .large], selection: $composerDetent)
+                .presentationDragIndicator(.visible)
+            }
         .fullScreenCover(item: $editingTransaction) { row in
             TransactionEditorView(
                 database: database,
@@ -203,7 +211,7 @@ struct BudgetDetailView: View {
                 }
 
                 BudgetTopBarButton(symbol: "pencil", tint: OrdinatioColor.actionOrange) {
-                    composerRoute = .edit(snapshot)
+                    presentComposer(.edit(snapshot))
                 }
 
                 BudgetTopBarButton(symbol: "trash.fill", tint: OrdinatioColor.expense) {

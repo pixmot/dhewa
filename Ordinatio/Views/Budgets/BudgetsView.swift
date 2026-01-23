@@ -11,6 +11,7 @@ struct BudgetsView: View {
     @AppStorage(PreferencesKeys.budgetRows) private var budgetRows = false
 
     @State private var composerRoute: BudgetComposerRoute?
+    @State private var composerDetent: PresentationDetent = .medium
     @State private var pendingDelete: BudgetSnapshot?
 
     init(database: AppDatabase, householdId: String, defaultCurrencyCode: String) {
@@ -18,6 +19,11 @@ struct BudgetsView: View {
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
         _viewModel = StateObject(wrappedValue: BudgetsViewModel(database: database, householdId: householdId))
+    }
+
+    private func presentComposer(_ route: BudgetComposerRoute) {
+        composerDetent = .medium
+        composerRoute = route
     }
 
     var body: some View {
@@ -60,7 +66,7 @@ struct BudgetsView: View {
                                                 soloBudget: viewModel.categorySnapshots.isEmpty
                                             )
                                             .contextMenu {
-                                                Button { composerRoute = .edit(overall) } label: {
+                                                Button { presentComposer(.edit(overall)) } label: {
                                                     Label("Edit", systemImage: "pencil")
                                                 }
                                                 Button(role: .destructive) { pendingDelete = overall } label: {
@@ -87,12 +93,12 @@ struct BudgetsView: View {
                                                 } label: {
                                                     DimeBudgetRowCard(
                                                         snapshot: snapshot,
-                                                        onEdit: { composerRoute = .edit(snapshot) },
+                                                        onEdit: { presentComposer(.edit(snapshot)) },
                                                         onDeleteRequest: { pendingDelete = snapshot },
                                                         onDeleteImmediate: { viewModel.deleteBudget(id: snapshot.budget.id) }
                                                     )
                                                     .contextMenu {
-                                                        Button { composerRoute = .edit(snapshot) } label: {
+                                                        Button { presentComposer(.edit(snapshot)) } label: {
                                                             Label("Edit", systemImage: "pencil")
                                                         }
                                                         Button(role: .destructive) { pendingDelete = snapshot } label: {
@@ -123,7 +129,7 @@ struct BudgetsView: View {
                                                 } label: {
                                                     DimeBudgetGridCard(snapshot: snapshot)
                                                         .contextMenu {
-                                                            Button { composerRoute = .edit(snapshot) } label: {
+                                                            Button { presentComposer(.edit(snapshot)) } label: {
                                                                 Label("Edit", systemImage: "pencil")
                                                             }
                                                             Button(role: .destructive) { pendingDelete = snapshot } label: {
@@ -148,7 +154,7 @@ struct BudgetsView: View {
             }
             .overlay(alignment: .bottomTrailing) {
                 BudgetCreateButton {
-                    composerRoute = .create(overallExists: viewModel.overallSnapshot != nil)
+                    presentComposer(.create(overallExists: viewModel.overallSnapshot != nil))
                 }
                 .padding(.trailing, 20)
                 .padding(.bottom, 12)
@@ -186,6 +192,8 @@ struct BudgetsView: View {
                         }
                     }
                 )
+                .presentationDetents([.medium, .large], selection: $composerDetent)
+                .presentationDragIndicator(.visible)
             }
             .fullScreenCover(item: $pendingDelete) { snapshot in
                 BudgetDeleteAlert(
