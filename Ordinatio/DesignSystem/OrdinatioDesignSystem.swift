@@ -21,9 +21,47 @@ enum OrdinatioColor {
 
     static var income: Color { Color(uiColor: .ordinatioIncome) }
     static var expense: Color { Color(uiColor: .ordinatioExpense) }
+
+    static var darkBackground: Color { Color(uiColor: .ordinatioDarkBackground) }
+    static var lightIcon: Color { Color(uiColor: .ordinatioLightIcon) }
+
+    static var actionBlue: Color { Color(red: 0.416, green: 0.486, blue: 0.976) }
+    static var actionOrange: Color { Color(red: 0.992, green: 0.737, blue: 0.231) }
 }
 
 enum OrdinatioCategoryVisuals {
+    static func emoji(for categoryName: String) -> String {
+        let emojis = [
+            "🛒",
+            "🍽️",
+            "☕️",
+            "🏠",
+            "🚗",
+            "🚌",
+            "✈️",
+            "🚆",
+            "❤️",
+            "🩺",
+            "🎓",
+            "🎮",
+            "🎁",
+            "🎬",
+            "👕",
+            "🐾",
+            "🌿",
+            "⚡️",
+            "🛍️",
+            "💳",
+            "💵",
+            "🎵",
+            "📚",
+            "✨",
+        ]
+
+        let index = categoryName.ordinatioStableHash % emojis.count
+        return emojis[index]
+    }
+
     static func symbolName(for categoryName: String) -> String {
         let symbols = [
             "cart.fill",
@@ -105,40 +143,43 @@ private extension UIColor {
 
     static var ordinatioBackground: UIColor {
         ordinatioDynamic(
-            light: UIColor(white: 0.97, alpha: 1),
-            dark: .black
+            light: .white,
+            dark: UIColor(red: 0.024, green: 0.039, blue: 0.028, alpha: 1)
         )
     }
 
     static var ordinatioSurface: UIColor {
         ordinatioDynamic(
             light: .white,
-            dark: UIColor(white: 0.10, alpha: 1)
+            dark: UIColor(red: 0.137, green: 0.149, blue: 0.149, alpha: 1)
         )
     }
 
     static var ordinatioSurfaceElevated: UIColor {
         ordinatioDynamic(
-            light: UIColor(white: 0.93, alpha: 1),
-            dark: UIColor(white: 0.14, alpha: 1)
+            light: UIColor(red: 0.965, green: 0.965, blue: 0.965, alpha: 1),
+            dark: UIColor(red: 0.227, green: 0.227, blue: 0.235, alpha: 1)
         )
     }
 
     static var ordinatioTextPrimary: UIColor {
-        ordinatioDynamic(light: .black, dark: .white)
+        ordinatioDynamic(
+            light: UIColor(red: 0.004, green: 0.004, blue: 0.004, alpha: 1),
+            dark: .white
+        )
     }
 
     static var ordinatioTextSecondary: UIColor {
         ordinatioDynamic(
-            light: UIColor(white: 0.40, alpha: 1),
-            dark: UIColor(white: 0.70, alpha: 1)
+            light: UIColor(red: 0.651, green: 0.651, blue: 0.651, alpha: 1),
+            dark: UIColor(red: 0.463, green: 0.463, blue: 0.463, alpha: 1)
         )
     }
 
     static var ordinatioSeparator: UIColor {
         ordinatioDynamic(
-            light: UIColor(white: 0.86, alpha: 1),
-            dark: UIColor(white: 0.20, alpha: 1)
+            light: UIColor(red: 0.925, green: 0.941, blue: 0.957, alpha: 1),
+            dark: UIColor(red: 0.180, green: 0.180, blue: 0.180, alpha: 1)
         )
     }
 
@@ -148,5 +189,19 @@ private extension UIColor {
 
     static var ordinatioExpense: UIColor {
         UIColor(red: 0.95, green: 0.23, blue: 0.24, alpha: 1)
+    }
+
+    static var ordinatioDarkBackground: UIColor {
+        ordinatioDynamic(
+            light: UIColor(red: 0.235, green: 0.235, blue: 0.235, alpha: 1),
+            dark: .white
+        )
+    }
+
+    static var ordinatioLightIcon: UIColor {
+        ordinatioDynamic(
+            light: .white,
+            dark: UIColor(red: 0.137, green: 0.149, blue: 0.149, alpha: 1)
+        )
     }
 }
