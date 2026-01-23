@@ -264,19 +264,6 @@ private extension BudgetComposerView {
                     .foregroundStyle(OrdinatioColor.textPrimary)
                     .font(.system(.title2, design: .rounded).weight(.semibold))
 
-                if progress == 2 {
-                    Button {
-                        showingCategoryCreator = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(.footnote, design: .rounded).weight(.semibold))
-                            .foregroundStyle(OrdinatioColor.textSecondary)
-                            .padding(4)
-                            .background(OrdinatioColor.surfaceElevated, in: Circle())
-                            .contentShape(Circle())
-                    }
-                }
-
                 Spacer()
             }
             .frame(maxWidth: .infinity)
@@ -369,27 +356,27 @@ private extension BudgetComposerView {
     }
 
     var categoryStage: some View {
-        let emptyMessage: String? = {
+        let emptyState: (icon: String, message: String)? = {
             if availableCategoryOptions.isEmpty {
-                return "No remaining\ncategories."
+                return (icon: "tray.full.fill", message: "No remaining\ncategories.")
             }
 
             if filteredCategoryOptions.isEmpty {
-                return "No matching\ncategories."
+                return (icon: "magnifyingglass", message: "No matching\ncategories.")
             }
 
             return nil
         }()
 
         return VStack(spacing: 12) {
-            if let emptyMessage {
+            if let emptyState {
                 VStack(spacing: 12) {
-                    Image(systemName: "tray.full.fill")
+                    Image(systemName: emptyState.icon)
                         .font(.system(.largeTitle, design: .rounded))
                         .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
                         .padding(.top, 20)
 
-                    Text(emptyMessage)
+                    Text(emptyState.message)
                         .font(.system(.title3, design: .rounded).weight(.medium))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
@@ -420,7 +407,8 @@ private extension BudgetComposerView {
 
             Spacer(minLength: 0)
 
-            categorySearchBar
+            categorySearchControls
+                .padding(.bottom, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -465,6 +453,52 @@ private extension BudgetComposerView {
                     .ultraThinMaterial,
                     in: RoundedRectangle(cornerRadius: 18, style: .continuous)
                 )
+        }
+    }
+
+    @ViewBuilder
+    var categoryAddButton: some View {
+        let button = Button {
+            showingCategoryCreator = true
+        } label: {
+            Image(systemName: "plus")
+                .font(.system(.headline, design: .rounded).weight(.semibold))
+                .foregroundStyle(OrdinatioColor.textPrimary)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
+        .accessibilityLabel("New Category")
+
+        if #available(iOS 26, *) {
+            button.glassEffect(
+                .regular.tint(OrdinatioColor.surfaceElevated.opacity(0.25)).interactive(),
+                in: .circle
+            )
+        } else {
+            button
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay(
+                    Circle()
+                        .stroke(OrdinatioColor.separator.opacity(0.5), lineWidth: 1)
+                )
+        }
+    }
+
+    @ViewBuilder
+    var categorySearchControls: some View {
+        if #available(iOS 26, *) {
+            GlassEffectContainer(spacing: 12) {
+                HStack(spacing: 12) {
+                    categorySearchBar
+                    categoryAddButton
+                }
+            }
+        } else {
+            HStack(spacing: 12) {
+                categorySearchBar
+                categoryAddButton
+            }
         }
     }
 
