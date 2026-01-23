@@ -18,32 +18,74 @@ struct CategoriesView: View {
     var body: some View {
         NavigationStack {
             List {
-                ForEach(viewModel.categories) { category in
-                    HStack(spacing: 12) {
-                        OrdinatioIconTile(
-                            symbolName: OrdinatioCategoryVisuals.symbolName(for: category.name),
-                            color: OrdinatioCategoryVisuals.color(for: category.name),
-                            size: 32
-                        )
+                Section {
+                    if viewModel.categories.isEmpty {
+                        VStack(spacing: 10) {
+                            Image(systemName: "tray")
+                                .font(.system(.largeTitle, design: .rounded).weight(.light))
+                                .foregroundStyle(OrdinatioColor.textSecondary)
 
-                        Text(category.name)
-                            .foregroundStyle(OrdinatioColor.textPrimary)
+                            Text("No categories yet.")
+                                .font(.system(.body, design: .rounded).weight(.medium))
+                                .foregroundStyle(OrdinatioColor.textSecondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 32)
+                        .listRowBackground(OrdinatioColor.surfaceElevated)
+                        .listRowSeparator(.hidden)
+                    } else {
+                        ForEach(viewModel.categories) { category in
+                            HStack(spacing: 10) {
+                                Text(OrdinatioCategoryVisuals.emoji(for: category.name))
+                                    .font(.system(.subheadline, design: .rounded))
 
-                        Spacer(minLength: 0)
+                                Text(category.name)
+                                    .font(.system(.body, design: .rounded))
+                                    .foregroundStyle(OrdinatioColor.textPrimary)
+                                    .lineLimit(1)
+
+                                Spacer(minLength: 0)
+
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(OrdinatioCategoryVisuals.color(for: category.name))
+                                    .frame(width: 20, height: 20)
+                            }
+                            .padding(.vertical, 5)
+                            .contentShape(Rectangle())
+                            .onTapGesture { editingCategory = category }
+                            .listRowBackground(OrdinatioColor.surfaceElevated)
+                            .listRowSeparatorTint(OrdinatioColor.separator)
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    viewModel.deleteCategory(categoryId: category.id)
+                                } label: {
+                                    Image(systemName: "trash.fill")
+                                }
+                            }
+                            .swipeActions(edge: .leading) {
+                                Button {
+                                    editingCategory = category
+                                } label: {
+                                    Image(systemName: "pencil")
+                                }
+                                .tint(OrdinatioColor.actionOrange)
+                            }
+                        }
+                        .onDelete { indexSet in
+                            for idx in indexSet {
+                                viewModel.deleteCategory(categoryId: viewModel.categories[idx].id)
+                            }
+                        }
+                        .onMove(perform: viewModel.move)
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { editingCategory = category }
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(OrdinatioColor.background)
+                } header: {
+                    Text("CATEGORIES")
+                        .font(.system(.caption, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
                 }
-                .onDelete { indexSet in
-                    for idx in indexSet {
-                        viewModel.deleteCategory(categoryId: viewModel.categories[idx].id)
-                    }
-                }
-                .onMove(perform: viewModel.move)
             }
-            .listStyle(.plain)
+            .listStyle(.insetGrouped)
             .scrollContentBackground(.hidden)
             .background(OrdinatioColor.background)
             .navigationTitle("Categories")
