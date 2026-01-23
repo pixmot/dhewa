@@ -63,7 +63,6 @@ final class OrdinatioCoreTests: XCTestCase {
         let householdId = try appDatabase.write { db in
             try SeedData.ensureDefaultHouseholdAndCategories(in: db)
         }
-        let month = YearMonth(year: 2026, month: 1)
 
         try appDatabase.write { db in
             let now = Date()
@@ -108,22 +107,48 @@ final class OrdinatioCoreTests: XCTestCase {
             try BudgetRepository.upsertBudget(
                 in: db,
                 householdId: householdId,
-                month: month,
+                isOverall: true,
+                categoryId: nil,
+                timeFrame: .month,
+                startDate: now,
                 currencyCode: "USD",
                 amountMinor: 6000
             )
         }
 
-        let summaries = try appDatabase.read { db in
-            try BudgetRepository.fetchCurrencySummaries(in: db, householdId: householdId, month: month)
+        let budgets = try appDatabase.read { db in
+            try BudgetRepository.fetchBudgets(in: db, householdId: householdId)
         }
+        XCTAssertEqual(budgets.count, 1)
+        XCTAssertTrue(budgets[0].isOverall)
+        XCTAssertEqual(budgets[0].currencyCode, "USD")
+        XCTAssertEqual(budgets[0].timeFrame, .month)
 
-        let usd = summaries.first(where: { $0.currencyCode == "USD" })
-        XCTAssertEqual(usd?.spentAbsMinor, 5000)
-        XCTAssertEqual(usd?.budgetMinor, 6000)
+        let janStart = LocalDate(yyyymmdd: 20260101)
+        let febStart = LocalDate(yyyymmdd: 20260201)
 
-        let eur = summaries.first(where: { $0.currencyCode == "EUR" })
-        XCTAssertEqual(eur?.spentAbsMinor, 700)
-        XCTAssertNil(eur?.budgetMinor)
+        let spentUsd = try appDatabase.read { db in
+            try BudgetRepository.fetchSpentTotal(
+                in: db,
+                householdId: householdId,
+                categoryId: nil,
+                currencyCode: "USD",
+                startDate: janStart,
+                endDate: febStart
+            )
+        }
+        XCTAssertEqual(spentUsd, 5000)
+
+        let spentEur = try appDatabase.read { db in
+            try BudgetRepository.fetchSpentTotal(
+                in: db,
+                householdId: householdId,
+                categoryId: nil,
+                currencyCode: "EUR",
+                startDate: janStart,
+                endDate: febStart
+            )
+        }
+        XCTAssertEqual(spentEur, 700)
     }
 }

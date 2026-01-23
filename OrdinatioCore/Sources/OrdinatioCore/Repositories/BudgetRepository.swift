@@ -1,46 +1,62 @@
 import Foundation
 import GRDB
 
-public struct CurrencyBudgetSummary: Hashable, Sendable {
-    public var currencyCode: String
-    public var spentAbsMinor: Int64
-    public var budgetMinor: Int64?
-
-    public init(currencyCode: String, spentAbsMinor: Int64, budgetMinor: Int64?) {
-        self.currencyCode = currencyCode
-        self.spentAbsMinor = spentAbsMinor
-        self.budgetMinor = budgetMinor
-    }
-}
-
 public enum BudgetRepository {
-    public static func observeCurrencySummaries(householdId: String, month: YearMonth) -> ValueObservation<ValueReducers.Fetch<[CurrencyBudgetSummary]>> {
+    public static func observeBudgets(householdId: String) -> ValueObservation<ValueReducers.Fetch<[Budget]>> {
         ValueObservation.tracking { db in
-            try fetchCurrencySummariesInternal(in: db, householdId: householdId, month: month)
+            try fetchBudgets(in: db, householdId: householdId)
         }
     }
 
-    public static func fetchCurrencySummaries(in db: Database, householdId: String, month: YearMonth) throws -> [CurrencyBudgetSummary] {
-        try fetchCurrencySummariesInternal(in: db, householdId: householdId, month: month)
+    public static func fetchBudgets(in db: Database, householdId: String) throws -> [Budget] {
+        try Budget
+            .filter(Budget.Columns.householdId == householdId)
+            .filter(Budget.Columns.deletedAt == nil)
+            .order(Budget.Columns.isOverall.desc, Budget.Columns.createdAt.asc)
+            .fetchAll(db)
     }
 
-    public static func upsertBudget(in db: Database, householdId: String, month: YearMonth, currencyCode: String, amountMinor: Int64) throws {
+    public static func upsertBudget(
+        in db: Database,
+        householdId: String,
+        isOverall: Bool,
+        categoryId: String?,
+        timeFrame: BudgetTimeFrame,
+        startDate: Date,
+        currencyCode: String,
+        amountMinor: Int64
+    ) throws {
         let now = Date()
         let currencyCode = currencyCode.uppercased()
 
-        try db.execute(
-            sql: """
-            UPDATE budgets
-            SET amount_minor = ?, updated_at = ?
-            WHERE household_id = ? AND budget_month = ? AND currency_code = ? AND deleted_at IS NULL
-            """,
-            arguments: [amountMinor, now, householdId, month.yyyymm, currencyCode]
-        )
+        if isOverall {
+            try db.execute(
+                sql: """
+                UPDATE budgets
+                SET time_frame = ?, start_date = ?, currency_code = ?, amount_minor = ?, updated_at = ?
+                WHERE household_id = ? AND is_overall = 1 AND deleted_at IS NULL
+                """,
+                arguments: [timeFrame.rawValue, startDate, currencyCode, amountMinor, now, householdId]
+            )
+        } else if let categoryId {
+            try db.execute(
+                sql: """
+                UPDATE budgets
+                SET time_frame = ?, start_date = ?, currency_code = ?, amount_minor = ?, updated_at = ?
+                WHERE household_id = ? AND category_id = ? AND is_overall = 0 AND deleted_at IS NULL
+                """,
+                arguments: [timeFrame.rawValue, startDate, currencyCode, amountMinor, now, householdId, categoryId]
+            )
+        }
+
         if db.changesCount == 0 {
             let budget = Budget(
                 id: UUID().uuidString.lowercased(),
                 householdId: householdId,
-                budgetMonth: month.yyyymm,
+                isOverall: isOverall,
+                categoryId: categoryId,
+                timeFrameRaw: timeFrame.rawValue,
+                startDate: startDate,
                 currencyCode: currencyCode,
                 amountMinor: amountMinor,
                 createdAt: now,
@@ -50,67 +66,77 @@ public enum BudgetRepository {
         }
     }
 
-    public static func deleteBudget(in db: Database, householdId: String, month: YearMonth, currencyCode: String) throws {
+    public static func updateBudget(
+        in db: Database,
+        budgetId: String,
+        isOverall: Bool,
+        categoryId: String?,
+        timeFrame: BudgetTimeFrame,
+        startDate: Date,
+        currencyCode: String,
+        amountMinor: Int64
+    ) throws {
+        let now = Date()
+        let currencyCode = currencyCode.uppercased()
+        let finalCategoryId = isOverall ? nil : categoryId
+
         try db.execute(
-            sql: "DELETE FROM budgets WHERE household_id = ? AND budget_month = ? AND currency_code = ?",
-            arguments: [householdId, month.yyyymm, currencyCode.uppercased()]
+            sql: """
+            UPDATE budgets
+            SET is_overall = ?, category_id = ?, time_frame = ?, start_date = ?, currency_code = ?, amount_minor = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            arguments: [isOverall, finalCategoryId, timeFrame.rawValue, startDate, currencyCode, amountMinor, now, budgetId]
         )
     }
 
-    private static func fetchCurrencySummariesInternal(in db: Database, householdId: String, month: YearMonth) throws -> [CurrencyBudgetSummary] {
-        let start = month.yyyymm * 100 + 1
-        let end = month.next().yyyymm * 100 + 1
+    public static func updateBudgetStartDate(in db: Database, budgetId: String, startDate: Date) throws {
+        try db.execute(
+            sql: "UPDATE budgets SET start_date = ?, updated_at = ? WHERE id = ?",
+            arguments: [startDate, Date(), budgetId]
+        )
+    }
 
-        struct TxnSpentRow: FetchableRecord, Decodable {
-            var currencyCode: String
+    public static func deleteBudget(in db: Database, budgetId: String) throws {
+        try db.execute(sql: "DELETE FROM budgets WHERE id = ?", arguments: [budgetId])
+    }
+
+    public static func fetchSpentTotal(
+        in db: Database,
+        householdId: String,
+        categoryId: String?,
+        currencyCode: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ) throws -> Int64 {
+        var sql = """
+        SELECT COALESCE(SUM(CASE WHEN amount_minor < 0 THEN -amount_minor ELSE 0 END), 0) AS spentAbsMinor
+        FROM transactions
+        WHERE household_id = ?
+          AND deleted_at IS NULL
+          AND currency_code = ?
+          AND txn_date >= ?
+          AND txn_date < ?
+        """
+
+        var args: [DatabaseValueConvertible] = [
+            householdId,
+            currencyCode.uppercased(),
+            startDate.yyyymmdd,
+            endDate.yyyymmdd,
+        ]
+
+        if let categoryId {
+            sql += "\n  AND category_id = ?"
+            args.append(categoryId)
+        }
+
+        struct Row: FetchableRecord, Decodable {
             var spentAbsMinor: Int64
         }
 
-        let spentRows = try SQLRequest<TxnSpentRow>(
-            sql: """
-            SELECT
-                currency_code AS currencyCode,
-                COALESCE(SUM(CASE WHEN amount_minor < 0 THEN -amount_minor ELSE 0 END), 0) AS spentAbsMinor
-            FROM transactions
-            WHERE household_id = ?
-              AND deleted_at IS NULL
-              AND txn_date >= ?
-              AND txn_date < ?
-            GROUP BY currency_code
-            ORDER BY currency_code ASC
-            """,
-            arguments: [householdId, start, end]
-        ).fetchAll(db)
-
-        struct BudgetRow: FetchableRecord, Decodable {
-            var currencyCode: String
-            var budgetMinor: Int64
-        }
-
-        let budgetRows = try SQLRequest<BudgetRow>(
-            sql: """
-            SELECT
-                currency_code AS currencyCode,
-                amount_minor AS budgetMinor
-            FROM budgets
-            WHERE household_id = ? AND budget_month = ? AND deleted_at IS NULL
-            """,
-            arguments: [householdId, month.yyyymm]
-        ).fetchAll(db)
-
-        let budgetByCurrency = Dictionary(uniqueKeysWithValues: budgetRows.map { ($0.currencyCode, $0.budgetMinor) })
-
-        let spentByCurrency = Dictionary(uniqueKeysWithValues: spentRows.map { ($0.currencyCode, $0.spentAbsMinor) })
-        let allCurrencies = Set(spentByCurrency.keys).union(budgetByCurrency.keys)
-
-        return allCurrencies
-            .sorted()
-            .map { code in
-                CurrencyBudgetSummary(
-                    currencyCode: code,
-                    spentAbsMinor: spentByCurrency[code] ?? 0,
-                    budgetMinor: budgetByCurrency[code]
-                )
-            }
+        return try SQLRequest<Row>(sql: sql, arguments: StatementArguments(args))
+            .fetchOne(db)?
+            .spentAbsMinor ?? 0
     }
 }

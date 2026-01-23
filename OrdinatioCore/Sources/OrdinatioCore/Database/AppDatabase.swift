@@ -108,6 +108,32 @@ public final class AppDatabase {
             try db.create(index: "idx_budgets_household_month", on: "budgets", columns: ["household_id", "budget_month"])
         }
 
+        migrator.registerMigration("v2_rebuild_budgets") { db in
+            try db.execute(sql: "DROP TABLE IF EXISTS budgets")
+
+            try db.create(table: "budgets") { t in
+                t.column("id", .text).primaryKey()
+                t.column("household_id", .text)
+                    .notNull()
+                    .indexed()
+                    .references("households", onDelete: .cascade, onUpdate: .cascade)
+                t.column("is_overall", .boolean).notNull()
+                t.column("category_id", .text)
+                    .references("categories", onDelete: .cascade, onUpdate: .cascade)
+                t.column("time_frame", .integer).notNull()
+                t.column("start_date", .datetime).notNull()
+                t.column("currency_code", .text).notNull()
+                t.column("amount_minor", .integer).notNull()
+                t.column("created_at", .datetime).notNull()
+                t.column("updated_at", .datetime).notNull()
+                t.column("deleted_at", .datetime)
+            }
+
+            try db.execute(sql: "CREATE UNIQUE INDEX idx_budgets_overall ON budgets(household_id) WHERE is_overall = 1")
+            try db.execute(sql: "CREATE UNIQUE INDEX idx_budgets_category ON budgets(household_id, category_id) WHERE is_overall = 0")
+            try db.create(index: "idx_budgets_household_timeframe", on: "budgets", columns: ["household_id", "time_frame"])
+        }
+
         return migrator
     }
 }
