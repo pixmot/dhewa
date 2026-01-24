@@ -1,3 +1,4 @@
+import Observation
 import OrdinatioCore
 import SwiftUI
 
@@ -23,19 +24,7 @@ struct TransactionEditorView: View {
     @FocusState private var focusedField: FocusField?
 
     @State private var categories: [OrdinatioCore.Category] = []
-    @State private var isExpense: Bool
-    @State private var amountText: String
-    @State private var currencyCode: String
-    @State private var fractionDigits: Int
-    @State private var dateTime: Date
-    @State private var categoryId: String?
-    @State private var note: String
-    @State private var errorMessage: String?
-    @State private var confirmDelete = false
-    @State private var showingCategoryPicker = false
-    @State private var showingCurrencyPicker = false
-    @State private var showingDatePicker = false
-    @State private var showingTimePicker = false
+    @State private var model: TransactionEditorModel
 
     init(
         db: DatabaseClient,
@@ -51,34 +40,581 @@ struct TransactionEditorView: View {
         self.mode = mode
         self.showsDismissButton = showsDismissButton
         self.prefilledCategoryId = prefilledCategoryId
+        _model = State(
+            initialValue: TransactionEditorModel(
+                defaultCurrencyCode: defaultCurrencyCode,
+                mode: mode,
+                prefilledCategoryId: prefilledCategoryId
+            )
+        )
+    }
 
+    private var selectedCategoryName: String {
+        guard let categoryId = model.categoryId else { return "Category" }
+        return categories.first(where: { $0.id == categoryId })?.name ?? "Category"
+    }
+
+    private func save() {
+        focusedField = nil
+        model.errorMessage = nil
+
+        let amountTrimmed = model.amountText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let absMinor = model.parsedAbsMinor else {
+            model.errorMessage = amountTrimmed.isEmpty ? "Amount is required" : "Invalid amount"
+            return
+        }
+
+        guard absMinor > 0 else {
+            model.errorMessage = "Amount must be greater than zero"
+            return
+        }
+
+        let currency = model.currencyCode.uppercased()
+        let signedMinor = model.isExpense ? -absMinor : absMinor
+        let localDate = LocalDate.from(date: model.dateTime)
+        let now = Date()
+        let txnTimestamp = model.dateTime
+        let trimmedNote = model.note.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let txnId: String
         switch mode {
         case .create:
-            _isExpense = State(initialValue: true)
-            _amountText = State(initialValue: "")
-            _currencyCode = State(initialValue: defaultCurrencyCode.uppercased())
-            _fractionDigits = State(initialValue: MoneyFormat.fractionDigits(for: defaultCurrencyCode))
-            _dateTime = State(initialValue: Date())
-            _categoryId = State(initialValue: prefilledCategoryId)
-            _note = State(initialValue: "")
+            txnId = UUID().uuidString.lowercased()
         case .edit(let row):
-            _isExpense = State(initialValue: row.amountMinor < 0)
-            _amountText = State(
-                initialValue: Self.entryAmountText(absMinor: abs(row.amountMinor), currencyCode: row.currencyCode))
-            _currencyCode = State(initialValue: row.currencyCode.uppercased())
-            _fractionDigits = State(initialValue: MoneyFormat.fractionDigits(for: row.currencyCode))
-            _dateTime = State(initialValue: Self.initialDateTime(txnDate: row.txnDate, createdAt: row.createdAt))
-            _categoryId = State(initialValue: row.categoryId)
-            _note = State(initialValue: row.note ?? "")
+            txnId = row.id
+        }
+
+        let txn = Transaction(
+            id: txnId,
+            householdId: householdId,
+            categoryId: model.categoryId,
+            amountMinor: signedMinor,
+            currencyCode: currency,
+            txnDate: localDate.yyyymmdd,
+            note: trimmedNote.isEmpty ? nil : trimmedNote,
+            createdAt: txnTimestamp,
+            updatedAt: now
+        )
+
+        Task { @MainActor in
+            do {
+                try await db.upsertTransaction(txn)
+                dismiss()
+            } catch {
+                model.errorMessage = ErrorDisplay.message(error)
+            }
         }
     }
 
-    static func entryAmountText(absMinor: Int64, currencyCode: String) -> String {
+    private func deleteTransaction() {
+        guard case .edit(let row) = mode else { return }
+
+        let transactionId = row.id
+        Task { @MainActor in
+            do {
+                try await db.deleteTransaction(transactionId: transactionId)
+                dismiss()
+            } catch {
+                model.errorMessage = ErrorDisplay.message(error)
+            }
+        }
+    }
+
+    private func loadCategories() async {
+        guard categories.isEmpty else { return }
+        do {
+            categories = try await db.fetchCategories(householdId: householdId)
+        } catch {
+            model.errorMessage = ErrorDisplay.message(error)
+        }
+    }
+
+    var body: some View {
+        @Bindable var model = model
+
+        NavigationStack {
+            ZStack {
+                OrdinatioColor.background
+                    .ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            amountRow
+                            noteField
+                            chipsRow
+                        }
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.top, 8)
+                        .padding(.bottom, 18)
+                    }
+
+                    if focusedField == nil {
+                        keypad
+                            .padding(.horizontal, OrdinatioMetric.screenPadding)
+                            .padding(.bottom, 22)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .animation(.easeInOut(duration: 0.20), value: focusedField)
+            .task { await loadCategories() }
+            .sheet(isPresented: $model.showingCategoryPicker) {
+                CategoryPickerSheet(categories: categories, selection: $model.categoryId)
+            }
+            .sheet(isPresented: $model.showingCurrencyPicker) {
+                CurrencyPickerSheet(selection: $model.currencyCode)
+                    .onDisappear {
+                        model.didSelectCurrency()
+                    }
+            }
+            .sheet(isPresented: $model.showingDatePicker) {
+                DateTimePickerSheet(
+                    title: "Date",
+                    selection: $model.dateTime,
+                    displayedComponents: .date,
+                    style: .graphical
+                )
+            }
+            .sheet(isPresented: $model.showingTimePicker) {
+                DateTimePickerSheet(
+                    title: "Time",
+                    selection: $model.dateTime,
+                    displayedComponents: .hourAndMinute,
+                    style: .wheel
+                )
+            }
+            .confirmationDialog(
+                "Delete this transaction?",
+                isPresented: $model.confirmDelete,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) { deleteTransaction() }
+            }
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: {
+                        model.errorMessage != nil
+                    },
+                    set: { newValue in
+                        if !newValue { model.errorMessage = nil }
+                    })
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(model.errorMessage ?? "")
+            }
+            .toolbar {
+                if showsDismissButton {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .cancel) {
+                            dismiss()
+                        } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .accessibilityLabel("Close")
+                    }
+                }
+
+                ToolbarItem(placement: .principal) {
+                    Picker("Type", selection: $model.isExpense) {
+                        Text("Expense").tag(true)
+                        Text("Income").tag(false)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 220)
+                }
+
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            model.showingCurrencyPicker = true
+                        } label: {
+                            Label("Currency", systemImage: "dollarsign.circle")
+                        }
+
+                        if case .edit = mode {
+                            Button(role: .destructive) {
+                                model.confirmDelete = true
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.2.circlepath")
+                    }
+                    .accessibilityLabel("More")
+                }
+
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focusedField = nil }
+                }
+            }
+        }
+    }
+
+    private var amountRow: some View {
+        @Bindable var model = model
+
+        return HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Text(model.currencySymbol)
+                .font(.system(size: 28, weight: .semibold, design: .rounded))
+                .foregroundStyle(OrdinatioColor.textSecondary)
+
+            Text(model.formattedAmount)
+                .font(.system(size: 54, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(OrdinatioColor.textPrimary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.55)
+
+            Button {
+                model.deleteLastInput()
+            } label: {
+                Image(systemName: "delete.left")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(OrdinatioColor.surface)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(OrdinatioColor.separator.opacity(0.8), lineWidth: 1)
+                    }
+            }
+            .buttonStyle(.plain)
+            .disabled(model.amountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityLabel("Backspace")
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .padding(.vertical, 4)
+        .accessibilityIdentifier("TransactionAmountField")
+    }
+
+    private var noteField: some View {
+        @Bindable var model = model
+
+        return HStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(OrdinatioColor.textSecondary)
+
+            TextField("Note", text: $model.note)
+                .focused($focusedField, equals: .note)
+                .textInputAutocapitalization(.sentences)
+                .autocorrectionDisabled(false)
+                .foregroundStyle(OrdinatioColor.textPrimary)
+                .accessibilityIdentifier("TransactionNoteField")
+
+            if !model.note.isEmpty {
+                Button {
+                    model.note = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear note")
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(OrdinatioColor.surface)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+        }
+    }
+
+    private var chipsRow: some View {
+        @Bindable var model = model
+
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                TransactionChip(
+                    label: model.dateTime.formatted(date: .abbreviated, time: .omitted),
+                    systemImage: "calendar",
+                    tint: .blue
+                ) {
+                    model.showingDatePicker = true
+                }
+
+                TransactionChip(
+                    label: model.dateTime.formatted(date: .omitted, time: .shortened),
+                    systemImage: "clock",
+                    tint: .orange
+                ) {
+                    model.showingTimePicker = true
+                }
+
+                Button {
+                    model.showingCategoryPicker = true
+                } label: {
+                    HStack(spacing: 10) {
+                        OrdinatioIconTile(
+                            symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
+                            color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
+                            size: 26
+                        )
+
+                        Text(model.categoryId == nil ? "Category" : selectedCategoryName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OrdinatioColor.textPrimary)
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(OrdinatioColor.textSecondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(
+                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Category")
+            }
+            .padding(.vertical, 2)
+        }
+        .scrollClipDisabled()
+    }
+
+    private var keypad: some View {
+        @Bindable var model = model
+
+        return LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
+            spacing: 12
+        ) {
+            keypadNumberRow([1, 2, 3])
+            keypadNumberRow([4, 5, 6])
+            keypadNumberRow([7, 8, 9])
+
+            keypadButton(title: ".", role: .secondary) { model.appendDecimalSeparator() }
+                .accessibilityIdentifier("TransactionKeypadDecimal")
+                .disabled(model.fractionDigits == 0)
+
+            keypadButton(title: "0", role: .secondary) { model.appendDigit(0) }
+                .accessibilityIdentifier("TransactionKeypadDigit0")
+
+            keypadButton(systemImage: "checkmark", role: .primary) { save() }
+                .accessibilityIdentifier("TransactionKeypadSave")
+                .disabled(!model.canSave)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Keypad")
+        .accessibilityIdentifier("TransactionKeypad")
+    }
+
+    private func keypadNumberRow(_ digits: [Int]) -> some View {
+        @Bindable var model = model
+
+        return ForEach(digits, id: \.self) { digit in
+            keypadButton(title: "\(digit)", role: .secondary) { model.appendDigit(digit) }
+                .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
+        }
+    }
+
+    private enum KeypadRole {
+        case primary
+        case secondary
+    }
+
+    private func keypadButton(
+        title: String,
+        role: KeypadRole,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
+                }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func keypadButton(
+        systemImage: String,
+        role: KeypadRole,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 58)
+                .background {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Save")
+    }
+}
+
+@MainActor
+@Observable
+final class TransactionEditorModel {
+    var isExpense: Bool
+    var amountText: String
+    var currencyCode: String
+    var fractionDigits: Int
+    var dateTime: Date
+    var categoryId: String?
+    var note: String
+
+    var errorMessage: String?
+    var confirmDelete = false
+    var showingCategoryPicker = false
+    var showingCurrencyPicker = false
+    var showingDatePicker = false
+    var showingTimePicker = false
+
+    init(
+        defaultCurrencyCode: String,
+        mode: TransactionEditorMode,
+        prefilledCategoryId: String?
+    ) {
+        switch mode {
+        case .create:
+            isExpense = true
+            amountText = ""
+            currencyCode = defaultCurrencyCode.uppercased()
+            fractionDigits = MoneyFormat.fractionDigits(for: defaultCurrencyCode)
+            dateTime = Date()
+            categoryId = prefilledCategoryId
+            note = ""
+        case .edit(let row):
+            isExpense = row.amountMinor < 0
+            amountText = Self.entryAmountText(absMinor: abs(row.amountMinor), currencyCode: row.currencyCode)
+            currencyCode = row.currencyCode.uppercased()
+            fractionDigits = MoneyFormat.fractionDigits(for: row.currencyCode)
+            dateTime = Self.initialDateTime(txnDate: row.txnDate, createdAt: row.createdAt)
+            categoryId = row.categoryId
+            note = row.note ?? ""
+        }
+    }
+
+    func didSelectCurrency() {
+        fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
+        normalizeAmountTextForCurrency()
+    }
+
+    var parsedAbsMinor: Int64? {
+        Self.parseAbsMinor(from: amountText, fractionDigits: fractionDigits)
+    }
+
+    var formattedAmount: String {
+        guard let parsedAbsMinor else {
+            return fractionDigits == 0 ? "0" : "0." + String(repeating: "0", count: fractionDigits)
+        }
+        return Self.format(absMinor: parsedAbsMinor, fractionDigits: fractionDigits)
+    }
+
+    private static let currencySymbolFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .current
+        return formatter
+    }()
+
+    var currencySymbol: String {
+        Self.currencySymbolFormatter.currencyCode = currencyCode.uppercased()
+        return Self.currencySymbolFormatter.currencySymbol ?? currencyCode.uppercased()
+    }
+
+    var canSave: Bool {
+        (parsedAbsMinor ?? 0) > 0
+    }
+
+    func appendDigit(_ digit: Int) {
+        guard (0...9).contains(digit) else { return }
+        let separator = "."
+
+        var next =
+            amountText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+
+        if next == "0" && !next.contains(separator) {
+            next = "\(digit)"
+            amountText = next
+            return
+        }
+
+        if let separatorIndex = next.firstIndex(of: Character(separator)) {
+            let fractionCount = next.distance(from: next.index(after: separatorIndex), to: next.endIndex)
+            guard fractionCount < fractionDigits else { return }
+        }
+
+        if next.isEmpty {
+            amountText = "\(digit)"
+            return
+        }
+
+        amountText = next + "\(digit)"
+    }
+
+    func appendDecimalSeparator() {
+        guard fractionDigits > 0 else { return }
+        let separator = "."
+
+        var next =
+            amountText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+
+        guard !next.contains(separator) else { return }
+        if next.isEmpty { next = "0" }
+        amountText = next + separator
+    }
+
+    func deleteLastInput() {
+        var next =
+            amountText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+        guard !next.isEmpty else { return }
+
+        next.removeLast()
+        amountText = next
+    }
+
+    private static func entryAmountText(absMinor: Int64, currencyCode: String) -> String {
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
         return format(absMinor: absMinor, fractionDigits: digits)
     }
 
-    static func initialDateTime(txnDate: Int32, createdAt: Date) -> Date {
+    private static func initialDateTime(txnDate: Int32, createdAt: Date) -> Date {
         let calendar = Calendar.current
         let day = LocalDate(yyyymmdd: txnDate).date(calendar: calendar)
         let time = calendar.dateComponents([.hour, .minute, .second], from: createdAt)
@@ -89,18 +625,6 @@ struct TransactionEditorView: View {
             of: day
         ) ?? createdAt
     }
-
-    private var selectedCategoryName: String {
-        guard let categoryId else { return "Category" }
-        return categories.first(where: { $0.id == categoryId })?.name ?? "Category"
-    }
-
-    private static let currencySymbolFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = .current
-        return formatter
-    }()
 
     private static func pow10Int64(_ digits: Int) -> Int64? {
         guard digits >= 0 else { return nil }
@@ -167,79 +691,6 @@ struct TransactionEditorView: View {
         return total
     }
 
-    private var parsedAbsMinor: Int64? {
-        Self.parseAbsMinor(from: amountText, fractionDigits: fractionDigits)
-    }
-
-    private var formattedAmount: String {
-        guard let parsedAbsMinor else {
-            return fractionDigits == 0 ? "0" : "0." + String(repeating: "0", count: fractionDigits)
-        }
-        return Self.format(absMinor: parsedAbsMinor, fractionDigits: fractionDigits)
-    }
-
-    private var currencySymbol: String {
-        Self.currencySymbolFormatter.currencyCode = currencyCode.uppercased()
-        return Self.currencySymbolFormatter.currencySymbol ?? currencyCode.uppercased()
-    }
-
-    private var canSave: Bool {
-        (parsedAbsMinor ?? 0) > 0
-    }
-
-    private func appendDigit(_ digit: Int) {
-        guard (0...9).contains(digit) else { return }
-        let separator = "."
-
-        var next =
-            amountText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: "")
-
-        if next == "0" && !next.contains(separator) {
-            next = "\(digit)"
-            amountText = next
-            return
-        }
-
-        if let separatorIndex = next.firstIndex(of: Character(separator)) {
-            let fractionCount = next.distance(from: next.index(after: separatorIndex), to: next.endIndex)
-            guard fractionCount < fractionDigits else { return }
-        }
-
-        if next.isEmpty {
-            amountText = "\(digit)"
-            return
-        }
-
-        amountText = next + "\(digit)"
-    }
-
-    private func appendDecimalSeparator() {
-        guard fractionDigits > 0 else { return }
-        let separator = "."
-
-        var next =
-            amountText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: "")
-
-        guard !next.contains(separator) else { return }
-        if next.isEmpty { next = "0" }
-        amountText = next + separator
-    }
-
-    private func deleteLastInput() {
-        var next =
-            amountText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: ",", with: "")
-        guard !next.isEmpty else { return }
-
-        next.removeLast()
-        amountText = next
-    }
-
     private func normalizeAmountTextForCurrency() {
         let separator = "."
         var next =
@@ -267,421 +718,6 @@ struct TransactionEditorView: View {
         }
 
         amountText = next
-    }
-
-    private func save() {
-        focusedField = nil
-        errorMessage = nil
-
-        let amountTrimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let absMinor = parsedAbsMinor else {
-            errorMessage = amountTrimmed.isEmpty ? "Amount is required" : "Invalid amount"
-            return
-        }
-
-        guard absMinor > 0 else {
-            errorMessage = "Amount must be greater than zero"
-            return
-        }
-
-        let currency = currencyCode.uppercased()
-        let signedMinor = isExpense ? -absMinor : absMinor
-        let localDate = LocalDate.from(date: dateTime)
-        let now = Date()
-        let txnTimestamp = dateTime
-        let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let txnId: String
-        switch mode {
-        case .create:
-            txnId = UUID().uuidString.lowercased()
-        case .edit(let row):
-            txnId = row.id
-        }
-
-        let txn = Transaction(
-            id: txnId,
-            householdId: householdId,
-            categoryId: categoryId,
-            amountMinor: signedMinor,
-            currencyCode: currency,
-            txnDate: localDate.yyyymmdd,
-            note: trimmedNote.isEmpty ? nil : trimmedNote,
-            createdAt: txnTimestamp,
-            updatedAt: now
-        )
-
-        Task { @MainActor in
-            do {
-                try await db.upsertTransaction(txn)
-                dismiss()
-            } catch {
-                errorMessage = ErrorDisplay.message(error)
-            }
-        }
-    }
-
-    private func deleteTransaction() {
-        guard case .edit(let row) = mode else { return }
-
-        let transactionId = row.id
-        Task { @MainActor in
-            do {
-                try await db.deleteTransaction(transactionId: transactionId)
-                dismiss()
-            } catch {
-                errorMessage = ErrorDisplay.message(error)
-            }
-        }
-    }
-
-    private func loadCategories() async {
-        guard categories.isEmpty else { return }
-        do {
-            categories = try await db.fetchCategories(householdId: householdId)
-        } catch {
-            errorMessage = ErrorDisplay.message(error)
-        }
-    }
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                OrdinatioColor.background
-                    .ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    ScrollView {
-                        VStack(spacing: 18) {
-                            amountRow
-                            noteField
-                            chipsRow
-                        }
-                        .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.top, 8)
-                        .padding(.bottom, 18)
-                    }
-
-                    if focusedField == nil {
-                        keypad
-                            .padding(.horizontal, OrdinatioMetric.screenPadding)
-                            .padding(.bottom, 22)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        Spacer(minLength: 0)
-                    }
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .animation(.easeInOut(duration: 0.20), value: focusedField)
-            .task { await loadCategories() }
-            .sheet(isPresented: $showingCategoryPicker) {
-                CategoryPickerSheet(categories: categories, selection: $categoryId)
-            }
-            .sheet(isPresented: $showingCurrencyPicker) {
-                CurrencyPickerSheet(selection: $currencyCode)
-                    .onDisappear {
-                        fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-                        normalizeAmountTextForCurrency()
-                    }
-            }
-            .sheet(isPresented: $showingDatePicker) {
-                DateTimePickerSheet(
-                    title: "Date",
-                    selection: $dateTime,
-                    displayedComponents: .date,
-                    style: .graphical
-                )
-            }
-            .sheet(isPresented: $showingTimePicker) {
-                DateTimePickerSheet(
-                    title: "Time",
-                    selection: $dateTime,
-                    displayedComponents: .hourAndMinute,
-                    style: .wheel
-                )
-            }
-            .confirmationDialog(
-                "Delete this transaction?",
-                isPresented: $confirmDelete,
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) { deleteTransaction() }
-            }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: {
-                        errorMessage != nil
-                    },
-                    set: { newValue in
-                        if !newValue { errorMessage = nil }
-                    })
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(errorMessage ?? "")
-            }
-            .toolbar {
-                if showsDismissButton {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(role: .cancel) {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .accessibilityLabel("Close")
-                    }
-                }
-
-                ToolbarItem(placement: .principal) {
-                    Picker("Type", selection: $isExpense) {
-                        Text("Expense").tag(true)
-                        Text("Income").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(maxWidth: 220)
-                }
-
-                ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button {
-                            showingCurrencyPicker = true
-                        } label: {
-                            Label("Currency", systemImage: "dollarsign.circle")
-                        }
-
-                        if case .edit = mode {
-                            Button(role: .destructive) {
-                                confirmDelete = true
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "arrow.2.circlepath")
-                    }
-                    .accessibilityLabel("More")
-                }
-
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focusedField = nil }
-                }
-            }
-        }
-    }
-
-    private var amountRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(currencySymbol)
-                .font(.system(size: 28, weight: .semibold, design: .rounded))
-                .foregroundStyle(OrdinatioColor.textSecondary)
-
-            Text(formattedAmount)
-                .font(.system(size: 54, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(OrdinatioColor.textPrimary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.55)
-
-            Button {
-                deleteLastInput()
-            } label: {
-                Image(systemName: "delete.left")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(OrdinatioColor.surface)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(OrdinatioColor.separator.opacity(0.8), lineWidth: 1)
-                    }
-            }
-            .buttonStyle(.plain)
-            .disabled(amountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityLabel("Backspace")
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, 4)
-        .accessibilityIdentifier("TransactionAmountField")
-    }
-
-    private var noteField: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(OrdinatioColor.textSecondary)
-
-            TextField("Note", text: $note)
-                .focused($focusedField, equals: .note)
-                .textInputAutocapitalization(.sentences)
-                .autocorrectionDisabled(false)
-                .foregroundStyle(OrdinatioColor.textPrimary)
-                .accessibilityIdentifier("TransactionNoteField")
-
-            if !note.isEmpty {
-                Button {
-                    note = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Clear note")
-            }
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(OrdinatioColor.surface)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
-        }
-    }
-
-    private var chipsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                TransactionChip(
-                    label: dateTime.formatted(date: .abbreviated, time: .omitted),
-                    systemImage: "calendar",
-                    tint: .blue
-                ) {
-                    showingDatePicker = true
-                }
-
-                TransactionChip(
-                    label: dateTime.formatted(date: .omitted, time: .shortened),
-                    systemImage: "clock",
-                    tint: .orange
-                ) {
-                    showingTimePicker = true
-                }
-
-                Button {
-                    showingCategoryPicker = true
-                } label: {
-                    HStack(spacing: 10) {
-                        OrdinatioIconTile(
-                            symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
-                            color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
-                            size: 26
-                        )
-
-                        Text(categoryId == nil ? "Category" : selectedCategoryName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(OrdinatioColor.textPrimary)
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(OrdinatioColor.textSecondary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(
-                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Category")
-            }
-            .padding(.vertical, 2)
-        }
-        .scrollClipDisabled()
-    }
-
-    private var keypad: some View {
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
-            spacing: 12
-        ) {
-            keypadNumberRow([1, 2, 3])
-            keypadNumberRow([4, 5, 6])
-            keypadNumberRow([7, 8, 9])
-
-            keypadButton(title: ".", role: .secondary) { appendDecimalSeparator() }
-                .accessibilityIdentifier("TransactionKeypadDecimal")
-                .disabled(fractionDigits == 0)
-
-            keypadButton(title: "0", role: .secondary) { appendDigit(0) }
-                .accessibilityIdentifier("TransactionKeypadDigit0")
-
-            keypadButton(systemImage: "checkmark", role: .primary) { save() }
-                .accessibilityIdentifier("TransactionKeypadSave")
-                .disabled(!canSave)
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("Keypad")
-        .accessibilityIdentifier("TransactionKeypad")
-    }
-
-    private func keypadNumberRow(_ digits: [Int]) -> some View {
-        ForEach(digits, id: \.self) { digit in
-            keypadButton(title: "\(digit)", role: .secondary) { appendDigit(digit) }
-                .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
-        }
-    }
-
-    private enum KeypadRole {
-        case primary
-        case secondary
-    }
-
-    private func keypadButton(
-        title: String,
-        role: KeypadRole,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 58)
-                .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
-                }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func keypadButton(
-        systemImage: String,
-        role: KeypadRole,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 58)
-                .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Save")
     }
 }
 
