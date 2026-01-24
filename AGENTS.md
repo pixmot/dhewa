@@ -3,19 +3,13 @@
 - Create short, one-line, standard atomic commits for each change.
 
 ## Swift / SwiftUI (iOS 17+)
-- Prefer SwiftUI-first APIs and modern Swift Concurrency; avoid UIKit/Combine/GCD unless there is no practical SwiftUI alternative.
-- If UIKit is unavoidable: isolate it in a small bridge file (Representable), keep the surface area minimal, and add a short comment explaining why SwiftUI cannot do it.
-- Keep the UI consistent: use the design system tokens/components in `Ordinatio/DesignSystem` and avoid one-off colors/fonts/spacing in feature views.
-- Keep views fast: keep `body` pure and cheap, avoid heavy work in `body`, cancel `Task` work on disappear, and avoid `AnyView`/type erasure unless required.
-
-## Concurrency & Data
-- UI state is `@MainActor`; do heavy work off-main; use structured concurrency (`async/await`) and propagate cancellation.
+- Assume iOS 17+ baseline; use modern SwiftUI APIs and avoid legacy/deprecated ones.
+- Prefer Swift Concurrency (`async/await`, `Task`, `AsyncSequence`) over callbacks/Combine for new code; never block the main actor with DB/file/network work.
+- Prefer Observation for new state/view models (`@Observable`, `@Bindable`); avoid introducing new `ObservableObject/@Published` unless required.
+- Keep `View.body` cheap: no per-render allocations (e.g. `DateFormatter`/`NumberFormatter`) and no expensive sorting/grouping; precompute/cache off the main actor.
+- Lists must have stable identity (`Identifiable` with stable ids); avoid `id: \\.self` and index-based ids; keep row views lightweight.
+- Keep design consistent: use `OrdinatioColor`/`OrdinatioMetric`/shared typography helpers; avoid hard-coded colors/spacing/fonts.
+- Prefer SwiftUI-native components; isolate UIKit wrappers behind small `UIViewControllerRepresentable`/`UIViewRepresentable` when unavoidable.
 - For GRDB reads: prefer `ValueObservation`/`AsyncValueObservation` over polling or manual notifications.
-
-## Quality Gates
-- Keep warnings at zero; avoid force unwraps, `try!`, and `fatalError` in production paths.
-- Add/update tests for behavior changes; keep UI tests stable with `accessibilityIdentifier`s.
-- Before finishing: run `xcodebuild test` for the `Ordinatio` scheme (or at minimum `xcodebuild build` for non-behavioral changes).
-
-## UX & Accessibility
-- Ensure tappable controls have accessibility labels, respect Dynamic Type, and do not rely on color alone to convey meaning.
+- Add accessibility labels/values + `accessibilityIdentifier` for anything tappable/tested; support Dynamic Type and Reduce Motion.
+- Keep builds warning-free (especially concurrency); validate UI performance with Instruments when touching rendering-heavy paths.
