@@ -3,9 +3,6 @@ import SwiftUI
 enum OrdinatioMetric {
     static let screenPadding: CGFloat = 16
     static let cardCornerRadius: CGFloat = 16
-    static let tabBarCornerRadius: CGFloat = 18
-    static let tabBarHeight: CGFloat = 56
-    static let tabBarHorizontalPadding: CGFloat = 16
 }
 
 enum OrdinatioColor {
