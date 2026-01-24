@@ -21,7 +21,6 @@
 		5757CFC78BC53A4328A9569A /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */; };
 		5A2117B4A5E922E44E3124B8 /* OrdinatioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */; };
 		695663D5B4C9D4A4D2A40997 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA068AF33369D8111517766B /* Assets.xcassets */; };
-		6AD3067605F331E1CEA8EC94 /* CategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */; };
 		7320260C5FAFB84F9B565302 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */; };
 		87CF52B74200C173A11F1CBF /* TransactionRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276564BB119D28FBF8D020E7 /* TransactionRowView.swift */; };
 		8F8F93803EC9B12CDD1A4B2E /* TransactionListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2313A8EFEE8A70C497DE1119 /* TransactionListViewModel.swift */; };
@@ -36,7 +35,6 @@
 		EDA762607523C0AA9A8852F3 /* OrdinatioCore in Frameworks */ = {isa = PBXBuildFile; productRef = 0CDCB89DDF71AEE00B9CE5EA /* OrdinatioCore */; };
 		F081B0CDB665894B52C0D9B8 /* TransactionSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */; };
 		F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 778724BAAC304E89800FD36B /* InsightsView.swift */; };
-		FA8076E045A99F218F241A19 /* CategoriesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,7 +63,6 @@
 		276564BB119D28FBF8D020E7 /* TransactionRowView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionRowView.swift; path = Ordinatio/Views/Transactions/TransactionRowView.swift; sourceTree = "<group>"; };
 		3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetsView.swift; path = Ordinatio/Views/Budgets/BudgetsView.swift; sourceTree = "<group>"; };
 		4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetEditorView.swift; path = Ordinatio/Views/Budgets/BudgetEditorView.swift; sourceTree = "<group>"; };
-		4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesViewModel.swift; path = Ordinatio/Views/Categories/CategoriesViewModel.swift; sourceTree = "<group>"; };
 		506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioIconTile.swift; path = Ordinatio/DesignSystem/OrdinatioIconTile.swift; sourceTree = "<group>"; };
 		517963F4AAC521C0D9F1868C /* RootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RootView.swift; path = Ordinatio/Views/RootView.swift; sourceTree = "<group>"; };
 		560723CAD7438BC7547B10B7 /* AppState.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppState.swift; path = Ordinatio/AppState.swift; sourceTree = "<group>"; };
@@ -78,7 +75,6 @@
 		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
 		A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionFiltersView.swift; path = Ordinatio/Views/Transactions/TransactionFiltersView.swift; sourceTree = "<group>"; };
 		AA068AF33369D8111517766B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Ordinatio/Assets.xcassets; sourceTree = "<group>"; };
-		B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoriesView.swift; path = Ordinatio/Views/Categories/CategoriesView.swift; sourceTree = "<group>"; };
 		BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreferencesKeys.swift; path = Ordinatio/Support/PreferencesKeys.swift; sourceTree = "<group>"; };
 		BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoryEditorView.swift; path = Ordinatio/Views/Categories/CategoryEditorView.swift; sourceTree = "<group>"; };
 		BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -184,8 +180,6 @@
 				506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */,
 				4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */,
 				3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */,
-				B952D9BFE8F072AB3F91E2E4 /* CategoriesView.swift */,
-				4DCE269A3BCA10CA32AB2925 /* CategoriesViewModel.swift */,
 				BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */,
 				59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */,
 				A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */,
@@ -343,8 +337,6 @@
 				53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */,
 				55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */,
 				01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */,
-				6AD3067605F331E1CEA8EC94 /* CategoriesView.swift in Sources */,
-				FA8076E045A99F218F241A19 /* CategoriesViewModel.swift in Sources */,
 				B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */,
 				5757CFC78BC53A4328A9569A /* MainTabView.swift in Sources */,
 				7320260C5FAFB84F9B565302 /* OnboardingView.swift in Sources */,
