@@ -1,6 +1,7 @@
-import XCTest
-@testable import Ordinatio
 import OrdinatioCore
+import XCTest
+
+@testable import Ordinatio
 
 final class TransactionListComputationTests: XCTestCase {
     private func makeRow(
@@ -25,10 +26,10 @@ final class TransactionListComputationTests: XCTestCase {
 
     func testCompute_defaultsToDefaultCurrencyAndGroupsSections() {
         let rows: [TransactionListRow] = [
-            makeRow(id: "t1", amountMinor: -500, currencyCode: "usd", txnDate: 20240102),
-            makeRow(id: "t2", amountMinor: 1000, currencyCode: "USD", txnDate: 20240102),
-            makeRow(id: "t3", amountMinor: -200, currencyCode: "EUR", txnDate: 20240101),
-            makeRow(id: "t4", amountMinor: -300, currencyCode: "USD", txnDate: 20240101),
+            makeRow(id: "t1", amountMinor: -500, currencyCode: "usd", txnDate: 20_240_102),
+            makeRow(id: "t2", amountMinor: 1000, currencyCode: "USD", txnDate: 20_240_102),
+            makeRow(id: "t3", amountMinor: -200, currencyCode: "EUR", txnDate: 20_240_101),
+            makeRow(id: "t4", amountMinor: -300, currencyCode: "USD", txnDate: 20_240_101),
         ]
 
         let result = TransactionListComputation.compute(
@@ -44,17 +45,17 @@ final class TransactionListComputationTests: XCTestCase {
         XCTAssertEqual(result.expenseTotalAbsMinor, 800)
 
         XCTAssertEqual(result.sections.count, 2)
-        XCTAssertEqual(result.sections[0].date.yyyymmdd, 20240102)
+        XCTAssertEqual(result.sections[0].date.yyyymmdd, 20_240_102)
         XCTAssertEqual(result.sections[0].rows.map(\.id), ["t1", "t2"])
-        XCTAssertEqual(result.sections[1].date.yyyymmdd, 20240101)
+        XCTAssertEqual(result.sections[1].date.yyyymmdd, 20_240_101)
         XCTAssertEqual(result.sections[1].rows.map(\.id), ["t3", "t4"])
     }
 
     func testCompute_usesCurrencyFilterForTotals() {
         let rows: [TransactionListRow] = [
-            makeRow(id: "t1", amountMinor: -500, currencyCode: "USD", txnDate: 20240102),
-            makeRow(id: "t2", amountMinor: 1000, currencyCode: "USD", txnDate: 20240102),
-            makeRow(id: "t3", amountMinor: -200, currencyCode: "eur", txnDate: 20240101),
+            makeRow(id: "t1", amountMinor: -500, currencyCode: "USD", txnDate: 20_240_102),
+            makeRow(id: "t2", amountMinor: 1000, currencyCode: "USD", txnDate: 20_240_102),
+            makeRow(id: "t3", amountMinor: -200, currencyCode: "eur", txnDate: 20_240_101),
         ]
 
         let result = TransactionListComputation.compute(

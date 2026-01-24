@@ -55,4 +55,3 @@ final class BudgetComposerModel {
         self.amountMinor = 0
     }
 }
-

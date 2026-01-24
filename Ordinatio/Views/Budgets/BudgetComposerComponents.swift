@@ -370,7 +370,8 @@ extension BudgetComposerView {
                     .symbolEffect(.bounce.up.byLayer, value: canSubmit)
                     .frame(width: width, height: height)
                     .foregroundStyle(OrdinatioColor.lightIcon)
-                    .background(OrdinatioColor.darkBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(
+                        OrdinatioColor.darkBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
             .buttonStyle(NumPadButtonStyle())
             .disabled(!canSubmit)
