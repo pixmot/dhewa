@@ -4,6 +4,7 @@ import GRDB
 /// Serializes all database access behind an actor so UI code can `await` without blocking the main actor.
 public actor DatabaseClient {
     private let database: AppDatabase
+    private static let observationQueue = DispatchQueue(label: "OrdinatioCore.DatabaseClient.observation")
 
     public init(database: AppDatabase) {
         self.database = database
@@ -106,7 +107,7 @@ public actor DatabaseClient {
         AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = Task {
                 do {
-                    for try await value in observation.values(in: database.dbQueue, scheduling: .immediate) {
+                    for try await value in observation.values(in: database.dbQueue, scheduling: .async(onQueue: Self.observationQueue)) {
                         continuation.yield(value)
                     }
                     continuation.finish()
