@@ -44,6 +44,18 @@ final class OrdinatioUITests: XCTestCase {
         }
     }
 
+    private func enterBudgetMinorDigits(_ digits: String, in app: XCUIApplication) {
+        for character in digits {
+            guard ("0"..."9").contains(character) else {
+                XCTFail("Unsupported budget digit: \(character)")
+                return
+            }
+            let key = app.buttons["BudgetKeypadDigit\(character)"]
+            XCTAssertTrue(key.waitForExistence(timeout: 5))
+            key.tap()
+        }
+    }
+
     func testAddAndEditTransactionFlow() throws {
         let app = XCUIApplication()
         app.launchArguments.append("--uitesting")
@@ -111,5 +123,56 @@ final class OrdinatioUITests: XCTestCase {
         saveButton.tap()
 
         XCTAssertTrue(app.staticTexts["UITest Transaction 2"].firstMatch.waitForExistence(timeout: 10))
+    }
+
+    func testCreateOverallBudgetFlow() throws {
+        let app = XCUIApplication()
+        app.launchArguments.append("--uitesting")
+        app.launchArguments += [
+            "-AppleLanguages",
+            "(en)",
+            "-AppleLocale",
+            "en_US_POSIX",
+            "-AppleTimeZone",
+            "UTC",
+        ]
+        app.launch()
+
+        let budgetsTab = app.tabBars.buttons["Budgets"]
+        XCTAssertTrue(budgetsTab.waitForExistence(timeout: 10))
+        budgetsTab.tap()
+
+        let createButton = app.buttons["BudgetCreateButton"]
+        XCTAssertTrue(createButton.waitForExistence(timeout: 10))
+        createButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Indicate budget type"].waitForExistence(timeout: 10))
+
+        let continueButton = app.buttons["BudgetComposerContinue"]
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 10))
+        continueButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Choose a time frame"].waitForExistence(timeout: 10))
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 10))
+        continueButton.tap()
+
+        XCTAssertTrue(app.staticTexts["Pick a start date"].waitForExistence(timeout: 10))
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 10))
+        continueButton.tap()
+
+        let amountTitle = app.staticTexts["Set budget amount"]
+        XCTAssertTrue(amountTitle.waitForExistence(timeout: 10))
+
+        enterBudgetMinorDigits("1234", in: app)
+
+        let submitButton = app.buttons["BudgetKeypadSubmit"]
+        XCTAssertTrue(submitButton.waitForExistence(timeout: 10))
+        submitButton.tap()
+
+        let dismissed = NSPredicate(format: "exists == false")
+        expectation(for: dismissed, evaluatedWith: amountTitle)
+        waitForExpectations(timeout: 10)
+
+        XCTAssertTrue(createButton.waitForExistence(timeout: 10))
     }
 }
