@@ -3,7 +3,7 @@ import OrdinatioCore
 
 @main
 struct OrdinatioApp: App {
-    @StateObject private var appState: AppState
+    @State private var appState: AppState
 
     init() {
         let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
@@ -22,13 +22,13 @@ struct OrdinatioApp: App {
         } catch {
             fatalError("Failed to initialize database: \(error)")
         }
-        _appState = StateObject(wrappedValue: AppState(database: database))
+        _appState = State(initialValue: AppState(database: database))
     }
 
     var body: some Scene {
         WindowGroup {
             RootView()
-                .environmentObject(appState)
+                .environment(appState)
         }
     }
 }

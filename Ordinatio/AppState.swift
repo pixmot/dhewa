@@ -1,17 +1,19 @@
 import Foundation
+import Observation
 import OrdinatioCore
 
 @MainActor
-final class AppState: ObservableObject {
+@Observable
+final class AppState {
     let database: AppDatabase
+    let db: DatabaseClient
 
     init(database: AppDatabase) {
         self.database = database
+        self.db = DatabaseClient(database: database)
     }
 
-    func ensureSeedData() throws -> String {
-        try database.write { db in
-            try SeedData.ensureDefaultHouseholdAndCategories(in: db)
-        }
+    func ensureSeedData() async throws -> String {
+        try await db.ensureSeedData()
     }
 }
