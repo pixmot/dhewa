@@ -5,15 +5,6 @@ import OrdinatioCore
 @MainActor
 @Observable
 final class TransactionListViewModel {
-    private struct Computed: Sendable {
-        var sections: [TransactionSection]
-        var availableCurrencyCodes: [String]
-        var summaryCurrencyCode: String
-        var netTotalMinor: Int64
-        var incomeTotalMinor: Int64
-        var expenseTotalAbsMinor: Int64
-    }
-
     var sections: [TransactionSection] = []
     var categories: [OrdinatioCore.Category] = []
     var availableCurrencyCodes: [String] = []
@@ -112,7 +103,11 @@ final class TransactionListViewModel {
         transactionsTask = Task.detached(priority: .userInitiated) { [db, householdId, defaultCurrencyCode] in
             do {
                 for try await rows in await db.observeTransactionListRows(householdId: householdId, filter: filter) {
-                    let computed = Self.compute(rows: rows, filter: filter, defaultCurrencyCode: defaultCurrencyCode)
+                    let computed = TransactionListComputation.compute(
+                        rows: rows,
+                        filter: filter,
+                        defaultCurrencyCode: defaultCurrencyCode
+                    )
                     await MainActor.run { [weak self] in
                         guard let self else { return }
                         self.sections = computed.sections
@@ -130,10 +125,23 @@ final class TransactionListViewModel {
             }
         }
     }
+}
 
-    nonisolated private static func compute(
-        rows: [TransactionListRow], filter: TransactionFilter, defaultCurrencyCode: String
-    ) -> Computed {
+enum TransactionListComputation {
+    struct Result: Sendable {
+        var sections: [TransactionSection]
+        var availableCurrencyCodes: [String]
+        var summaryCurrencyCode: String
+        var netTotalMinor: Int64
+        var incomeTotalMinor: Int64
+        var expenseTotalAbsMinor: Int64
+    }
+
+    static func compute(
+        rows: [TransactionListRow],
+        filter: TransactionFilter,
+        defaultCurrencyCode: String
+    ) -> Result {
         let currencyFilter = filter.currencyCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let summaryCurrencyCode = (currencyFilter.isEmpty ? defaultCurrencyCode : currencyFilter).uppercased()
 
@@ -173,7 +181,7 @@ final class TransactionListViewModel {
             sections.append(TransactionSection(date: LocalDate(yyyymmdd: currentDate), rows: currentRows))
         }
 
-        return Computed(
+        return Result(
             sections: sections,
             availableCurrencyCodes: availableCurrencyCodes,
             summaryCurrencyCode: summaryCurrencyCode,
