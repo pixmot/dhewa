@@ -13,6 +13,7 @@
 		2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */; };
 		255E6A56E0007E8A283AEF0A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
 		282B4A9754BC58271A45064F /* TransactionEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */; };
+		307C11EA735D4603A748A7B2 /* TransactionEditorModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE7EFE3584145D8B9B5AB80 /* TransactionEditorModel.swift */; };
 		3B1776B23B1F396C8379329C /* TransactionFiltersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */; };
 		46E79D4E5DC349BF0123E43E /* OrdinatioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */; };
 		4E355B5C1E497E77CFDD5646 /* TransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0683CCB132CED99871D6D3C4 /* TransactionsView.swift */; };
@@ -29,6 +30,7 @@
 		9837A98E95D48156F9A28DDC /* DatabasePaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */; };
 		A01DD4675F6B12C0C077CA66 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517963F4AAC521C0D9F1868C /* RootView.swift */; };
 		A11DEB7360BEBBA321401336 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560723CAD7438BC7547B10B7 /* AppState.swift */; };
+		A97FC71FCF5241029948837B /* TransactionEditorComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5700933E324580B5FECA16 /* TransactionEditorComponents.swift */; };
 		B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */; };
 		B97BE05BC6EED2FCEC2C2FF3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
 		D7BCDA2CB65CD1F11EF01317 /* OrdinatioCoreExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */; };
@@ -76,11 +78,13 @@
 		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
 		A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionFiltersView.swift; path = Ordinatio/Views/Transactions/TransactionFiltersView.swift; sourceTree = "<group>"; };
 		AA068AF33369D8111517766B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Ordinatio/Assets.xcassets; sourceTree = "<group>"; };
+		AE5700933E324580B5FECA16 /* TransactionEditorComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionEditorComponents.swift; path = Ordinatio/Views/Transactions/TransactionEditorComponents.swift; sourceTree = "<group>"; };
 		BA8900C7BA2841C4B034470F /* OrdinatioLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioLog.swift; path = OrdinatioLog.swift; sourceTree = "<group>"; };
 		BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreferencesKeys.swift; path = PreferencesKeys.swift; sourceTree = "<group>"; };
 		BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoryEditorView.swift; path = Ordinatio/Views/Categories/CategoryEditorView.swift; sourceTree = "<group>"; };
 		BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTests.swift; path = OrdinatioTests/OrdinatioTests.swift; sourceTree = "<group>"; };
+		DCE7EFE3584145D8B9B5AB80 /* TransactionEditorModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionEditorModel.swift; path = Ordinatio/Views/Transactions/TransactionEditorModel.swift; sourceTree = "<group>"; };
 		DFD8031083ADDB4E09E35EF4 /* Ordinatio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ordinatio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E93C5510F5A1ADFCD448577F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioCoreExtensions.swift; path = OrdinatioCoreExtensions.swift; sourceTree = "<group>"; };
@@ -198,6 +202,8 @@
 				FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */,
 				517963F4AAC521C0D9F1868C /* RootView.swift */,
 				778724BAAC304E89800FD36B /* InsightsView.swift */,
+				AE5700933E324580B5FECA16 /* TransactionEditorComponents.swift */,
+				DCE7EFE3584145D8B9B5AB80 /* TransactionEditorModel.swift */,
 				1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */,
 				A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */,
 				2313A8EFEE8A70C497DE1119 /* TransactionListViewModel.swift */,
@@ -355,6 +361,8 @@
 				7320260C5FAFB84F9B565302 /* OnboardingView.swift in Sources */,
 				A01DD4675F6B12C0C077CA66 /* RootView.swift in Sources */,
 				F38C14D6036542C1A61C96FD /* InsightsView.swift in Sources */,
+				A97FC71FCF5241029948837B /* TransactionEditorComponents.swift in Sources */,
+				307C11EA735D4603A748A7B2 /* TransactionEditorModel.swift in Sources */,
 				282B4A9754BC58271A45064F /* TransactionEditorView.swift in Sources */,
 				3B1776B23B1F396C8379329C /* TransactionFiltersView.swift in Sources */,
 				8F8F93803EC9B12CDD1A4B2E /* TransactionListViewModel.swift in Sources */,
