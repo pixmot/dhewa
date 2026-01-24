@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct MainTabView: View {
     let db: DatabaseClient
@@ -29,8 +29,8 @@ struct MainTabView: View {
                 mode: .create,
                 showsDismissButton: false
             )
-                .tag(OrdinatioTab.add)
-                .tabItem { Label(OrdinatioTab.add.title, systemImage: OrdinatioTab.add.symbolName) }
+            .tag(OrdinatioTab.add)
+            .tabItem { Label(OrdinatioTab.add.title, systemImage: OrdinatioTab.add.symbolName) }
 
             BudgetsView(
                 db: db,

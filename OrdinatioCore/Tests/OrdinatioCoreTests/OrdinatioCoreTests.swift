@@ -1,15 +1,17 @@
 import Foundation
 import GRDB
 import XCTest
+
 @testable import OrdinatioCore
 
 final class OrdinatioCoreTests: XCTestCase {
     func testMoneyParsingUSD() throws {
-        let result = MoneyFormat.parseMinorUnits("12.34", currencyCode: "USD", locale: Locale(identifier: "en_US_POSIX"))
+        let result = MoneyFormat.parseMinorUnits(
+            "12.34", currencyCode: "USD", locale: Locale(identifier: "en_US_POSIX"))
         switch result {
-        case let .success(minorUnits):
+        case .success(let minorUnits):
             XCTAssertEqual(minorUnits, 1234)
-        case let .failure(error):
+        case .failure(let error):
             XCTFail("Unexpected parse error: \(error)")
         }
     }
@@ -17,15 +19,16 @@ final class OrdinatioCoreTests: XCTestCase {
     func testMoneyParsingJPY() throws {
         let result = MoneyFormat.parseMinorUnits("1234", currencyCode: "JPY", locale: Locale(identifier: "en_US_POSIX"))
         switch result {
-        case let .success(minorUnits):
+        case .success(let minorUnits):
             XCTAssertEqual(minorUnits, 1234)
-        case let .failure(error):
+        case .failure(let error):
             XCTFail("Unexpected parse error: \(error)")
         }
     }
 
     func testMoneyFormattingUsesCurrency() throws {
-        let formatted = MoneyFormat.format(minorUnits: -199, currencyCode: "USD", locale: Locale(identifier: "en_US_POSIX"))
+        let formatted = MoneyFormat.format(
+            minorUnits: -199, currencyCode: "USD", locale: Locale(identifier: "en_US_POSIX"))
         XCTAssertTrue(formatted.contains("$"))
     }
 
@@ -72,7 +75,7 @@ final class OrdinatioCoreTests: XCTestCase {
                 categoryId: nil,
                 amountMinor: -5000,
                 currencyCode: "USD",
-                txnDate: 20260115,
+                txnDate: 20_260_115,
                 note: "Dinner",
                 createdAt: now,
                 updatedAt: now
@@ -83,7 +86,7 @@ final class OrdinatioCoreTests: XCTestCase {
                 categoryId: nil,
                 amountMinor: 10_000,
                 currencyCode: "USD",
-                txnDate: 20260116,
+                txnDate: 20_260_116,
                 note: "Salary",
                 createdAt: now,
                 updatedAt: now
@@ -94,7 +97,7 @@ final class OrdinatioCoreTests: XCTestCase {
                 categoryId: nil,
                 amountMinor: -700,
                 currencyCode: "EUR",
-                txnDate: 20260120,
+                txnDate: 20_260_120,
                 note: "Coffee",
                 createdAt: now,
                 updatedAt: now
@@ -124,8 +127,8 @@ final class OrdinatioCoreTests: XCTestCase {
         XCTAssertEqual(budgets[0].currencyCode, "USD")
         XCTAssertEqual(budgets[0].timeFrame, .month)
 
-        let janStart = LocalDate(yyyymmdd: 20260101)
-        let febStart = LocalDate(yyyymmdd: 20260201)
+        let janStart = LocalDate(yyyymmdd: 20_260_101)
+        let febStart = LocalDate(yyyymmdd: 20_260_201)
 
         let spentUsd = try appDatabase.read { db in
             try BudgetRepository.fetchSpentTotal(

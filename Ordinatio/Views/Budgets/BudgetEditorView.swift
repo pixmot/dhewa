@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct BudgetDraft: Hashable {
     let budgetId: String?
@@ -161,7 +161,8 @@ private extension BudgetComposerView {
         [
             InstructionHeadings(
                 title: "Indicate budget type",
-                subtitle: "The overall budget tracks expenses across the board, while categorical budgets are tied to expenses of a particular type only."
+                subtitle:
+                    "The overall budget tracks expenses across the board, while categorical budgets are tied to expenses of a particular type only."
             ),
             InstructionHeadings(
                 title: "Select a category",
@@ -234,7 +235,9 @@ private extension BudgetComposerView {
                         .foregroundStyle(OrdinatioColor.expense)
                 }
                 .padding(8)
-                .background(OrdinatioColor.expense.opacity(0.23), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(
+                    OrdinatioColor.expense.opacity(0.23), in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .frame(width: 250)
             }
@@ -383,7 +386,9 @@ private extension BudgetComposerView {
         VStack {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(BudgetTimeFrame.allCases, id: \.self) { frame in
-                    BudgetTypeRow(title: timeFrameTitle(frame), selected: budgetTimeFrame == frame, animation: animation) {
+                    BudgetTypeRow(
+                        title: timeFrameTitle(frame), selected: budgetTimeFrame == frame, animation: animation
+                    ) {
                         withAnimation(.easeIn(duration: 0.15)) {
                             budgetTimeFrame = frame
                         }
@@ -407,7 +412,9 @@ private extension BudgetComposerView {
                     ScrollViewReader { value in
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(weekdayOptions, id: \.value) { option in
-                                BudgetTypeRow(title: option.label, selected: chosenDayWeek == option.value, animation: animation) {
+                                BudgetTypeRow(
+                                    title: option.label, selected: chosenDayWeek == option.value, animation: animation
+                                ) {
                                     withAnimation(.easeIn(duration: 0.15)) {
                                         chosenDayWeek = option.value
                                     }
@@ -426,8 +433,10 @@ private extension BudgetComposerView {
                 ScrollView(showsIndicators: false) {
                     ScrollViewReader { value in
                         VStack(alignment: .leading, spacing: 0) {
-                            ForEach(1 ..< 29) { day in
-                                BudgetTypeRow(title: monthStartLabel(day), selected: chosenDayMonth == day, animation: animation) {
+                            ForEach(1..<29) { day in
+                                BudgetTypeRow(
+                                    title: monthStartLabel(day), selected: chosenDayMonth == day, animation: animation
+                                ) {
                                     withAnimation(.easeIn(duration: 0.15)) {
                                         chosenDayMonth = day
                                     }
@@ -446,7 +455,7 @@ private extension BudgetComposerView {
                 DatePicker(
                     "Date",
                     selection: $chosenDayYear,
-                    in: oneYearAgo ... Date(),
+                    in: oneYearAgo...Date(),
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
@@ -669,7 +678,8 @@ private extension BudgetComposerView {
             let prevComponents = calendar.dateComponents([.year, .month], from: previous)
             let prevYear = prevComponents.year ?? year
             let prevMonth = prevComponents.month ?? month
-            let prevCandidate = calendar.date(from: DateComponents(year: prevYear, month: prevMonth, day: clampedDay)) ?? previous
+            let prevCandidate =
+                calendar.date(from: DateComponents(year: prevYear, month: prevMonth, day: clampedDay)) ?? previous
             return calendar.startOfDay(for: prevCandidate)
         case .year:
             let year = calendar.component(.year, from: reference)
@@ -817,7 +827,9 @@ private struct BudgetCategoryChip: View {
             .padding(.horizontal, 11)
             .padding(.vertical, 7)
             .foregroundStyle(selected ? color : OrdinatioColor.textPrimary)
-            .background(selected ? color.opacity(0.35) : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(
+                selected ? color.opacity(0.35) : Color.clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
             .overlay {
                 if !selected {
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -866,7 +878,7 @@ private struct BudgetStepProgress: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            ForEach(1 ... clampedTotal, id: \.self) { step in
+            ForEach(1...clampedTotal, id: \.self) { step in
                 HStack(spacing: 6) {
                     ZStack {
                         Circle()
@@ -875,7 +887,8 @@ private struct BudgetStepProgress: View {
                         if clampedTotal > 1 {
                             Text("\(step)")
                                 .font(.system(.caption2, design: .rounded).weight(.semibold))
-                                .foregroundStyle(step <= clampedCurrent ? OrdinatioColor.lightIcon : OrdinatioColor.textSecondary)
+                                .foregroundStyle(
+                                    step <= clampedCurrent ? OrdinatioColor.lightIcon : OrdinatioColor.textSecondary)
                         }
                     }
                     .frame(width: 18, height: 18)
@@ -953,8 +966,8 @@ private struct BudgetNumberPadTextView: View {
                 .foregroundStyle(OrdinatioColor.textPrimary)
         }
         .minimumScaleFactor(0.5)
-            .lineLimit(1)
-            .frame(maxWidth: .infinity)
+        .lineLimit(1)
+        .frame(maxWidth: .infinity)
     }
 
     private var amountString: String {

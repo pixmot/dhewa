@@ -91,4 +91,3 @@ struct InsightsView: View {
         }
     }
 }
-

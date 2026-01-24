@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct TransactionsView: View {
     let db: DatabaseClient
@@ -15,7 +15,9 @@ struct TransactionsView: View {
         self.db = db
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
-        _viewModel = State(initialValue: TransactionListViewModel(db: db, householdId: householdId, defaultCurrencyCode: defaultCurrencyCode))
+        _viewModel = State(
+            initialValue: TransactionListViewModel(
+                db: db, householdId: householdId, defaultCurrencyCode: defaultCurrencyCode))
     }
 
     private func sectionTitle(for date: LocalDate) -> String {
@@ -37,13 +39,17 @@ struct TransactionsView: View {
                 .foregroundStyle(OrdinatioColor.textPrimary)
 
             HStack(spacing: 12) {
-                Text("+\(MoneyFormat.format(minorUnits: viewModel.incomeTotalMinor, currencyCode: viewModel.summaryCurrencyCode))")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(OrdinatioColor.income)
+                Text(
+                    "+\(MoneyFormat.format(minorUnits: viewModel.incomeTotalMinor, currencyCode: viewModel.summaryCurrencyCode))"
+                )
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(OrdinatioColor.income)
 
-                Text("-\(MoneyFormat.format(minorUnits: viewModel.expenseTotalAbsMinor, currencyCode: viewModel.summaryCurrencyCode))")
-                    .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(OrdinatioColor.expense)
+                Text(
+                    "-\(MoneyFormat.format(minorUnits: viewModel.expenseTotalAbsMinor, currencyCode: viewModel.summaryCurrencyCode))"
+                )
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(OrdinatioColor.expense)
             }
         }
         .padding(.vertical, 10)
@@ -122,11 +128,16 @@ struct TransactionsView: View {
                     mode: .edit(row)
                 )
             }
-            .alert("Error", isPresented: Binding(get: {
-                model.errorMessage != nil
-            }, set: { newValue in
-                if !newValue { model.errorMessage = nil }
-            })) {
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: {
+                        model.errorMessage != nil
+                    },
+                    set: { newValue in
+                        if !newValue { model.errorMessage = nil }
+                    })
+            ) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(model.errorMessage ?? "")

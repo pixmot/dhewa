@@ -152,7 +152,7 @@ struct LiquidGlassCapsule: View {
 private extension String {
     var ordinatioStableHash: Int {
         unicodeScalars.reduce(0) { partialResult, scalar in
-            (partialResult &* 31 &+ Int(scalar.value)) & 0x7fffffff
+            (partialResult &* 31 &+ Int(scalar.value)) & 0x7fff_ffff
         }
     }
 }

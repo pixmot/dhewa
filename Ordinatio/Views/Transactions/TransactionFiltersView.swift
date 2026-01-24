@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct TransactionFiltersView: View {
     let categories: [OrdinatioCore.Category]
@@ -49,13 +49,14 @@ struct TransactionFiltersView: View {
         let trimmedMax = maxAmountText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         let needsCurrency = !trimmedMin.isEmpty || !trimmedMax.isEmpty
-        let effectiveCurrency = (selectedCurrencyCode?.uppercased())
+        let effectiveCurrency =
+            (selectedCurrencyCode?.uppercased())
             ?? (needsCurrency ? defaultCurrencyCode.uppercased() : nil)
 
         func parse(_ text: String) -> Int64? {
             guard let effectiveCurrency else { return nil }
             switch MoneyFormat.parseMinorUnits(text, currencyCode: effectiveCurrency) {
-            case let .success(minor): return abs(minor)
+            case .success(let minor): return abs(minor)
             case .failure:
                 return nil
             }

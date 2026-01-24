@@ -3,7 +3,8 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppState.self) private var appState
     @AppStorage(PreferencesKeys.hasOnboarded) private var hasOnboarded = false
-    @AppStorage(PreferencesKeys.defaultCurrencyCode) private var defaultCurrencyCode = Locale.current.currency?.identifier ?? "USD"
+    @AppStorage(PreferencesKeys.defaultCurrencyCode) private var defaultCurrencyCode =
+        Locale.current.currency?.identifier ?? "USD"
     @AppStorage(PreferencesKeys.activeHouseholdId) private var activeHouseholdId = ""
 
     @State private var bootErrorMessage: String?

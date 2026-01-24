@@ -5,4 +5,3 @@ final class OrdinatioTests: XCTestCase {
         XCTAssertTrue(true)
     }
 }
-

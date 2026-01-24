@@ -54,7 +54,8 @@ public enum MoneyFormat {
         let fractionDigits = fractionDigits(for: currencyCode)
 
         func cleaned(_ input: String, locale: Locale) -> String {
-            var result = input
+            var result =
+                input
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .replacingOccurrences(of: " ", with: "")
                 .replacingOccurrences(of: "\u{00A0}", with: "")

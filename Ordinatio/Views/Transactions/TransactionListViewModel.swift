@@ -131,7 +131,9 @@ final class TransactionListViewModel {
         }
     }
 
-    nonisolated private static func compute(rows: [TransactionListRow], filter: TransactionFilter, defaultCurrencyCode: String) -> Computed {
+    nonisolated private static func compute(
+        rows: [TransactionListRow], filter: TransactionFilter, defaultCurrencyCode: String
+    ) -> Computed {
         let currencyFilter = filter.currencyCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let summaryCurrencyCode = (currencyFilter.isEmpty ? defaultCurrencyCode : currencyFilter).uppercased()
 

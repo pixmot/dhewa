@@ -46,7 +46,8 @@ public actor DatabaseClient {
 
     public func reorderCategories(householdId: String, orderedCategoryIds: [String]) throws {
         try database.write { db in
-            try CategoryRepository.reorderCategories(in: db, householdId: householdId, orderedCategoryIds: orderedCategoryIds)
+            try CategoryRepository.reorderCategories(
+                in: db, householdId: householdId, orderedCategoryIds: orderedCategoryIds)
         }
     }
 
@@ -107,7 +108,9 @@ public actor DatabaseClient {
         AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = Task {
                 do {
-                    for try await value in observation.values(in: database.dbQueue, scheduling: .async(onQueue: Self.observationQueue)) {
+                    for try await value in observation.values(
+                        in: database.dbQueue, scheduling: .async(onQueue: Self.observationQueue))
+                    {
                         continuation.yield(value)
                     }
                     continuation.finish()

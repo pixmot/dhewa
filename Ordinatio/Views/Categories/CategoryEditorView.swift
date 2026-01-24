@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct CategoryEditorView: View {
     enum Mode: Hashable {
@@ -19,7 +19,7 @@ struct CategoryEditorView: View {
         switch mode {
         case .create:
             _name = State(initialValue: "")
-        case let .edit(category):
+        case .edit(let category):
             _name = State(initialValue: category.name)
         }
     }

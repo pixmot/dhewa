@@ -24,4 +24,3 @@ enum OrdinatioTab: Hashable {
         }
     }
 }
-

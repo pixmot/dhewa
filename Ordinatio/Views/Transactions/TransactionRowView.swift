@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct TransactionRowView: View {
     let row: TransactionListRow

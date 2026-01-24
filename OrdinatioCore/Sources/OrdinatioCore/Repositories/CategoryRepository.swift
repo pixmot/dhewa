@@ -14,11 +14,13 @@ public enum CategoryRepository {
 
     public static func createCategory(in db: Database, householdId: String, name: String) throws -> Category {
         let now = Date()
-        let maxSortOrder = try Int.fetchOne(
-            db,
-            sql: "SELECT COALESCE(MAX(sort_order), -1) FROM categories WHERE household_id = ? AND deleted_at IS NULL",
-            arguments: [householdId]
-        ) ?? -1
+        let maxSortOrder =
+            try Int.fetchOne(
+                db,
+                sql:
+                    "SELECT COALESCE(MAX(sort_order), -1) FROM categories WHERE household_id = ? AND deleted_at IS NULL",
+                arguments: [householdId]
+            ) ?? -1
 
         let category = Category(
             id: UUID().uuidString.lowercased(),

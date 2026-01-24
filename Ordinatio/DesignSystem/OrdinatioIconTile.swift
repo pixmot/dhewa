@@ -34,4 +34,3 @@ struct OrdinatioIconTile: View {
         .frame(width: size, height: size)
     }
 }
-

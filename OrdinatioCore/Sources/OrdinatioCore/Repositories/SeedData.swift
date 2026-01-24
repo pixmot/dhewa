@@ -41,4 +41,3 @@ public enum SeedData {
         return householdId
     }
 }
-

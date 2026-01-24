@@ -1,5 +1,5 @@
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 enum TransactionEditorMode: Hashable {
     case create
@@ -61,9 +61,10 @@ struct TransactionEditorView: View {
             _dateTime = State(initialValue: Date())
             _categoryId = State(initialValue: prefilledCategoryId)
             _note = State(initialValue: "")
-        case let .edit(row):
+        case .edit(let row):
             _isExpense = State(initialValue: row.amountMinor < 0)
-            _amountText = State(initialValue: Self.entryAmountText(absMinor: abs(row.amountMinor), currencyCode: row.currencyCode))
+            _amountText = State(
+                initialValue: Self.entryAmountText(absMinor: abs(row.amountMinor), currencyCode: row.currencyCode))
             _currencyCode = State(initialValue: row.currencyCode.uppercased())
             _fractionDigits = State(initialValue: MoneyFormat.fractionDigits(for: row.currencyCode))
             _dateTime = State(initialValue: Self.initialDateTime(txnDate: row.txnDate, createdAt: row.createdAt))
@@ -127,7 +128,8 @@ struct TransactionEditorView: View {
     }
 
     private static func parseAbsMinor(from input: String, fractionDigits: Int) -> Int64? {
-        let trimmed = input
+        let trimmed =
+            input
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
 
@@ -189,7 +191,8 @@ struct TransactionEditorView: View {
         guard (0...9).contains(digit) else { return }
         let separator = "."
 
-        var next = amountText
+        var next =
+            amountText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
 
@@ -216,7 +219,8 @@ struct TransactionEditorView: View {
         guard fractionDigits > 0 else { return }
         let separator = "."
 
-        var next = amountText
+        var next =
+            amountText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
 
@@ -226,7 +230,8 @@ struct TransactionEditorView: View {
     }
 
     private func deleteLastInput() {
-        var next = amountText
+        var next =
+            amountText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
         guard !next.isEmpty else { return }
@@ -237,7 +242,8 @@ struct TransactionEditorView: View {
 
     private func normalizeAmountTextForCurrency() {
         let separator = "."
-        var next = amountText
+        var next =
+            amountText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
 
@@ -289,7 +295,7 @@ struct TransactionEditorView: View {
         switch mode {
         case .create:
             txnId = UUID().uuidString.lowercased()
-        case let .edit(row):
+        case .edit(let row):
             txnId = row.id
         }
 
@@ -316,7 +322,7 @@ struct TransactionEditorView: View {
     }
 
     private func deleteTransaction() {
-        guard case let .edit(row) = mode else { return }
+        guard case .edit(let row) = mode else { return }
 
         let transactionId = row.id
         Task { @MainActor in
@@ -402,11 +408,16 @@ struct TransactionEditorView: View {
             ) {
                 Button("Delete", role: .destructive) { deleteTransaction() }
             }
-            .alert("Error", isPresented: Binding(get: {
-                errorMessage != nil
-            }, set: { newValue in
-                if !newValue { errorMessage = nil }
-            })) {
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: {
+                        errorMessage != nil
+                    },
+                    set: { newValue in
+                        if !newValue { errorMessage = nil }
+                    })
+            ) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(errorMessage ?? "")
@@ -579,7 +590,8 @@ struct TransactionEditorView: View {
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
+                            .strokeBorder(
+                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
                     }
                 }
                 .buttonStyle(.plain)

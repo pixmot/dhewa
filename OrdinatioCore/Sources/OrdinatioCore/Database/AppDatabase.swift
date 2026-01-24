@@ -68,7 +68,8 @@ public final class AppDatabase {
                 t.column("updated_at", .datetime).notNull()
                 t.column("deleted_at", .datetime)
             }
-            try db.create(index: "idx_categories_household_sort", on: "categories", columns: ["household_id", "sort_order"])
+            try db.create(
+                index: "idx_categories_household_sort", on: "categories", columns: ["household_id", "sort_order"])
 
             try db.create(table: "transactions") { t in
                 t.column("id", .text).primaryKey()
@@ -86,8 +87,10 @@ public final class AppDatabase {
                 t.column("updated_at", .datetime).notNull()
                 t.column("deleted_at", .datetime)
             }
-            try db.create(index: "idx_transactions_household_date", on: "transactions", columns: ["household_id", "txn_date"])
-            try db.create(index: "idx_transactions_category_date", on: "transactions", columns: ["category_id", "txn_date"])
+            try db.create(
+                index: "idx_transactions_household_date", on: "transactions", columns: ["household_id", "txn_date"])
+            try db.create(
+                index: "idx_transactions_category_date", on: "transactions", columns: ["category_id", "txn_date"])
             try db.create(index: "idx_transactions_updated_at", on: "transactions", columns: ["updated_at"])
 
             try db.create(table: "budgets") { t in
@@ -105,7 +108,8 @@ public final class AppDatabase {
 
                 t.uniqueKey(["household_id", "budget_month", "currency_code"])
             }
-            try db.create(index: "idx_budgets_household_month", on: "budgets", columns: ["household_id", "budget_month"])
+            try db.create(
+                index: "idx_budgets_household_month", on: "budgets", columns: ["household_id", "budget_month"])
         }
 
         migrator.registerMigration("v2_rebuild_budgets") { db in
@@ -130,8 +134,12 @@ public final class AppDatabase {
             }
 
             try db.execute(sql: "CREATE UNIQUE INDEX idx_budgets_overall ON budgets(household_id) WHERE is_overall = 1")
-            try db.execute(sql: "CREATE UNIQUE INDEX idx_budgets_category ON budgets(household_id, category_id) WHERE is_overall = 0")
-            try db.create(index: "idx_budgets_household_timeframe", on: "budgets", columns: ["household_id", "time_frame"])
+            try db.execute(
+                sql:
+                    "CREATE UNIQUE INDEX idx_budgets_category ON budgets(household_id, category_id) WHERE is_overall = 0"
+            )
+            try db.create(
+                index: "idx_budgets_household_timeframe", on: "budgets", columns: ["household_id", "time_frame"])
         }
 
         return migrator

@@ -1,6 +1,6 @@
 import Observation
-import SwiftUI
 import OrdinatioCore
+import SwiftUI
 
 struct BudgetsView: View {
     let db: DatabaseClient
@@ -84,11 +84,16 @@ struct BudgetsView: View {
                 .presentationDetents([.fraction(0.9), .large], selection: $composerDetent)
                 .presentationDragIndicator(.visible)
             }
-            .alert("Error", isPresented: Binding(get: {
-                model.errorMessage != nil
-            }, set: { newValue in
-                if !newValue { model.errorMessage = nil }
-            })) {
+            .alert(
+                "Error",
+                isPresented: Binding(
+                    get: {
+                        model.errorMessage != nil
+                    },
+                    set: { newValue in
+                        if !newValue { model.errorMessage = nil }
+                    })
+            ) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(model.errorMessage ?? "")
@@ -119,14 +124,14 @@ enum BudgetComposerRoute: Identifiable {
 
     var id: String {
         switch self {
-        case let .create(overallExists):
+        case .create(let overallExists):
             return "create_\(overallExists ? 1 : 0)"
         }
     }
 
     var overallExists: Bool {
         switch self {
-        case let .create(overallExists):
+        case .create(let overallExists):
             return overallExists
         }
     }

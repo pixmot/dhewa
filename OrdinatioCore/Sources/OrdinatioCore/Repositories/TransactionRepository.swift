@@ -2,7 +2,9 @@ import Foundation
 import GRDB
 
 public enum TransactionRepository {
-    public static func observeTransactionListRows(householdId: String, filter: TransactionFilter) -> ValueObservation<ValueReducers.Fetch<[TransactionListRow]>> {
+    public static func observeTransactionListRows(householdId: String, filter: TransactionFilter) -> ValueObservation<
+        ValueReducers.Fetch<[TransactionListRow]>
+    > {
         ValueObservation.tracking { db in
             try transactionListRequest(householdId: householdId, filter: filter).fetchAll(db)
         }
@@ -33,13 +35,13 @@ public enum TransactionRepository {
     ) -> ValueObservation<ValueReducers.Fetch<Int32?>> {
         ValueObservation.tracking { db in
             var sql = """
-            SELECT MIN(t.txn_date)
-            FROM transactions t
-            WHERE t.household_id = ?
-              AND t.deleted_at IS NULL
-              AND t.amount_minor < 0
-              AND t.currency_code = ?
-            """
+                SELECT MIN(t.txn_date)
+                FROM transactions t
+                WHERE t.household_id = ?
+                  AND t.deleted_at IS NULL
+                  AND t.amount_minor < 0
+                  AND t.currency_code = ?
+                """
 
             var args: [DatabaseValueConvertible] = [
                 householdId,
@@ -67,24 +69,26 @@ public enum TransactionRepository {
         try db.execute(sql: "DELETE FROM transactions WHERE id = ?", arguments: [transactionId])
     }
 
-    public static func transactionListRequest(householdId: String, filter: TransactionFilter) -> SQLRequest<TransactionListRow> {
+    public static func transactionListRequest(householdId: String, filter: TransactionFilter) -> SQLRequest<
+        TransactionListRow
+    > {
         var sql = """
-        SELECT
-            t.id,
-            t.household_id AS householdId,
-            t.category_id AS categoryId,
-            c.name AS categoryName,
-            t.amount_minor AS amountMinor,
-            t.currency_code AS currencyCode,
-            t.txn_date AS txnDate,
-            t.note,
-            t.created_at AS createdAt,
-            t.updated_at AS updatedAt
-        FROM transactions t
-        LEFT JOIN categories c ON c.id = t.category_id
-        WHERE t.household_id = ?
-          AND t.deleted_at IS NULL
-        """
+            SELECT
+                t.id,
+                t.household_id AS householdId,
+                t.category_id AS categoryId,
+                c.name AS categoryName,
+                t.amount_minor AS amountMinor,
+                t.currency_code AS currencyCode,
+                t.txn_date AS txnDate,
+                t.note,
+                t.created_at AS createdAt,
+                t.updated_at AS updatedAt
+            FROM transactions t
+            LEFT JOIN categories c ON c.id = t.category_id
+            WHERE t.household_id = ?
+              AND t.deleted_at IS NULL
+            """
 
         var args: [DatabaseValueConvertible] = [householdId]
 
@@ -123,26 +127,26 @@ public enum TransactionRepository {
         endDate: LocalDate
     ) -> SQLRequest<TransactionListRow> {
         var sql = """
-        SELECT
-            t.id,
-            t.household_id AS householdId,
-            t.category_id AS categoryId,
-            c.name AS categoryName,
-            t.amount_minor AS amountMinor,
-            t.currency_code AS currencyCode,
-            t.txn_date AS txnDate,
-            t.note,
-            t.created_at AS createdAt,
-            t.updated_at AS updatedAt
-        FROM transactions t
-        LEFT JOIN categories c ON c.id = t.category_id
-        WHERE t.household_id = ?
-          AND t.deleted_at IS NULL
-          AND t.amount_minor < 0
-          AND t.currency_code = ?
-          AND t.txn_date >= ?
-          AND t.txn_date < ?
-        """
+            SELECT
+                t.id,
+                t.household_id AS householdId,
+                t.category_id AS categoryId,
+                c.name AS categoryName,
+                t.amount_minor AS amountMinor,
+                t.currency_code AS currencyCode,
+                t.txn_date AS txnDate,
+                t.note,
+                t.created_at AS createdAt,
+                t.updated_at AS updatedAt
+            FROM transactions t
+            LEFT JOIN categories c ON c.id = t.category_id
+            WHERE t.household_id = ?
+              AND t.deleted_at IS NULL
+              AND t.amount_minor < 0
+              AND t.currency_code = ?
+              AND t.txn_date >= ?
+              AND t.txn_date < ?
+            """
 
         var args: [DatabaseValueConvertible] = [
             householdId,
