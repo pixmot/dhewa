@@ -52,9 +52,15 @@ final class OrdinatioUITests: XCTestCase {
         let logNavBar = app.navigationBars["Log"]
         XCTAssertTrue(logNavBar.waitForExistence(timeout: 10))
 
-        let addButton = app.buttons["Add Transaction"]
-        XCTAssertTrue(addButton.waitForExistence(timeout: 10))
-        addButton.tap()
+        // Support both the system TabView tab item ("Add") and a custom tab bar button ("Add Transaction").
+        let addTransactionButton = app.buttons["Add Transaction"]
+        if addTransactionButton.waitForExistence(timeout: 1) {
+            addTransactionButton.tap()
+        } else {
+            let addTab = app.tabBars.buttons["Add"]
+            XCTAssertTrue(addTab.waitForExistence(timeout: 10))
+            addTab.tap()
+        }
 
         enterAmount("12.34", in: app)
 
@@ -67,6 +73,12 @@ final class OrdinatioUITests: XCTestCase {
         let saveButton = app.buttons["TransactionKeypadSave"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
         saveButton.tap()
+
+        // If "Add" is implemented as a tab (not a modal), switch back to the Log tab to verify the transaction appears.
+        let logTab = app.tabBars.buttons["Log"]
+        if logTab.waitForExistence(timeout: 2) {
+            logTab.tap()
+        }
 
         let createdCell = app.staticTexts["UITest Transaction 1"].firstMatch
         XCTAssertTrue(createdCell.waitForExistence(timeout: 10))
