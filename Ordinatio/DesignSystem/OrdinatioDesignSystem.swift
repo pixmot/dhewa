@@ -149,79 +149,79 @@ struct LiquidGlassCapsule: View {
     }
 }
 
-private extension String {
-    var ordinatioStableHash: Int {
+extension String {
+    fileprivate var ordinatioStableHash: Int {
         unicodeScalars.reduce(0) { partialResult, scalar in
             (partialResult &* 31 &+ Int(scalar.value)) & 0x7fff_ffff
         }
     }
 }
 
-private extension UIColor {
-    static func ordinatioDynamic(light: UIColor, dark: UIColor) -> UIColor {
+extension UIColor {
+    fileprivate static func ordinatioDynamic(light: UIColor, dark: UIColor) -> UIColor {
         UIColor { traitCollection in
             traitCollection.userInterfaceStyle == .dark ? dark : light
         }
     }
 
-    static var ordinatioBackground: UIColor {
+    fileprivate static var ordinatioBackground: UIColor {
         ordinatioDynamic(
             light: .white,
             dark: UIColor(red: 0.024, green: 0.039, blue: 0.028, alpha: 1)
         )
     }
 
-    static var ordinatioSurface: UIColor {
+    fileprivate static var ordinatioSurface: UIColor {
         ordinatioDynamic(
             light: .white,
             dark: UIColor(red: 0.137, green: 0.149, blue: 0.149, alpha: 1)
         )
     }
 
-    static var ordinatioSurfaceElevated: UIColor {
+    fileprivate static var ordinatioSurfaceElevated: UIColor {
         ordinatioDynamic(
             light: UIColor(red: 0.965, green: 0.965, blue: 0.965, alpha: 1),
             dark: UIColor(red: 0.227, green: 0.227, blue: 0.235, alpha: 1)
         )
     }
 
-    static var ordinatioTextPrimary: UIColor {
+    fileprivate static var ordinatioTextPrimary: UIColor {
         ordinatioDynamic(
             light: UIColor(red: 0.004, green: 0.004, blue: 0.004, alpha: 1),
             dark: .white
         )
     }
 
-    static var ordinatioTextSecondary: UIColor {
+    fileprivate static var ordinatioTextSecondary: UIColor {
         ordinatioDynamic(
             light: UIColor(red: 0.651, green: 0.651, blue: 0.651, alpha: 1),
             dark: UIColor(red: 0.463, green: 0.463, blue: 0.463, alpha: 1)
         )
     }
 
-    static var ordinatioSeparator: UIColor {
+    fileprivate static var ordinatioSeparator: UIColor {
         ordinatioDynamic(
             light: UIColor(red: 0.925, green: 0.941, blue: 0.957, alpha: 1),
             dark: UIColor(red: 0.180, green: 0.180, blue: 0.180, alpha: 1)
         )
     }
 
-    static var ordinatioIncome: UIColor {
+    fileprivate static var ordinatioIncome: UIColor {
         UIColor(red: 0.07, green: 0.78, blue: 0.45, alpha: 1)
     }
 
-    static var ordinatioExpense: UIColor {
+    fileprivate static var ordinatioExpense: UIColor {
         UIColor(red: 0.95, green: 0.23, blue: 0.24, alpha: 1)
     }
 
-    static var ordinatioDarkBackground: UIColor {
+    fileprivate static var ordinatioDarkBackground: UIColor {
         ordinatioDynamic(
             light: UIColor(red: 0.235, green: 0.235, blue: 0.235, alpha: 1),
             dark: .white
         )
     }
 
-    static var ordinatioLightIcon: UIColor {
+    fileprivate static var ordinatioLightIcon: UIColor {
         ordinatioDynamic(
             light: .white,
             dark: UIColor(red: 0.137, green: 0.149, blue: 0.149, alpha: 1)

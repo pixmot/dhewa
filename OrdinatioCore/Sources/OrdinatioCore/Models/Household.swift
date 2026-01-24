@@ -19,8 +19,8 @@ public struct Household: Codable, FetchableRecord, PersistableRecord, Identifiab
     }
 }
 
-public extension Household {
-    enum Columns: String, ColumnExpression {
+extension Household {
+    public enum Columns: String, ColumnExpression {
         case id
         case name
         case createdAt = "created_at"

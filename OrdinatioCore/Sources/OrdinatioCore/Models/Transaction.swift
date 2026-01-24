@@ -42,8 +42,8 @@ public struct Transaction: Codable, FetchableRecord, PersistableRecord, Identifi
     }
 }
 
-public extension Transaction {
-    enum Columns: String, ColumnExpression {
+extension Transaction {
+    public enum Columns: String, ColumnExpression {
         case id
         case householdId = "household_id"
         case categoryId = "category_id"

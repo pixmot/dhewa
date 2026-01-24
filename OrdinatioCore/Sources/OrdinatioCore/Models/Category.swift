@@ -33,8 +33,8 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
     }
 }
 
-public extension Category {
-    enum Columns: String, ColumnExpression {
+extension Category {
+    public enum Columns: String, ColumnExpression {
         case id
         case householdId = "household_id"
         case name

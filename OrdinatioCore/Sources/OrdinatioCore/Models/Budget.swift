@@ -59,8 +59,8 @@ public struct Budget: Codable, FetchableRecord, PersistableRecord, Identifiable,
     }
 }
 
-public extension Budget {
-    enum Columns: String, ColumnExpression {
+extension Budget {
+    public enum Columns: String, ColumnExpression {
         case id
         case householdId = "household_id"
         case isOverall = "is_overall"
@@ -75,8 +75,8 @@ public extension Budget {
     }
 }
 
-public extension Budget {
-    var timeFrame: BudgetTimeFrame {
+extension Budget {
+    public var timeFrame: BudgetTimeFrame {
         BudgetTimeFrame(rawValue: timeFrameRaw) ?? .month
     }
 }

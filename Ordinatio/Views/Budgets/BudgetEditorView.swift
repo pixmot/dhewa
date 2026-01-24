@@ -130,25 +130,25 @@ struct BudgetComposerView: View {
     }
 }
 
-private extension BudgetComposerView {
-    var showBackButton: Bool {
+extension BudgetComposerView {
+    fileprivate var showBackButton: Bool {
         progress > initialProgress
     }
 
-    var progressStepCount: Int {
+    fileprivate var progressStepCount: Int {
         max(6 - initialProgress, 1)
     }
 
-    var progressStepIndex: Int {
+    fileprivate var progressStepIndex: Int {
         let step = max(progress - initialProgress + 1, 1)
         return min(step, progressStepCount)
     }
 
-    var currencyCode: String {
+    fileprivate var currencyCode: String {
         defaultCurrencyCode.uppercased()
     }
 
-    var timeFrameString: String {
+    fileprivate var timeFrameString: String {
         switch budgetTimeFrame {
         case .day: return "day"
         case .week: return "week"
@@ -157,7 +157,7 @@ private extension BudgetComposerView {
         }
     }
 
-    var instructions: [InstructionHeadings] {
+    fileprivate var instructions: [InstructionHeadings] {
         [
             InstructionHeadings(
                 title: "Indicate budget type",
@@ -183,7 +183,7 @@ private extension BudgetComposerView {
         ]
     }
 
-    var availableCategoryOptions: [OrdinatioCore.Category] {
+    fileprivate var availableCategoryOptions: [OrdinatioCore.Category] {
         categories.filter { category in
             guard !existingCategoryBudgetIds.contains(category.id) else {
                 return category.id == selectedCategoryId
@@ -193,8 +193,8 @@ private extension BudgetComposerView {
     }
 }
 
-private extension BudgetComposerView {
-    var topBar: some View {
+extension BudgetComposerView {
+    fileprivate var topBar: some View {
         HStack {
             Button {
                 if showBackButton {
@@ -246,7 +246,7 @@ private extension BudgetComposerView {
         .animation(.easeInOut, value: showBackButton)
     }
 
-    var instructionsHeader: some View {
+    fileprivate var instructionsHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
                 Text(instructions[progress - 1].title)
@@ -265,7 +265,7 @@ private extension BudgetComposerView {
     }
 
     @ViewBuilder
-    var stageContent: some View {
+    fileprivate var stageContent: some View {
         if progress == 1 {
             typeStage
         } else if progress == 2 {
@@ -280,8 +280,8 @@ private extension BudgetComposerView {
     }
 }
 
-private extension BudgetComposerView {
-    var typeStage: some View {
+extension BudgetComposerView {
+    fileprivate var typeStage: some View {
         VStack(spacing: 16) {
             BudgetTypeBlock(
                 title: "Overall Budget",
@@ -312,7 +312,7 @@ private extension BudgetComposerView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    var categoryStage: some View {
+    fileprivate var categoryStage: some View {
         let emptyState: (icon: String, message: String)? = {
             if availableCategoryOptions.isEmpty {
                 return (icon: "tray.full.fill", message: "No remaining\ncategories.")
@@ -367,7 +367,7 @@ private extension BudgetComposerView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    var categoryAddButton: some View {
+    fileprivate var categoryAddButton: some View {
         Button {
             showingCategoryCreator = true
         } label: {
@@ -382,7 +382,7 @@ private extension BudgetComposerView {
         .accessibilityLabel("Create Category")
     }
 
-    var timeFrameStage: some View {
+    fileprivate var timeFrameStage: some View {
         VStack {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(BudgetTimeFrame.allCases, id: \.self) { frame in
@@ -402,7 +402,7 @@ private extension BudgetComposerView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    var startDateStage: some View {
+    fileprivate var startDateStage: some View {
         VStack {
             switch budgetTimeFrame {
             case .day:
@@ -469,7 +469,7 @@ private extension BudgetComposerView {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    var amountStage: some View {
+    fileprivate var amountStage: some View {
         VStack(spacing: 10) {
             BudgetNumberPadTextView(amountMinor: amountMinor, currencyCode: currencyCode)
 
@@ -494,13 +494,13 @@ private extension BudgetComposerView {
     }
 }
 
-private extension BudgetComposerView {
-    func playSensoryFeedback(_ feedback: SensoryFeedback) {
+extension BudgetComposerView {
+    fileprivate func playSensoryFeedback(_ feedback: SensoryFeedback) {
         pendingSensoryFeedback = feedback
         sensoryFeedbackTrigger += 1
     }
 
-    var continueButton: some View {
+    fileprivate var continueButton: some View {
         let missingCategory = progress == 2 && selectedCategoryId == nil
 
         return Button {
@@ -536,30 +536,30 @@ private extension BudgetComposerView {
     }
 }
 
-private extension BudgetComposerView {
-    static let ordinalFormatter: NumberFormatter = {
+extension BudgetComposerView {
+    fileprivate static let ordinalFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .ordinal
         formatter.locale = .current
         return formatter
     }()
 
-    var canSubmitAmount: Bool {
+    fileprivate var canSubmitAmount: Bool {
         amountMinor > 0 && (!categoryBudget || selectedCategoryId != nil)
     }
 
-    var oneYearAgo: Date {
+    fileprivate var oneYearAgo: Date {
         Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()
     }
 
-    var weekdayOptions: [(label: String, value: Int)] {
+    fileprivate var weekdayOptions: [(label: String, value: Int)] {
         let names = Calendar.current.weekdaySymbols
         return names.enumerated().map { idx, label in
             (label: label, value: idx + 1)
         }
     }
 
-    func timeFrameTitle(_ frame: BudgetTimeFrame) -> String {
+    fileprivate func timeFrameTitle(_ frame: BudgetTimeFrame) -> String {
         switch frame {
         case .day: return "Day"
         case .week: return "Week"
@@ -568,14 +568,14 @@ private extension BudgetComposerView {
         }
     }
 
-    func monthStartLabel(_ day: Int) -> String {
+    fileprivate func monthStartLabel(_ day: Int) -> String {
         if day == 1 { return "Start of month" }
         let ordinal = (Self.ordinalFormatter.string(from: day as NSNumber) ?? "\(day)")
             .replacingOccurrences(of: ".", with: "")
         return "\(ordinal) of month"
     }
 
-    func amountPerDayString() -> String {
+    fileprivate func amountPerDayString() -> String {
         let decimal = MoneyFormat.decimal(fromMinorUnits: amountMinor, currencyCode: currencyCode)
         let divisor: Decimal
 
@@ -595,7 +595,7 @@ private extension BudgetComposerView {
         return "~\(formatted) /day"
     }
 
-    func advance() {
+    fileprivate func advance() {
         if progress >= 5 { return }
 
         if progress == 1 {
@@ -607,7 +607,7 @@ private extension BudgetComposerView {
         }
     }
 
-    func back() {
+    fileprivate func back() {
         if progress == 3 && !categoryBudget {
             progress -= 2
         } else if progress == 5 && budgetTimeFrame == .day {
@@ -617,7 +617,7 @@ private extension BudgetComposerView {
         }
     }
 
-    func submit() {
+    fileprivate func submit() {
         if amountMinor == 0 {
             toastMessage = "Missing Amount"
             showToast = true
@@ -650,7 +650,7 @@ private extension BudgetComposerView {
         dismiss()
     }
 
-    func computedStartDate(referenceDate: Date = Date()) -> Date {
+    fileprivate func computedStartDate(referenceDate: Date = Date()) -> Date {
         let calendar = Calendar.current
         let reference = calendar.startOfDay(for: referenceDate)
 
@@ -694,7 +694,7 @@ private extension BudgetComposerView {
         }
     }
 
-    func createCategory(name: String) {
+    fileprivate func createCategory(name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
