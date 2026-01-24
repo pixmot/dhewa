@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    var selectedCurrencyCode: String
     var onContinue: (String) -> Void
 
     enum Step {
@@ -14,7 +13,6 @@ struct OnboardingView: View {
     @State private var searchText = ""
 
     init(selectedCurrencyCode: String, onContinue: @escaping (String) -> Void) {
-        self.selectedCurrencyCode = selectedCurrencyCode
         self.onContinue = onContinue
         _currencyCode = State(initialValue: selectedCurrencyCode)
     }
@@ -25,25 +23,37 @@ struct OnboardingView: View {
         let subtitle: String
     }
 
-    private var features: [Feature] {
-        [
-            Feature(
-                symbolName: "bolt.fill",
-                title: "Fast by default",
-                subtitle: "Designed to feel instant for everyday entry."
-            ),
-            Feature(
-                symbolName: "lock.fill",
-                title: "Offline-first",
-                subtitle: "Your data stays on-device and works without a network."
-            ),
-            Feature(
-                symbolName: "chart.bar.xaxis",
-                title: "Clarity over clutter",
-                subtitle: "Insights and budgets that are simple, readable, and useful."
-            ),
-        ]
-    }
+    private static let features: [Feature] = [
+        Feature(
+            symbolName: "bolt.fill",
+            title: "Fast by default",
+            subtitle: "Designed to feel instant for everyday entry."
+        ),
+        Feature(
+            symbolName: "lock.fill",
+            title: "Offline-first",
+            subtitle: "Your data stays on-device and works without a network."
+        ),
+        Feature(
+            symbolName: "chart.bar.xaxis",
+            title: "Clarity over clutter",
+            subtitle: "Insights and budgets that are simple, readable, and useful."
+        ),
+    ]
+
+    private static let currencySymbolCache: [String: String] = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .current
+
+        var cache: [String: String] = [:]
+        for code in Locale.commonISOCurrencyCodes {
+            let upper = code.uppercased()
+            formatter.currencyCode = upper
+            cache[upper] = formatter.currencySymbol ?? upper
+        }
+        return cache
+    }()
 
     private var currencyCodes: [String] {
         let all = Locale.commonISOCurrencyCodes
@@ -56,12 +66,10 @@ struct OnboardingView: View {
     }
 
     private func currencyTitle(_ code: String) -> String {
-        let name = Locale.current.localizedString(forCurrencyCode: code) ?? code
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
-        let symbol = formatter.currencySymbol ?? code
-        return "\(code) — \(name) (\(symbol))"
+        let upper = code.uppercased()
+        let name = Locale.current.localizedString(forCurrencyCode: upper) ?? upper
+        let symbol = Self.currencySymbolCache[upper] ?? upper
+        return "\(upper) — \(name) (\(symbol))"
     }
 
     var body: some View {
@@ -107,7 +115,7 @@ struct OnboardingView: View {
             .padding(.horizontal, 10)
 
             VStack(alignment: .leading, spacing: 14) {
-                ForEach(features, id: \.self) { feature in
+                ForEach(Self.features, id: \.self) { feature in
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: feature.symbolName)
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
