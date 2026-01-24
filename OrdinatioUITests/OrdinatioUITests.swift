@@ -47,6 +47,14 @@ final class OrdinatioUITests: XCTestCase {
     func testAddAndEditTransactionFlow() throws {
         let app = XCUIApplication()
         app.launchArguments.append("--uitesting")
+        app.launchArguments += [
+            "-AppleLanguages",
+            "(en)",
+            "-AppleLocale",
+            "en_US_POSIX",
+            "-AppleTimeZone",
+            "UTC",
+        ]
         app.launch()
 
         let logNavBar = app.navigationBars["Log"]
