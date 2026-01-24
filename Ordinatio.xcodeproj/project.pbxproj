@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */; };
+		11A3B032875A4496917E5B6F /* BudgetComposerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C86E03612AFC4BA881F98481 /* BudgetComposerModel.swift */; };
 		152950502DBF44A78725D68E /* OrdinatioLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8900C7BA2841C4B034470F /* OrdinatioLog.swift */; };
 		1E7559FF2FF663F910C8FE9C /* OrdinatioUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */; };
 		2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */; };
@@ -31,6 +32,7 @@
 		A01DD4675F6B12C0C077CA66 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 517963F4AAC521C0D9F1868C /* RootView.swift */; };
 		A11DEB7360BEBBA321401336 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560723CAD7438BC7547B10B7 /* AppState.swift */; };
 		A97FC71FCF5241029948837B /* TransactionEditorComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5700933E324580B5FECA16 /* TransactionEditorComponents.swift */; };
+		A64900FFEB47419ABAEB62FC /* BudgetComposerComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F7D4C42472F4533B71FE848 /* BudgetComposerComponents.swift */; };
 		B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */; };
 		B97BE05BC6EED2FCEC2C2FF3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
 		D7BCDA2CB65CD1F11EF01317 /* OrdinatioCoreExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */; };
@@ -83,6 +85,7 @@
 		BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreferencesKeys.swift; path = PreferencesKeys.swift; sourceTree = "<group>"; };
 		BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoryEditorView.swift; path = Ordinatio/Views/Categories/CategoryEditorView.swift; sourceTree = "<group>"; };
 		BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C86E03612AFC4BA881F98481 /* BudgetComposerModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetComposerModel.swift; path = Ordinatio/Views/Budgets/BudgetComposerModel.swift; sourceTree = "<group>"; };
 		C2EBDB41424318B907B613E9 /* OrdinatioTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTests.swift; path = OrdinatioTests/OrdinatioTests.swift; sourceTree = "<group>"; };
 		DCE7EFE3584145D8B9B5AB80 /* TransactionEditorModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionEditorModel.swift; path = Ordinatio/Views/Transactions/TransactionEditorModel.swift; sourceTree = "<group>"; };
 		DFD8031083ADDB4E09E35EF4 /* Ordinatio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ordinatio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -90,6 +93,7 @@
 		F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioCoreExtensions.swift; path = OrdinatioCoreExtensions.swift; sourceTree = "<group>"; };
 		F855B598B0D962344637ADD4 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = Info.plist; path = Ordinatio/Info.plist; sourceTree = "<group>"; };
 		FE612FBF443BDBDDAD4939E0 /* OnboardingView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OnboardingView.swift; path = Ordinatio/Views/OnboardingView.swift; sourceTree = "<group>"; };
+		9F7D4C42472F4533B71FE848 /* BudgetComposerComponents.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetComposerComponents.swift; path = Ordinatio/Views/Budgets/BudgetComposerComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -195,6 +199,8 @@
 				132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */,
 				506974675FE24D4991A4E7D7 /* OrdinatioIconTile.swift */,
 				4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */,
+				C86E03612AFC4BA881F98481 /* BudgetComposerModel.swift */,
+				9F7D4C42472F4533B71FE848 /* BudgetComposerComponents.swift */,
 				3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */,
 				BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */,
 				59DA68FFD3FA301F80EE5BD3 /* MainTabView.swift */,
@@ -355,6 +361,8 @@
 				EA615A4E82E74F0BAFCA2C21 /* OrdinatioIconTile.swift in Sources */,
 				53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */,
 				55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */,
+				11A3B032875A4496917E5B6F /* BudgetComposerModel.swift in Sources */,
+				A64900FFEB47419ABAEB62FC /* BudgetComposerComponents.swift in Sources */,
 				01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */,
 				B457A70CD78ED5677B981C41 /* CategoryEditorView.swift in Sources */,
 				5757CFC78BC53A4328A9569A /* MainTabView.swift in Sources */,
