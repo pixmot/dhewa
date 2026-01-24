@@ -1,3 +1,4 @@
+import Observation
 import OrdinatioCore
 import SwiftUI
 
@@ -16,40 +17,71 @@ private struct InstructionHeadings {
     let subtitle: String
 }
 
-struct BudgetComposerView: View {
-    let route: BudgetComposerRoute
-    let db: DatabaseClient
-    let householdId: String
-    @State private var categories: [OrdinatioCore.Category]
+@MainActor
+@Observable
+final class BudgetComposerModel {
+    var categories: [OrdinatioCore.Category]
     let existingCategoryBudgetIds: Set<String>
     let defaultCurrencyCode: String
-    var onSave: (BudgetDraft) -> Void
+
+    var progress: Int
+    let initialProgress: Int
+
+    var categoryBudget: Bool
+    var selectedCategoryId: String?
+
+    var budgetTimeFrame: BudgetTimeFrame
+    var chosenDayWeek: Int
+    var chosenDayMonth: Int
+    var chosenDayYear: Date
+
+    var amountMinor: Int64
+
+    var showToast = false
+    var toastMessage = "Missing Category"
+    var showingCategoryCreator = false
+
+    var sensoryFeedbackTrigger = 0
+    var pendingSensoryFeedback: SensoryFeedback?
+
+    init(
+        route: BudgetComposerRoute,
+        categories: [OrdinatioCore.Category],
+        existingCategoryBudgetIds: Set<String>,
+        defaultCurrencyCode: String
+    ) {
+        self.categories = categories
+        self.existingCategoryBudgetIds = existingCategoryBudgetIds
+        self.defaultCurrencyCode = defaultCurrencyCode
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        let initialProgress = route.overallExists ? 2 : 1
+        self.initialProgress = initialProgress
+        self.progress = initialProgress
+        self.categoryBudget = route.overallExists ? true : false
+        self.selectedCategoryId = nil
+        self.budgetTimeFrame = .week
+        self.chosenDayWeek = calendar.component(.weekday, from: today)
+        self.chosenDayMonth = 1
+        self.chosenDayYear = today
+        self.amountMinor = 0
+    }
+}
+
+struct BudgetComposerView: View {
+    let db: DatabaseClient
+    let householdId: String
+    let onSave: (BudgetDraft) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
     @Namespace private var animation
 
-    @State private var progress: Int
-    private let initialProgress: Int
-
-    @State private var categoryBudget: Bool
-    @State private var selectedCategoryId: String?
-
-    @State private var budgetTimeFrame: BudgetTimeFrame
-    @State private var chosenDayWeek: Int
-    @State private var chosenDayMonth: Int
-    @State private var chosenDayYear: Date
-
-    @State private var amountMinor: Int64
-
-    @State private var showToast = false
-    @State private var toastMessage = "Missing Category"
+    @State private var model: BudgetComposerModel
     @State private var toastDismissTask: Task<Void, Never>?
-    @State private var showingCategoryCreator = false
-
-    @State private var sensoryFeedbackTrigger = 0
-    @State private var pendingSensoryFeedback: SensoryFeedback?
 
     init(
         route: BudgetComposerRoute,
@@ -60,56 +92,48 @@ struct BudgetComposerView: View {
         defaultCurrencyCode: String,
         onSave: @escaping (BudgetDraft) -> Void
     ) {
-        self.route = route
         self.db = db
         self.householdId = householdId
-        _categories = State(initialValue: categories)
-        self.existingCategoryBudgetIds = existingCategoryBudgetIds
-        self.defaultCurrencyCode = defaultCurrencyCode
         self.onSave = onSave
-
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        let initialProgress = route.overallExists ? 2 : 1
-        self.initialProgress = initialProgress
-        _progress = State(initialValue: initialProgress)
-        _categoryBudget = State(initialValue: route.overallExists ? true : false)
-        _selectedCategoryId = State(initialValue: nil)
-        _budgetTimeFrame = State(initialValue: .week)
-        _chosenDayWeek = State(initialValue: calendar.component(.weekday, from: today))
-        _chosenDayMonth = State(initialValue: 1)
-        _chosenDayYear = State(initialValue: today)
-        _amountMinor = State(initialValue: 0)
+        _model = State(
+            initialValue: BudgetComposerModel(
+                route: route,
+                categories: categories,
+                existingCategoryBudgetIds: existingCategoryBudgetIds,
+                defaultCurrencyCode: defaultCurrencyCode
+            )
+        )
     }
 
     var body: some View {
+        @Bindable var model = model
+
         VStack(spacing: 0) {
             topBar
 
             instructionsHeader
-                .frame(height: progress == 5 ? 130 : 170, alignment: .top)
+                .frame(height: model.progress == 5 ? 130 : 170, alignment: .top)
 
             stageContent
 
-            if progress < 5 {
+            if model.progress < 5 {
                 continueButton
             }
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(OrdinatioColor.background)
-        .sensoryFeedback(trigger: sensoryFeedbackTrigger) {
-            pendingSensoryFeedback
+        .sensoryFeedback(trigger: model.sensoryFeedbackTrigger) {
+            model.pendingSensoryFeedback
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
-        .sheet(isPresented: $showingCategoryCreator) {
+        .sheet(isPresented: $model.showingCategoryCreator) {
             CategoryEditorView(mode: .create) { name in
                 createCategory(name: name)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: showToast)
-        .onChange(of: showToast) { newValue in
+        .animation(.easeOut(duration: 0.2), value: model.showToast)
+        .onChange(of: model.showToast) { _, newValue in
             toastDismissTask?.cancel()
             guard newValue else { return }
 
@@ -121,7 +145,7 @@ struct BudgetComposerView: View {
                     return
                 }
 
-                showToast = false
+                model.showToast = false
             }
         }
         .onDisappear {
@@ -132,24 +156,24 @@ struct BudgetComposerView: View {
 
 extension BudgetComposerView {
     fileprivate var showBackButton: Bool {
-        progress > initialProgress
+        model.progress > model.initialProgress
     }
 
     fileprivate var progressStepCount: Int {
-        max(6 - initialProgress, 1)
+        max(6 - model.initialProgress, 1)
     }
 
     fileprivate var progressStepIndex: Int {
-        let step = max(progress - initialProgress + 1, 1)
+        let step = max(model.progress - model.initialProgress + 1, 1)
         return min(step, progressStepCount)
     }
 
     fileprivate var currencyCode: String {
-        defaultCurrencyCode.uppercased()
+        model.defaultCurrencyCode.uppercased()
     }
 
     fileprivate var timeFrameString: String {
-        switch budgetTimeFrame {
+        switch model.budgetTimeFrame {
         case .day: return "day"
         case .week: return "week"
         case .month: return "month"
@@ -184,9 +208,9 @@ extension BudgetComposerView {
     }
 
     fileprivate var availableCategoryOptions: [OrdinatioCore.Category] {
-        categories.filter { category in
-            guard !existingCategoryBudgetIds.contains(category.id) else {
-                return category.id == selectedCategoryId
+        model.categories.filter { category in
+            guard !model.existingCategoryBudgetIds.contains(category.id) else {
+                return category.id == model.selectedCategoryId
             }
             return true
         }
@@ -224,13 +248,13 @@ extension BudgetComposerView {
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxWidth: .infinity, alignment: .leading)
         .overlay {
-            if showToast {
+            if model.showToast {
                 HStack(spacing: 6.5) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(.subheadline, design: .rounded).weight(.semibold))
                         .foregroundStyle(OrdinatioColor.expense)
 
-                    Text(toastMessage)
+                    Text(model.toastMessage)
                         .font(.system(.callout, design: .rounded).weight(.semibold))
                         .foregroundStyle(OrdinatioColor.expense)
                 }
@@ -249,7 +273,7 @@ extension BudgetComposerView {
     fileprivate var instructionsHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Text(instructions[progress - 1].title)
+                Text(instructions[model.progress - 1].title)
                     .foregroundStyle(OrdinatioColor.textPrimary)
                     .font(.system(.title2, design: .rounded).weight(.semibold))
 
@@ -257,7 +281,7 @@ extension BudgetComposerView {
             }
             .frame(maxWidth: .infinity)
 
-            Text(instructions[progress - 1].subtitle)
+            Text(instructions[model.progress - 1].subtitle)
                 .foregroundStyle(OrdinatioColor.textSecondary)
                 .font(.system(.body, design: .rounded).weight(.medium))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -266,15 +290,15 @@ extension BudgetComposerView {
 
     @ViewBuilder
     fileprivate var stageContent: some View {
-        if progress == 1 {
+        if model.progress == 1 {
             typeStage
-        } else if progress == 2 {
+        } else if model.progress == 2 {
             categoryStage
-        } else if progress == 3 {
+        } else if model.progress == 3 {
             timeFrameStage
-        } else if progress == 4 {
+        } else if model.progress == 4 {
             startDateStage
-        } else if progress == 5 {
+        } else if model.progress == 5 {
             amountStage
         }
     }
@@ -288,10 +312,10 @@ extension BudgetComposerView {
                 subtitle: "One limit across all spending.",
                 symbol: "chart.pie.fill",
                 accent: OrdinatioColor.actionBlue,
-                selected: !categoryBudget
+                selected: !model.categoryBudget
             ) {
                 withAnimation(.easeIn(duration: 0.15)) {
-                    categoryBudget = false
+                    model.categoryBudget = false
                 }
             }
 
@@ -300,10 +324,10 @@ extension BudgetComposerView {
                 subtitle: "A limit for one category.",
                 symbol: "square.grid.2x2.fill",
                 accent: OrdinatioColor.actionOrange,
-                selected: categoryBudget
+                selected: model.categoryBudget
             ) {
                 withAnimation(.easeIn(duration: 0.15)) {
-                    categoryBudget = true
+                    model.categoryBudget = true
                 }
             }
 
@@ -342,13 +366,13 @@ extension BudgetComposerView {
                         ForEach(availableCategoryOptions) { category in
                             BudgetCategoryChip(
                                 category: category,
-                                selected: selectedCategoryId == category.id,
-                                dimmed: selectedCategoryId != nil && selectedCategoryId != category.id
+                                selected: model.selectedCategoryId == category.id,
+                                dimmed: model.selectedCategoryId != nil && model.selectedCategoryId != category.id
                             ) {
-                                if selectedCategoryId == category.id {
-                                    selectedCategoryId = nil
+                                if model.selectedCategoryId == category.id {
+                                    model.selectedCategoryId = nil
                                 } else {
-                                    selectedCategoryId = category.id
+                                    model.selectedCategoryId = category.id
                                 }
                             }
                         }
@@ -369,7 +393,7 @@ extension BudgetComposerView {
 
     fileprivate var categoryAddButton: some View {
         Button {
-            showingCategoryCreator = true
+            model.showingCategoryCreator = true
         } label: {
             Label("Create Category", systemImage: "plus")
                 .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -387,10 +411,10 @@ extension BudgetComposerView {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(BudgetTimeFrame.allCases, id: \.self) { frame in
                     BudgetTypeRow(
-                        title: timeFrameTitle(frame), selected: budgetTimeFrame == frame, animation: animation
+                        title: timeFrameTitle(frame), selected: model.budgetTimeFrame == frame, animation: animation
                     ) {
                         withAnimation(.easeIn(duration: 0.15)) {
-                            budgetTimeFrame = frame
+                            model.budgetTimeFrame = frame
                         }
                     }
                 }
@@ -403,8 +427,10 @@ extension BudgetComposerView {
     }
 
     fileprivate var startDateStage: some View {
-        VStack {
-            switch budgetTimeFrame {
+        @Bindable var model = model
+
+        return VStack {
+            switch model.budgetTimeFrame {
             case .day:
                 EmptyView()
             case .week:
@@ -413,17 +439,19 @@ extension BudgetComposerView {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(weekdayOptions, id: \.value) { option in
                                 BudgetTypeRow(
-                                    title: option.label, selected: chosenDayWeek == option.value, animation: animation
+                                    title: option.label,
+                                    selected: model.chosenDayWeek == option.value,
+                                    animation: animation
                                 ) {
                                     withAnimation(.easeIn(duration: 0.15)) {
-                                        chosenDayWeek = option.value
+                                        model.chosenDayWeek = option.value
                                     }
                                 }
                                 .id(option.value)
                             }
                         }
                         .onAppear {
-                            value.scrollTo(chosenDayWeek)
+                            value.scrollTo(model.chosenDayWeek)
                         }
                     }
                 }
@@ -435,17 +463,19 @@ extension BudgetComposerView {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(1..<29) { day in
                                 BudgetTypeRow(
-                                    title: monthStartLabel(day), selected: chosenDayMonth == day, animation: animation
+                                    title: monthStartLabel(day),
+                                    selected: model.chosenDayMonth == day,
+                                    animation: animation
                                 ) {
                                     withAnimation(.easeIn(duration: 0.15)) {
-                                        chosenDayMonth = day
+                                        model.chosenDayMonth = day
                                     }
                                 }
                                 .id(day)
                             }
                         }
                         .onAppear {
-                            value.scrollTo(chosenDayMonth)
+                            value.scrollTo(model.chosenDayMonth)
                         }
                     }
                 }
@@ -454,7 +484,7 @@ extension BudgetComposerView {
             case .year:
                 DatePicker(
                     "Date",
-                    selection: $chosenDayYear,
+                    selection: $model.chosenDayYear,
                     in: oneYearAgo...Date(),
                     displayedComponents: .date
                 )
@@ -470,10 +500,12 @@ extension BudgetComposerView {
     }
 
     fileprivate var amountStage: some View {
-        VStack(spacing: 10) {
-            BudgetNumberPadTextView(amountMinor: amountMinor, currencyCode: currencyCode)
+        @Bindable var model = model
 
-            if budgetTimeFrame != .day && amountMinor > 0 {
+        return VStack(spacing: 10) {
+            BudgetNumberPadTextView(amountMinor: model.amountMinor, currencyCode: currencyCode)
+
+            if model.budgetTimeFrame != .day && model.amountMinor > 0 {
                 Text(amountPerDayString())
                     .font(.system(.subheadline, design: .rounded).weight(.semibold))
                     .foregroundStyle(OrdinatioColor.textSecondary)
@@ -485,7 +517,7 @@ extension BudgetComposerView {
             Spacer()
 
             BudgetNumberPad(
-                amountMinor: $amountMinor,
+                amountMinor: $model.amountMinor,
                 canSubmit: canSubmitAmount,
                 onSubmit: submit
             )
@@ -496,17 +528,17 @@ extension BudgetComposerView {
 
 extension BudgetComposerView {
     fileprivate func playSensoryFeedback(_ feedback: SensoryFeedback) {
-        pendingSensoryFeedback = feedback
-        sensoryFeedbackTrigger += 1
+        model.pendingSensoryFeedback = feedback
+        model.sensoryFeedbackTrigger += 1
     }
 
     fileprivate var continueButton: some View {
-        let missingCategory = progress == 2 && selectedCategoryId == nil
+        let missingCategory = model.progress == 2 && model.selectedCategoryId == nil
 
         return Button {
             if missingCategory {
-                toastMessage = "Missing Category"
-                showToast = true
+                model.toastMessage = "Missing Category"
+                model.showToast = true
                 playSensoryFeedback(.error)
                 return
             }
@@ -545,7 +577,7 @@ extension BudgetComposerView {
     }()
 
     fileprivate var canSubmitAmount: Bool {
-        amountMinor > 0 && (!categoryBudget || selectedCategoryId != nil)
+        model.amountMinor > 0 && (!model.categoryBudget || model.selectedCategoryId != nil)
     }
 
     fileprivate var oneYearAgo: Date {
@@ -576,10 +608,10 @@ extension BudgetComposerView {
     }
 
     fileprivate func amountPerDayString() -> String {
-        let decimal = MoneyFormat.decimal(fromMinorUnits: amountMinor, currencyCode: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: model.amountMinor, currencyCode: currencyCode)
         let divisor: Decimal
 
-        switch budgetTimeFrame {
+        switch model.budgetTimeFrame {
         case .week: divisor = 7
         case .month: divisor = 30
         case .year: divisor = 365
@@ -596,38 +628,38 @@ extension BudgetComposerView {
     }
 
     fileprivate func advance() {
-        if progress >= 5 { return }
+        if model.progress >= 5 { return }
 
-        if progress == 1 {
-            progress += categoryBudget ? 1 : 2
-        } else if progress == 3 {
-            progress += budgetTimeFrame == .day ? 2 : 1
+        if model.progress == 1 {
+            model.progress += model.categoryBudget ? 1 : 2
+        } else if model.progress == 3 {
+            model.progress += model.budgetTimeFrame == .day ? 2 : 1
         } else {
-            progress += 1
+            model.progress += 1
         }
     }
 
     fileprivate func back() {
-        if progress == 3 && !categoryBudget {
-            progress -= 2
-        } else if progress == 5 && budgetTimeFrame == .day {
-            progress -= 2
-        } else if progress > initialProgress {
-            progress -= 1
+        if model.progress == 3 && !model.categoryBudget {
+            model.progress -= 2
+        } else if model.progress == 5 && model.budgetTimeFrame == .day {
+            model.progress -= 2
+        } else if model.progress > model.initialProgress {
+            model.progress -= 1
         }
     }
 
     fileprivate func submit() {
-        if amountMinor == 0 {
-            toastMessage = "Missing Amount"
-            showToast = true
+        if model.amountMinor == 0 {
+            model.toastMessage = "Missing Amount"
+            model.showToast = true
             playSensoryFeedback(.error)
             return
         }
 
-        if categoryBudget && selectedCategoryId == nil {
-            toastMessage = "Missing Category"
-            showToast = true
+        if model.categoryBudget && model.selectedCategoryId == nil {
+            model.toastMessage = "Missing Category"
+            model.showToast = true
             playSensoryFeedback(.error)
             return
         }
@@ -639,12 +671,12 @@ extension BudgetComposerView {
         onSave(
             BudgetDraft(
                 budgetId: nil,
-                isOverall: !categoryBudget,
-                categoryId: categoryBudget ? selectedCategoryId : nil,
-                timeFrame: budgetTimeFrame,
+                isOverall: !model.categoryBudget,
+                categoryId: model.categoryBudget ? model.selectedCategoryId : nil,
+                timeFrame: model.budgetTimeFrame,
                 startDate: startDate,
                 currencyCode: currencyCode.uppercased(),
-                amountMinor: amountMinor
+                amountMinor: model.amountMinor
             )
         )
         dismiss()
@@ -654,19 +686,19 @@ extension BudgetComposerView {
         let calendar = Calendar.current
         let reference = calendar.startOfDay(for: referenceDate)
 
-        switch budgetTimeFrame {
+        switch model.budgetTimeFrame {
         case .day:
             return reference
         case .week:
             let match = calendar.nextDate(
                 after: reference,
-                matching: DateComponents(weekday: chosenDayWeek),
+                matching: DateComponents(weekday: model.chosenDayWeek),
                 matchingPolicy: .nextTime,
                 direction: .backward
             )
             return calendar.startOfDay(for: match ?? reference)
         case .month:
-            let clampedDay = min(max(chosenDayMonth, 1), 28)
+            let clampedDay = min(max(model.chosenDayMonth, 1), 28)
             let components = calendar.dateComponents([.year, .month], from: reference)
             let year = components.year ?? 1
             let month = components.month ?? 1
@@ -683,8 +715,8 @@ extension BudgetComposerView {
             return calendar.startOfDay(for: prevCandidate)
         case .year:
             let year = calendar.component(.year, from: reference)
-            let month = calendar.component(.month, from: chosenDayYear)
-            let day = min(max(calendar.component(.day, from: chosenDayYear), 1), 28)
+            let month = calendar.component(.month, from: model.chosenDayYear)
+            let day = min(max(calendar.component(.day, from: model.chosenDayYear), 1), 28)
             let candidate = calendar.date(from: DateComponents(year: year, month: month, day: day)) ?? reference
             if candidate <= reference {
                 return calendar.startOfDay(for: candidate)
@@ -701,11 +733,11 @@ extension BudgetComposerView {
         Task { @MainActor in
             do {
                 let created = try await db.createCategory(householdId: householdId, name: trimmed)
-                categories.append(created)
-                categories.sort { $0.sortOrder < $1.sortOrder }
+                model.categories.append(created)
+                model.categories.sort { $0.sortOrder < $1.sortOrder }
             } catch {
-                toastMessage = "Couldn't create category"
-                showToast = true
+                model.toastMessage = "Couldn't create category"
+                model.showToast = true
                 playSensoryFeedback(.error)
             }
         }
