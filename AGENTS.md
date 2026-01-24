@@ -8,6 +8,7 @@
 - Actor hygiene: UI state is `@MainActor`; never block the main actor with DB/file/network or heavy formatting.
 - Dependencies: no singletons; inject dependencies via initializers/Environment; keep OrdinatioCore free of SwiftUI/app types.
 - Concurrency: prefer structured concurrency; avoid `Task.detached` unless required; handle cancellation and avoid task leaks.
+- Concurrency escapes: ban `@unchecked Sendable`, `nonisolated(unsafe)`, and `DispatchQueue.main.async` "fixes" unless there is a written justification.
 - Data access: app uses `DatabaseClient` only; keep GRDB imports/queries confined to OrdinatioCore.
 - Determinism: avoid `Date()`, `Calendar.current`, `Locale.current`, `TimeZone.current` in core logic; inject clock/calendar/locale/time zone and fix them in tests.
 - Query/perf: DB reads specify `ORDER BY`; avoid unbounded `fetchAll` on hot paths; paginate/limit and add indexes when needed.
@@ -20,10 +21,14 @@
 - Localization: avoid hard-coded user-facing strings long-term; avoid string-concatenated UI; add locale-variant tests for formatting/parsing.
 - Accessibility/testing: add `accessibilityLabel` + `accessibilityIdentifier` for interactive/tested UI; support Dynamic Type and Reduce Motion.
 - Quality: keep builds warning-free (especially Swift 6 concurrency/Sendable); no `print`; use `Logger` when needed; add/extend tests for new logic.
+- Tooling: enforce `swift-format` in CI (lint in strict mode); keep diffs small and consistently formatted.
+- Observability: standardize `Logger` categories and use signposts for hot paths; integrate crash reporting when ready; never log sensitive fields.
 - Error handling: no `try!`/`fatalError` in production paths; show user-safe errors; log failures with context and avoid sensitive data in logs.
 - Privacy: treat notes and amounts as sensitive; do not log them; decide and enforce DB file protection and backup policy.
 - Memory: no long-lived tasks without a clear owner; cancel in `deinit`/on disappear; avoid unintended strong `self` captures.
 - Migrations: schema changes are additive and versioned; add migration tests; never rely on "reset DB" to fix production issues.
 - Tests: cover new logic/bugs (esp. money/date parsing and DB queries); keep tests deterministic (fixed locale/time zone/calendar when relevant).
+- Tests (UI): set launch arguments for fixed locale/time zone/calendar; avoid relying on simulator/device settings.
+- Debug vs release: keep debug-only helpers behind `#if DEBUG`; do not ship verbose logging or debug behavior in release builds.
 - CI discipline: treat warnings as errors in CI; keep strict concurrency checks enabled; no warning regressions.
 - GRDB (OrdinatioCore): prefer `ValueObservation/AsyncValueObservation`; avoid `.immediate` unless started on main; keep observation queues serial + cancelable.
