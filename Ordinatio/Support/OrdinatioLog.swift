@@ -10,8 +10,7 @@ enum OrdinatioLog {
 }
 
 #if DEBUG
-enum OrdinatioSignpost {
-    static let signposter = OSSignposter(subsystem: OrdinatioLog.subsystem, category: "performance")
-}
+    enum OrdinatioSignpost {
+        static let signposter = OSSignposter(subsystem: OrdinatioLog.subsystem, category: "performance")
+    }
 #endif
-
