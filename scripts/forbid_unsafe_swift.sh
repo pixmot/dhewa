@@ -8,6 +8,7 @@ declare -a PATTERNS=(
   '@unchecked[[:space:]]+Sendable'
   'nonisolated\\(unsafe\\)'
   'DispatchQueue\\.main\\.async(?!After)'
+  'fatalError\('
 )
 
 for pattern in "${PATTERNS[@]}"; do
@@ -26,4 +27,3 @@ for pattern in "${PATTERNS[@]}"; do
     exit 1
   fi
 done
-
