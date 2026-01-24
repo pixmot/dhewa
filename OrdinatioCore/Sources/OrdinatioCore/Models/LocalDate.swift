@@ -45,16 +45,32 @@ public struct LocalDate: Hashable, Comparable, Codable, Sendable {
         calendar: Calendar = .current,
         timeZone: TimeZone = .current
     ) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.calendar = calendar
-        formatter.timeZone = timeZone
-        formatter.dateStyle = dateStyle
-        formatter.timeStyle = .none
-        return formatter.string(from: date(calendar: calendar, timeZone: timeZone))
+        var style = Date.FormatStyle(date: formatStyle(for: dateStyle), time: .omitted)
+        style.locale = locale
+        style.calendar = calendar
+        style.timeZone = timeZone
+
+        return date(calendar: calendar, timeZone: timeZone).formatted(style)
     }
 
     public static func < (lhs: LocalDate, rhs: LocalDate) -> Bool {
         lhs.yyyymmdd < rhs.yyyymmdd
+    }
+
+    private func formatStyle(for dateStyle: DateFormatter.Style) -> Date.FormatStyle.DateStyle {
+        switch dateStyle {
+        case .none:
+            return .omitted
+        case .short:
+            return .numeric
+        case .medium:
+            return .abbreviated
+        case .long:
+            return .long
+        case .full:
+            return .complete
+        @unknown default:
+            return .abbreviated
+        }
     }
 }
