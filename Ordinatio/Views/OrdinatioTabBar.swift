@@ -5,7 +5,6 @@ enum OrdinatioTab: Hashable {
     case insights
     case add
     case budgets
-    case settings
 
     var title: String {
         switch self {
@@ -13,7 +12,6 @@ enum OrdinatioTab: Hashable {
         case .insights: return "Insights"
         case .add: return "Add"
         case .budgets: return "Budgets"
-        case .settings: return "Settings"
         }
     }
 
@@ -23,7 +21,6 @@ enum OrdinatioTab: Hashable {
         case .insights: return "chart.bar.xaxis"
         case .add: return "plus"
         case .budgets: return "square.grid.2x2"
-        case .settings: return "gearshape"
         }
     }
 }
@@ -40,7 +37,6 @@ struct OrdinatioTabBar: View {
             tabButton(.insights)
             addButton
             tabButton(.budgets)
-            tabButton(.settings)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)

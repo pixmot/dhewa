@@ -39,10 +39,6 @@ struct MainTabView: View {
             )
             .tag(OrdinatioTab.budgets)
             .tabItem { Label(OrdinatioTab.budgets.title, systemImage: OrdinatioTab.budgets.symbolName) }
-
-            SettingsView(database: database, householdId: householdId)
-                .tag(OrdinatioTab.settings)
-                .tabItem { Label(OrdinatioTab.settings.title, systemImage: OrdinatioTab.settings.symbolName) }
         }
         .ordinatioRoundedFontDesign()
     }
