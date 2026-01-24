@@ -11,25 +11,11 @@ struct RootView: View {
     var body: some View {
         Group {
             if let bootErrorMessage {
-                if #available(iOS 17.0, *) {
-                    ContentUnavailableView(
-                        "Unable to start",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(bootErrorMessage)
-                    )
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.system(size: 40, weight: .semibold))
-                            .foregroundStyle(.secondary)
-                        Text("Unable to start")
-                            .font(.title2.weight(.semibold))
-                        Text(bootErrorMessage)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding()
-                }
+                ContentUnavailableView(
+                    "Unable to start",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(bootErrorMessage)
+                )
             } else if hasOnboarded {
                 if activeHouseholdId.isEmpty {
                     ProgressView("Loading…")

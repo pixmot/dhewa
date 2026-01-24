@@ -40,6 +40,6 @@ struct MainTabView: View {
             .tag(OrdinatioTab.budgets)
             .tabItem { Label(OrdinatioTab.budgets.title, systemImage: OrdinatioTab.budgets.symbolName) }
         }
-        .ordinatioRoundedFontDesign()
+        .fontDesign(.rounded)
     }
 }

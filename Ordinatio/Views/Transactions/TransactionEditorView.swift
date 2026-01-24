@@ -560,7 +560,7 @@ struct TransactionEditorView: View {
             }
             .padding(.vertical, 2)
         }
-        .scrollClipDisabledIfAvailable()
+        .scrollClipDisabled()
     }
 
     private var keypad: some View {
@@ -881,13 +881,3 @@ private struct DateTimePickerSheet: View {
     }
 }
 
-private extension View {
-    @ViewBuilder
-    func scrollClipDisabledIfAvailable() -> some View {
-        if #available(iOS 17.0, *) {
-            scrollClipDisabled()
-        } else {
-            self
-        }
-    }
-}

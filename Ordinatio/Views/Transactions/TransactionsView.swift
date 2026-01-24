@@ -81,27 +81,11 @@ struct TransactionsView: View {
                     .listRowBackground(Color.clear)
 
                 if viewModel.sections.isEmpty {
-                    Group {
-                        if #available(iOS 17.0, *) {
-                            ContentUnavailableView(
-                                "No Transactions",
-                                systemImage: "tray",
-                                description: Text("Add your first transaction to get started.")
-                            )
-                        } else {
-                            VStack(spacing: 12) {
-                                Image(systemName: "tray")
-                                    .font(.system(size: 40, weight: .semibold))
-                                    .foregroundStyle(.secondary)
-                                Text("No Transactions")
-                                    .font(.title2.weight(.semibold))
-                                Text("Add your first transaction to get started.")
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding()
-                        }
-                    }
+                    ContentUnavailableView(
+                        "No Transactions",
+                        systemImage: "tray",
+                        description: Text("Add your first transaction to get started.")
+                    )
                     .listRowBackground(Color.clear)
                     .listRowSeparator(.hidden)
                 }

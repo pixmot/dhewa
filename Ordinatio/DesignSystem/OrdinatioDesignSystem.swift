@@ -149,17 +149,6 @@ struct LiquidGlassCapsule: View {
     }
 }
 
-extension View {
-    @ViewBuilder
-    func ordinatioRoundedFontDesign() -> some View {
-        if #available(iOS 16.1, *) {
-            fontDesign(.rounded)
-        } else {
-            self
-        }
-    }
-}
-
 private extension String {
     var ordinatioStableHash: Int {
         unicodeScalars.reduce(0) { partialResult, scalar in
