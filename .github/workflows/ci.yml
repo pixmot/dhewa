@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: swift-format check
+        run: scripts/swift_format_check.sh
+
+      - name: Unsafe pattern check
+        run: scripts/forbid_unsafe_swift.sh
+
+      - name: xcodebuild test
+        env:
+          NSUnbufferedIO: "YES"
+        run: |
+          set -euo pipefail
+
+          DESTINATION="$(
+            python3 - <<'PY'
+          import json, re, subprocess, sys
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"]))
+          runtimes = [k for k in data.get("devices", {}).keys() if "iOS" in k]
+          def version_key(k: str):
+            m = re.search(r"iOS-(\d+)-(\d+)", k)
+            if m:
+              return (int(m.group(1)), int(m.group(2)))
+            m = re.search(r"iOS-(\d+)", k)
+            if m:
+              return (int(m.group(1)), 0)
+            return (0, 0)
+          runtimes = sorted(runtimes, key=version_key, reverse=True)
+          for runtime in runtimes:
+            for device in data["devices"].get(runtime, []):
+              if not device.get("isAvailable"):
+                continue
+              name = device.get("name", "")
+              if name.startswith("iPhone"):
+                udid = device.get("udid")
+                if udid:
+                  print(f"platform=iOS Simulator,id={udid}")
+                  sys.exit(0)
+          print("No available iPhone simulator found", file=sys.stderr)
+          sys.exit(1)
+          PY
+          )"
+
+          xcodebuild \
+            -scheme Ordinatio \
+            -configuration Debug \
+            -destination "$DESTINATION" \
+            test
+
