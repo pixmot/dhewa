@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import OrdinatioCore
 
 struct BudgetDraft: Hashable {
@@ -48,6 +47,9 @@ struct BudgetComposerView: View {
     @State private var toastMessage = "Missing Category"
     @State private var showingCategoryCreator = false
 
+    @State private var sensoryFeedbackTrigger = 0
+    @State private var pendingSensoryFeedback: SensoryFeedback?
+
     init(
         route: BudgetComposerRoute,
         database: AppDatabase,
@@ -68,30 +70,16 @@ struct BudgetComposerView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        switch route {
-        case let .create(overallExists):
-            let initialProgress = overallExists ? 2 : 1
-            self.initialProgress = initialProgress
-            _progress = State(initialValue: initialProgress)
-            _categoryBudget = State(initialValue: overallExists ? true : false)
-            _selectedCategoryId = State(initialValue: nil)
-            _budgetTimeFrame = State(initialValue: .week)
-            _chosenDayWeek = State(initialValue: calendar.component(.weekday, from: today))
-            _chosenDayMonth = State(initialValue: 1)
-            _chosenDayYear = State(initialValue: today)
-            _amountMinor = State(initialValue: 0)
-        case let .edit(snapshot):
-            let budget = snapshot.budget
-            self.initialProgress = 3
-            _progress = State(initialValue: 3)
-            _categoryBudget = State(initialValue: !budget.isOverall)
-            _selectedCategoryId = State(initialValue: budget.categoryId)
-            _budgetTimeFrame = State(initialValue: budget.timeFrame)
-            _chosenDayWeek = State(initialValue: calendar.component(.weekday, from: budget.startDate))
-            _chosenDayMonth = State(initialValue: min(max(calendar.component(.day, from: budget.startDate), 1), 28))
-            _chosenDayYear = State(initialValue: budget.startDate)
-            _amountMinor = State(initialValue: abs(budget.amountMinor))
-        }
+        let initialProgress = route.overallExists ? 2 : 1
+        self.initialProgress = initialProgress
+        _progress = State(initialValue: initialProgress)
+        _categoryBudget = State(initialValue: route.overallExists ? true : false)
+        _selectedCategoryId = State(initialValue: nil)
+        _budgetTimeFrame = State(initialValue: .week)
+        _chosenDayWeek = State(initialValue: calendar.component(.weekday, from: today))
+        _chosenDayMonth = State(initialValue: 1)
+        _chosenDayYear = State(initialValue: today)
+        _amountMinor = State(initialValue: 0)
     }
 
     var body: some View {
@@ -110,6 +98,9 @@ struct BudgetComposerView: View {
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(OrdinatioColor.background)
+        .sensoryFeedback(trigger: sensoryFeedbackTrigger) {
+            pendingSensoryFeedback
+        }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .sheet(isPresented: $showingCategoryCreator) {
             CategoryEditorView(mode: .create) { name in
@@ -128,11 +119,6 @@ struct BudgetComposerView: View {
 }
 
 private extension BudgetComposerView {
-    var editMode: Bool {
-        if case .edit = route { return true }
-        return false
-    }
-
     var showBackButton: Bool {
         progress > initialProgress
     }
@@ -147,12 +133,7 @@ private extension BudgetComposerView {
     }
 
     var currencyCode: String {
-        switch route {
-        case .create:
-            return defaultCurrencyCode.uppercased()
-        case let .edit(snapshot):
-            return snapshot.budget.currencyCode.uppercased()
-        }
+        defaultCurrencyCode.uppercased()
     }
 
     var timeFrameString: String {
@@ -365,39 +346,25 @@ private extension BudgetComposerView {
             Spacer(minLength: 0)
 
             categoryAddButton
-                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.bottom, 16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    @ViewBuilder
     var categoryAddButton: some View {
-        let button = Button {
+        Button {
             showingCategoryCreator = true
         } label: {
-            Text("+ create category")
+            Label("Create Category", systemImage: "plus")
                 .font(.system(.headline, design: .rounded).weight(.semibold))
                 .foregroundStyle(OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 18)
                 .padding(.vertical, 12)
+                .background(LiquidGlassCapsule())
         }
         .buttonStyle(.plain)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .accessibilityLabel("Create Category")
-
-        if #available(iOS 26, *) {
-            button.glassEffect(
-                .regular.tint(OrdinatioColor.surfaceElevated.opacity(0.25)).interactive(),
-                in: .rect(cornerRadius: 18)
-            )
-        } else {
-            button
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(OrdinatioColor.separator.opacity(0.5), lineWidth: 1)
-                )
-        }
     }
 
     var timeFrameStage: some View {
@@ -507,6 +474,11 @@ private extension BudgetComposerView {
 }
 
 private extension BudgetComposerView {
+    func playSensoryFeedback(_ feedback: SensoryFeedback) {
+        pendingSensoryFeedback = feedback
+        sensoryFeedbackTrigger += 1
+    }
+
     var continueButton: some View {
         let missingCategory = progress == 2 && selectedCategoryId == nil
 
@@ -514,11 +486,11 @@ private extension BudgetComposerView {
             if missingCategory {
                 toastMessage = "Missing Category"
                 showToast = true
-                UINotificationFeedbackGenerator().notificationOccurred(.error)
+                playSensoryFeedback(.error)
                 return
             }
 
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            playSensoryFeedback(.impact(weight: .light, intensity: 1))
             withAnimation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.8)) {
                 advance()
             }
@@ -613,7 +585,7 @@ private extension BudgetComposerView {
     }
 
     func back() {
-        if progress == 3 && !categoryBudget && !editMode {
+        if progress == 3 && !categoryBudget {
             progress -= 2
         } else if progress == 5 && budgetTimeFrame == .day {
             progress -= 2
@@ -626,32 +598,24 @@ private extension BudgetComposerView {
         if amountMinor == 0 {
             toastMessage = "Missing Amount"
             showToast = true
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            playSensoryFeedback(.error)
             return
         }
 
         if categoryBudget && selectedCategoryId == nil {
             toastMessage = "Missing Category"
             showToast = true
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            playSensoryFeedback(.error)
             return
         }
 
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        playSensoryFeedback(.impact(weight: .light, intensity: 1))
 
         let startDate = computedStartDate()
 
-        let budgetId: String?
-        switch route {
-        case .create:
-            budgetId = nil
-        case let .edit(snapshot):
-            budgetId = snapshot.budget.id
-        }
-
         onSave(
             BudgetDraft(
-                budgetId: budgetId,
+                budgetId: nil,
                 isOverall: !categoryBudget,
                 categoryId: categoryBudget ? selectedCategoryId : nil,
                 timeFrame: budgetTimeFrame,
@@ -722,7 +686,7 @@ private extension BudgetComposerView {
         } catch {
             toastMessage = "Couldn't create category"
             showToast = true
-            UINotificationFeedbackGenerator().notificationOccurred(.error)
+            playSensoryFeedback(.error)
         }
     }
 }

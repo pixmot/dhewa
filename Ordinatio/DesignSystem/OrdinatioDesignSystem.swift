@@ -115,6 +115,44 @@ enum OrdinatioCategoryVisuals {
     }
 }
 
+/// A pill-shaped, "liquid glass" material background used for primary pill actions.
+struct LiquidGlassCapsule: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        Capsule(style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                Capsule(style: .continuous)
+                    .strokeBorder(
+                        Color.white.opacity(colorScheme == .dark ? 0.18 : 0.55),
+                        lineWidth: 1
+                    )
+            )
+            .overlay(
+                Capsule(style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(colorScheme == .dark ? 0.12 : 0.45),
+                                Color.white.opacity(0.08),
+                                Color.clear,
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .blendMode(.plusLighter)
+            )
+            .shadow(
+                color: Color.black.opacity(colorScheme == .dark ? 0.25 : 0.12),
+                radius: 10,
+                x: 0,
+                y: 6
+            )
+    }
+}
+
 extension View {
     @ViewBuilder
     func ordinatioRoundedFontDesign() -> some View {
