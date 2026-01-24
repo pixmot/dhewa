@@ -38,7 +38,7 @@ struct OrdinatioTabBar: View {
             addButton
             tabButton(.budgets)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, OrdinatioMetric.tabBarHorizontalPadding)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
         .background {
