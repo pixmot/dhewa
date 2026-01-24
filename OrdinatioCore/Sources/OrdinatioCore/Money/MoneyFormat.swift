@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 public enum MoneyParseError: Error, Equatable {
     case empty
@@ -7,32 +8,38 @@ public enum MoneyParseError: Error, Equatable {
 }
 
 public enum MoneyFormat {
+    private static let fractionDigitsCache = OSAllocatedUnfairLock(initialState: [String: Int]())
+
     public static func fractionDigits(for currencyCode: String) -> Int {
+        let code = currencyCode.uppercased()
+
+        if let cached = fractionDigitsCache.withLock({ $0[code] }) {
+            return cached
+        }
+
+        // NumberFormatter is expensive and not thread-safe; compute once per currency and cache the digits only.
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
         formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.currencyCode = currencyCode.uppercased()
-        return formatter.maximumFractionDigits
+        formatter.currencyCode = code
+        let digits = formatter.maximumFractionDigits
+
+        fractionDigitsCache.withLock { state in
+            state[code] = digits
+        }
+        return digits
     }
 
     public static func decimal(fromMinorUnits minorUnits: Int64, currencyCode: String) -> Decimal {
-        let fractionDigits = fractionDigits(for: currencyCode)
-        var divisor = Decimal(1)
-        for _ in 0..<fractionDigits {
-            divisor *= 10
-        }
-        return Decimal(minorUnits) / divisor
+        let digits = fractionDigits(for: currencyCode)
+        return decimal(fromMinorUnits: minorUnits, fractionDigits: digits)
     }
 
     public static func format(minorUnits: Int64, currencyCode: String, locale: Locale = .current) -> String {
-        let decimal = decimal(fromMinorUnits: minorUnits, currencyCode: currencyCode)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.locale = locale
-        formatter.currencyCode = currencyCode.uppercased()
-        formatter.minimumFractionDigits = fractionDigits(for: currencyCode)
-        formatter.maximumFractionDigits = fractionDigits(for: currencyCode)
-        return formatter.string(from: NSDecimalNumber(decimal: decimal)) ?? "\(minorUnits)"
+        let code = currencyCode.uppercased()
+        let digits = fractionDigits(for: code)
+        let decimal = decimal(fromMinorUnits: minorUnits, fractionDigits: digits)
+        return decimal.formatted(.currency(code: code).locale(locale))
     }
 
     public static func parseMinorUnits(
@@ -43,28 +50,28 @@ public enum MoneyFormat {
         let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .failure(.empty) }
 
+        let posix = Locale(identifier: "en_US_POSIX")
         let fractionDigits = fractionDigits(for: currencyCode)
 
-        func parseDecimal(locale: Locale) -> Decimal? {
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.locale = locale
-            formatter.generatesDecimalNumbers = true
-            formatter.isLenient = true
-            return (formatter.number(from: trimmed) as? NSDecimalNumber)?.decimalValue
+        func cleaned(_ input: String, locale: Locale) -> String {
+            var result = input
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: " ", with: "")
+                .replacingOccurrences(of: "\u{00A0}", with: "")
+                .replacingOccurrences(of: "\u{202F}", with: "")
+
+            if let grouping = locale.groupingSeparator, !grouping.isEmpty {
+                result = result.replacingOccurrences(of: grouping, with: "")
+            }
+
+            return result
         }
 
+        let cleanedInput = cleaned(trimmed, locale: locale)
         let decimal =
-            parseDecimal(locale: locale)
-            ?? parseDecimal(locale: Locale(identifier: "en_US_POSIX"))
-            ?? {
-                let normalized = trimmed.replacingOccurrences(of: ",", with: ".")
-                let formatter = NumberFormatter()
-                formatter.numberStyle = .decimal
-                formatter.locale = Locale(identifier: "en_US_POSIX")
-                formatter.generatesDecimalNumbers = true
-                return (formatter.number(from: normalized) as? NSDecimalNumber)?.decimalValue
-            }()
+            Decimal(string: cleanedInput, locale: locale)
+            ?? Decimal(string: cleaned(cleanedInput, locale: posix), locale: posix)
+            ?? Decimal(string: cleanedInput.replacingOccurrences(of: ",", with: "."), locale: posix)
 
         guard var decimal else { return .failure(.invalid) }
 
@@ -87,5 +94,12 @@ public enum MoneyFormat {
         }
         return .success(number.int64Value)
     }
-}
 
+    private static func decimal(fromMinorUnits minorUnits: Int64, fractionDigits: Int) -> Decimal {
+        var divisor = Decimal(1)
+        for _ in 0..<fractionDigits {
+            divisor *= 10
+        }
+        return Decimal(minorUnits) / divisor
+    }
+}
