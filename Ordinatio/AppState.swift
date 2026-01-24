@@ -14,9 +14,4 @@ final class AppState: ObservableObject {
             try SeedData.ensureDefaultHouseholdAndCategories(in: db)
         }
     }
-
-    func resetAllData() throws {
-        try database.resetAllData()
-    }
 }
-
