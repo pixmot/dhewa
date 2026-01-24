@@ -15,6 +15,75 @@ public actor DatabaseClient {
         }
     }
 
+    public func fetchCategories(householdId: String) throws -> [Category] {
+        try database.read { db in
+            try Category
+                .filter(Category.Columns.householdId == householdId)
+                .filter(Category.Columns.deletedAt == nil)
+                .order(Category.Columns.sortOrder.asc)
+                .fetchAll(db)
+        }
+    }
+
+    public func createCategory(householdId: String, name: String) throws -> Category {
+        try database.write { db in
+            try CategoryRepository.createCategory(in: db, householdId: householdId, name: name)
+        }
+    }
+
+    public func updateCategoryName(categoryId: String, name: String) throws {
+        try database.write { db in
+            try CategoryRepository.updateCategoryName(in: db, categoryId: categoryId, name: name)
+        }
+    }
+
+    public func deleteCategory(categoryId: String) throws {
+        try database.write { db in
+            try CategoryRepository.deleteCategory(in: db, categoryId: categoryId)
+        }
+    }
+
+    public func reorderCategories(householdId: String, orderedCategoryIds: [String]) throws {
+        try database.write { db in
+            try CategoryRepository.reorderCategories(in: db, householdId: householdId, orderedCategoryIds: orderedCategoryIds)
+        }
+    }
+
+    public func upsertTransaction(_ transaction: Transaction) throws {
+        try database.write { db in
+            try TransactionRepository.upsertTransaction(in: db, transaction: transaction)
+        }
+    }
+
+    public func deleteTransaction(transactionId: String) throws {
+        try database.write { db in
+            try TransactionRepository.deleteTransaction(in: db, transactionId: transactionId)
+        }
+    }
+
+    public func upsertBudget(
+        householdId: String,
+        isOverall: Bool,
+        categoryId: String?,
+        timeFrame: BudgetTimeFrame,
+        startDate: Date,
+        currencyCode: String,
+        amountMinor: Int64
+    ) throws {
+        try database.write { db in
+            try BudgetRepository.upsertBudget(
+                in: db,
+                householdId: householdId,
+                isOverall: isOverall,
+                categoryId: categoryId,
+                timeFrame: timeFrame,
+                startDate: startDate,
+                currencyCode: currencyCode,
+                amountMinor: amountMinor
+            )
+        }
+    }
+
     public func observeCategories(householdId: String) -> AsyncThrowingStream<[Category], Error> {
         stream(CategoryRepository.observeCategories(householdId: householdId))
     }
