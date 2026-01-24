@@ -39,11 +39,10 @@ public struct YearMonth: Hashable, Comparable, Codable, Sendable {
     }
 
     public func formatted(locale: Locale = .current, calendar: Calendar = .current) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = locale
-        formatter.calendar = calendar
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter.string(from: startDate(calendar: calendar))
+        var style = Date.FormatStyle.dateTime.month(.wide).year()
+        style.locale = locale
+        style.calendar = calendar
+        return startDate(calendar: calendar).formatted(style)
     }
 
     public static func < (lhs: YearMonth, rhs: YearMonth) -> Bool {
