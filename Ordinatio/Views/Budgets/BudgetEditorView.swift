@@ -512,6 +512,7 @@ extension BudgetComposerView {
                 }
         }
         .buttonStyle(BouncyButtonStyle(duration: 0.2, scale: 0.8))
+        .accessibilityIdentifier("BudgetComposerContinue")
     }
 }
 
@@ -690,4 +691,3 @@ extension BudgetComposerView {
         }
     }
 }
-

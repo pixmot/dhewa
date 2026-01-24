@@ -263,6 +263,7 @@ extension BudgetComposerView {
             .minimumScaleFactor(0.5)
             .lineLimit(1)
             .frame(maxWidth: .infinity)
+            .accessibilityIdentifier("BudgetAmountField")
         }
 
         private var amountString: String {
@@ -341,6 +342,7 @@ extension BudgetComposerView {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
             .buttonStyle(NumPadButtonStyle())
+            .accessibilityIdentifier("BudgetKeypadDigit\(digit)")
         }
 
         private func deleteButton(width: CGFloat, height: CGFloat) -> some View {
@@ -356,6 +358,7 @@ extension BudgetComposerView {
             }
             .buttonStyle(NumPadButtonStyle())
             .accessibilityLabel("Backspace")
+            .accessibilityIdentifier("BudgetKeypadBackspace")
         }
 
         private func submitButton(width: CGFloat, height: CGFloat) -> some View {
@@ -372,6 +375,7 @@ extension BudgetComposerView {
             .buttonStyle(NumPadButtonStyle())
             .disabled(!canSubmit)
             .opacity(canSubmit ? 1 : 0.6)
+            .accessibilityIdentifier("BudgetKeypadSubmit")
         }
 
         private func appendDigit(_ digit: Int) {
@@ -455,4 +459,3 @@ extension BudgetComposerView {
         }
     }
 }
-

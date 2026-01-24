@@ -116,6 +116,7 @@ private struct BudgetCreateButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Create Budget")
+        .accessibilityIdentifier("BudgetCreateButton")
     }
 }
 
