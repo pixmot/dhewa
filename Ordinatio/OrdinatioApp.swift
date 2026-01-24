@@ -3,7 +3,8 @@ import SwiftUI
 
 @main
 struct OrdinatioApp: App {
-    @State private var appState: AppState
+    @State private var appState: AppState?
+    @State private var startupErrorMessage: String?
 
     init() {
         let isUITesting = ProcessInfo.processInfo.arguments.contains("--uitesting")
@@ -13,22 +14,48 @@ struct OrdinatioApp: App {
             UserDefaults.standard.set("USD", forKey: PreferencesKeys.defaultCurrencyCode)
         }
 
-        let database: AppDatabase
         do {
-            database = try AppDatabase(databaseURL: DatabasePaths.appDatabaseURL())
+            let database = try AppDatabase(databaseURL: DatabasePaths.appDatabaseURL())
             if isUITesting {
                 try database.resetAllData()
             }
+            _appState = State(initialValue: AppState(database: database))
+            _startupErrorMessage = State(initialValue: nil)
         } catch {
-            fatalError("Failed to initialize database: \(error)")
+            OrdinatioLog.database.error(
+                "Failed to initialize database: \(String(describing: error), privacy: .public)"
+            )
+            _appState = State(initialValue: nil)
+            _startupErrorMessage = State(initialValue: ErrorDisplay.message(error))
         }
-        _appState = State(initialValue: AppState(database: database))
     }
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(appState)
+            if let appState {
+                RootView()
+                    .environment(appState)
+            } else {
+                StartupErrorView(message: startupErrorMessage ?? "Unable to start.")
+            }
+        }
+    }
+}
+
+private struct StartupErrorView: View {
+    let message: String
+
+    var body: some View {
+        ZStack {
+            OrdinatioColor.background
+                .ignoresSafeArea()
+
+            ContentUnavailableView(
+                "Unable to start",
+                systemImage: "exclamationmark.triangle",
+                description: Text(message)
+            )
+            .padding(OrdinatioMetric.screenPadding)
         }
     }
 }
