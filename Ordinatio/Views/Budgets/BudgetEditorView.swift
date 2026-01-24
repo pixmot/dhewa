@@ -18,7 +18,7 @@ private struct InstructionHeadings {
 
 struct BudgetComposerView: View {
     let route: BudgetComposerRoute
-    let database: AppDatabase
+    let db: DatabaseClient
     let householdId: String
     @State private var categories: [OrdinatioCore.Category]
     let existingCategoryBudgetIds: Set<String>
@@ -45,6 +45,7 @@ struct BudgetComposerView: View {
 
     @State private var showToast = false
     @State private var toastMessage = "Missing Category"
+    @State private var toastDismissTask: Task<Void, Never>?
     @State private var showingCategoryCreator = false
 
     @State private var sensoryFeedbackTrigger = 0
@@ -52,7 +53,7 @@ struct BudgetComposerView: View {
 
     init(
         route: BudgetComposerRoute,
-        database: AppDatabase,
+        db: DatabaseClient,
         householdId: String,
         categories: [OrdinatioCore.Category],
         existingCategoryBudgetIds: Set<String>,
@@ -60,7 +61,7 @@ struct BudgetComposerView: View {
         onSave: @escaping (BudgetDraft) -> Void
     ) {
         self.route = route
-        self.database = database
+        self.db = db
         self.householdId = householdId
         _categories = State(initialValue: categories)
         self.existingCategoryBudgetIds = existingCategoryBudgetIds
@@ -109,11 +110,22 @@ struct BudgetComposerView: View {
         }
         .animation(.easeOut(duration: 0.2), value: showToast)
         .onChange(of: showToast) { newValue in
-            if newValue {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    showToast = false
+            toastDismissTask?.cancel()
+            guard newValue else { return }
+
+            toastDismissTask = Task { @MainActor in
+                do {
+                    try await Task.sleep(for: .seconds(2))
+                    try Task.checkCancellation()
+                } catch {
+                    return
                 }
+
+                showToast = false
             }
+        }
+        .onDisappear {
+            toastDismissTask?.cancel()
         }
     }
 }
@@ -516,6 +528,13 @@ private extension BudgetComposerView {
 }
 
 private extension BudgetComposerView {
+    static let ordinalFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .ordinal
+        formatter.locale = .current
+        return formatter
+    }()
+
     var canSubmitAmount: Bool {
         amountMinor > 0 && (!categoryBudget || selectedCategoryId != nil)
     }
@@ -525,8 +544,7 @@ private extension BudgetComposerView {
     }
 
     var weekdayOptions: [(label: String, value: Int)] {
-        let formatter = DateFormatter()
-        let names = formatter.weekdaySymbols ?? []
+        let names = Calendar.current.weekdaySymbols
         return names.enumerated().map { idx, label in
             (label: label, value: idx + 1)
         }
@@ -543,9 +561,7 @@ private extension BudgetComposerView {
 
     func monthStartLabel(_ day: Int) -> String {
         if day == 1 { return "Start of month" }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .ordinal
-        let ordinal = (formatter.string(from: day as NSNumber) ?? "\(day)")
+        let ordinal = (Self.ordinalFormatter.string(from: day as NSNumber) ?? "\(day)")
             .replacingOccurrences(of: ".", with: "")
         return "\(ordinal) of month"
     }
@@ -563,12 +579,10 @@ private extension BudgetComposerView {
 
         let average = decimal / divisor
 
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode.uppercased()
-        formatter.maximumFractionDigits = 0
-
-        let formatted = formatter.string(from: NSDecimalNumber(decimal: average)) ?? "0"
+        let formatted = average.formatted(
+            .currency(code: currencyCode)
+                .precision(.fractionLength(0))
+        )
         return "~\(formatted) /day"
     }
 
@@ -674,19 +688,16 @@ private extension BudgetComposerView {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        do {
-            var created: OrdinatioCore.Category?
-            try database.write { db in
-                created = try CategoryRepository.createCategory(in: db, householdId: householdId, name: trimmed)
-            }
-            if let created {
+        Task { @MainActor in
+            do {
+                let created = try await db.createCategory(householdId: householdId, name: trimmed)
                 categories.append(created)
                 categories.sort { $0.sortOrder < $1.sortOrder }
+            } catch {
+                toastMessage = "Couldn't create category"
+                showToast = true
+                playSensoryFeedback(.error)
             }
-        } catch {
-            toastMessage = "Couldn't create category"
-            showToast = true
-            playSensoryFeedback(.error)
         }
     }
 }
@@ -894,11 +905,41 @@ private struct BudgetNumberPadTextView: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
-    private var currencySymbol: String {
+    private static let currencySymbolFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode.uppercased()
-        return formatter.currencySymbol ?? currencyCode.uppercased()
+        formatter.locale = .current
+        return formatter
+    }()
+
+    private static func pow10Int64(_ digits: Int) -> Int64? {
+        guard digits >= 0 else { return nil }
+        var value: Int64 = 1
+        for _ in 0..<digits {
+            let (next, overflow) = value.multipliedReportingOverflow(by: 10)
+            if overflow { return nil }
+            value = next
+        }
+        return value
+    }
+
+    private static func format(absMinor: Int64, fractionDigits: Int) -> String {
+        guard let multiplier = pow10Int64(fractionDigits), multiplier > 0 else { return "" }
+
+        if fractionDigits == 0 {
+            return String(absMinor)
+        }
+
+        let whole = absMinor / multiplier
+        let fraction = absMinor % multiplier
+        let fractionText = String(fraction)
+        let zeros = String(repeating: "0", count: max(0, fractionDigits - fractionText.count))
+        return "\(whole).\(zeros)\(fractionText)"
+    }
+
+    private var currencySymbol: String {
+        Self.currencySymbolFormatter.currencyCode = currencyCode.uppercased()
+        return Self.currencySymbolFormatter.currencySymbol ?? currencyCode.uppercased()
     }
 
     var body: some View {
@@ -917,13 +958,8 @@ private struct BudgetNumberPadTextView: View {
     }
 
     private var amountString: String {
-        let decimal = MoneyFormat.decimal(fromMinorUnits: abs(amountMinor), currencyCode: currencyCode)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.minimumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-        formatter.maximumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-        return formatter.string(from: NSDecimalNumber(decimal: decimal)) ?? "0"
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        return Self.format(absMinor: abs(amountMinor), fractionDigits: digits)
     }
 
     private var amountFontSize: CGFloat {

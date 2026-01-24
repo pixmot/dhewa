@@ -2,7 +2,6 @@ import SwiftUI
 import OrdinatioCore
 
 struct MainTabView: View {
-    let database: AppDatabase
     let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
@@ -34,7 +33,7 @@ struct MainTabView: View {
                 .tabItem { Label(OrdinatioTab.add.title, systemImage: OrdinatioTab.add.symbolName) }
 
             BudgetsView(
-                database: database,
+                db: db,
                 householdId: householdId,
                 defaultCurrencyCode: defaultCurrencyCode
             )

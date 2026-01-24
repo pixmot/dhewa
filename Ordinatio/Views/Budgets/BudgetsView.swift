@@ -1,31 +1,32 @@
-import Combine
-import Foundation
+import Observation
 import SwiftUI
 import OrdinatioCore
 
 struct BudgetsView: View {
-    let database: AppDatabase
+    let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
 
-    @StateObject private var viewModel: BudgetComposerHostViewModel
+    @State private var model: BudgetComposerHostModel
 
     @State private var composerRoute: BudgetComposerRoute?
     @State private var composerDetent: PresentationDetent = .fraction(0.9)
 
-    init(database: AppDatabase, householdId: String, defaultCurrencyCode: String) {
-        self.database = database
+    init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
+        self.db = db
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
-        _viewModel = StateObject(wrappedValue: BudgetComposerHostViewModel(database: database, householdId: householdId))
+        _model = State(initialValue: BudgetComposerHostModel(db: db, householdId: householdId))
     }
 
     private func presentComposer() {
         composerDetent = .fraction(0.9)
-        composerRoute = .create(overallExists: viewModel.overallExists)
+        composerRoute = .create(overallExists: model.overallExists)
     }
 
     var body: some View {
+        @Bindable var model = model
+
         NavigationStack {
             ZStack {
                 OrdinatioColor.background
@@ -73,24 +74,24 @@ struct BudgetsView: View {
             .sheet(item: $composerRoute) { route in
                 BudgetComposerView(
                     route: route,
-                    database: database,
+                    db: db,
                     householdId: householdId,
-                    categories: viewModel.categories,
-                    existingCategoryBudgetIds: viewModel.existingCategoryBudgetIds,
+                    categories: model.categories,
+                    existingCategoryBudgetIds: model.existingCategoryBudgetIds,
                     defaultCurrencyCode: defaultCurrencyCode,
-                    onSave: { viewModel.upsertBudget(from: $0) }
+                    onSave: { model.upsertBudget(from: $0) }
                 )
                 .presentationDetents([.fraction(0.9), .large], selection: $composerDetent)
                 .presentationDragIndicator(.visible)
             }
             .alert("Error", isPresented: Binding(get: {
-                viewModel.errorMessage != nil
+                model.errorMessage != nil
             }, set: { newValue in
-                if !newValue { viewModel.errorMessage = nil }
+                if !newValue { model.errorMessage = nil }
             })) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text(viewModel.errorMessage ?? "")
+                Text(model.errorMessage ?? "")
             }
         }
     }
@@ -132,23 +133,29 @@ enum BudgetComposerRoute: Identifiable {
 }
 
 @MainActor
-private final class BudgetComposerHostViewModel: ObservableObject {
-    @Published private(set) var budgets: [Budget] = []
-    @Published private(set) var categories: [OrdinatioCore.Category] = []
-    @Published var errorMessage: String?
+@Observable
+private final class BudgetComposerHostModel {
+    var budgets: [Budget] = []
+    var categories: [OrdinatioCore.Category] = []
+    var errorMessage: String?
 
-    private let database: AppDatabase
+    private let db: DatabaseClient
     private let householdId: String
 
-    private var budgetsCancellable: AnyCancellable?
-    private var categoriesCancellable: AnyCancellable?
+    @ObservationIgnored private var budgetsTask: Task<Void, Never>?
+    @ObservationIgnored private var categoriesTask: Task<Void, Never>?
 
-    init(database: AppDatabase, householdId: String) {
-        self.database = database
+    init(db: DatabaseClient, householdId: String) {
+        self.db = db
         self.householdId = householdId
 
         startObservingBudgets()
         startObservingCategories()
+    }
+
+    deinit {
+        budgetsTask?.cancel()
+        categoriesTask?.cancel()
     }
 
     var overallExists: Bool {
@@ -160,10 +167,9 @@ private final class BudgetComposerHostViewModel: ObservableObject {
     }
 
     func upsertBudget(from draft: BudgetDraft) {
-        do {
-            try database.write { db in
-                try BudgetRepository.upsertBudget(
-                    in: db,
+        Task { @MainActor in
+            do {
+                try await db.upsertBudget(
                     householdId: householdId,
                     isOverall: draft.isOverall,
                     categoryId: draft.categoryId,
@@ -172,37 +178,51 @@ private final class BudgetComposerHostViewModel: ObservableObject {
                     currencyCode: draft.currencyCode,
                     amountMinor: draft.amountMinor
                 )
+            } catch {
+                errorMessage = ErrorDisplay.message(error)
             }
-        } catch {
-            errorMessage = ErrorDisplay.message(error)
         }
     }
 
     private func startObservingBudgets() {
-        budgetsCancellable?.cancel()
-        budgetsCancellable = BudgetRepository
-            .observeBudgets(householdId: householdId)
-            .publisher(in: database.dbQueue)
-            .sink { [weak self] completion in
-                if case let .failure(error) = completion {
+        budgetsTask?.cancel()
+
+        let db = db
+        let householdId = householdId
+
+        budgetsTask = Task.detached(priority: .userInitiated) { [db, householdId] in
+            do {
+                for try await budgets in await db.observeBudgets(householdId: householdId) {
+                    await MainActor.run { [weak self] in
+                        self?.budgets = budgets
+                    }
+                }
+            } catch {
+                await MainActor.run { [weak self] in
                     self?.errorMessage = ErrorDisplay.message(error)
                 }
-            } receiveValue: { [weak self] budgets in
-                self?.budgets = budgets
             }
+        }
     }
 
     private func startObservingCategories() {
-        categoriesCancellable?.cancel()
-        categoriesCancellable = CategoryRepository
-            .observeCategories(householdId: householdId)
-            .publisher(in: database.dbQueue)
-            .sink { [weak self] completion in
-                if case let .failure(error) = completion {
+        categoriesTask?.cancel()
+
+        let db = db
+        let householdId = householdId
+
+        categoriesTask = Task.detached(priority: .userInitiated) { [db, householdId] in
+            do {
+                for try await categories in await db.observeCategories(householdId: householdId) {
+                    await MainActor.run { [weak self] in
+                        self?.categories = categories
+                    }
+                }
+            } catch {
+                await MainActor.run { [weak self] in
                     self?.errorMessage = ErrorDisplay.message(error)
                 }
-            } receiveValue: { [weak self] categories in
-                self?.categories = categories
             }
+        }
     }
 }
