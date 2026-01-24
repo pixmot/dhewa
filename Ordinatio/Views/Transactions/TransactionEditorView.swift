@@ -1,4 +1,3 @@
-import GRDB
 import SwiftUI
 import OrdinatioCore
 
@@ -8,7 +7,7 @@ enum TransactionEditorMode: Hashable {
 }
 
 struct TransactionEditorView: View {
-    let database: AppDatabase
+    let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
     let mode: TransactionEditorMode
@@ -27,6 +26,7 @@ struct TransactionEditorView: View {
     @State private var isExpense: Bool
     @State private var amountText: String
     @State private var currencyCode: String
+    @State private var fractionDigits: Int
     @State private var dateTime: Date
     @State private var categoryId: String?
     @State private var note: String
@@ -38,14 +38,14 @@ struct TransactionEditorView: View {
     @State private var showingTimePicker = false
 
     init(
-        database: AppDatabase,
+        db: DatabaseClient,
         householdId: String,
         defaultCurrencyCode: String,
         mode: TransactionEditorMode,
         showsDismissButton: Bool = true,
         prefilledCategoryId: String? = nil
     ) {
-        self.database = database
+        self.db = db
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
         self.mode = mode
@@ -57,6 +57,7 @@ struct TransactionEditorView: View {
             _isExpense = State(initialValue: true)
             _amountText = State(initialValue: "")
             _currencyCode = State(initialValue: defaultCurrencyCode.uppercased())
+            _fractionDigits = State(initialValue: MoneyFormat.fractionDigits(for: defaultCurrencyCode))
             _dateTime = State(initialValue: Date())
             _categoryId = State(initialValue: prefilledCategoryId)
             _note = State(initialValue: "")
@@ -64,6 +65,7 @@ struct TransactionEditorView: View {
             _isExpense = State(initialValue: row.amountMinor < 0)
             _amountText = State(initialValue: Self.entryAmountText(absMinor: abs(row.amountMinor), currencyCode: row.currencyCode))
             _currencyCode = State(initialValue: row.currencyCode.uppercased())
+            _fractionDigits = State(initialValue: MoneyFormat.fractionDigits(for: row.currencyCode))
             _dateTime = State(initialValue: Self.initialDateTime(txnDate: row.txnDate, createdAt: row.createdAt))
             _categoryId = State(initialValue: row.categoryId)
             _note = State(initialValue: row.note ?? "")
@@ -71,13 +73,8 @@ struct TransactionEditorView: View {
     }
 
     static func entryAmountText(absMinor: Int64, currencyCode: String) -> String {
-        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.usesGroupingSeparator = false
-        formatter.minimumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-        formatter.maximumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-        return formatter.string(from: NSDecimalNumber(decimal: decimal)) ?? ""
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        return format(absMinor: absMinor, fractionDigits: digits)
     }
 
     static func initialDateTime(txnDate: Int32, createdAt: Date) -> Date {
@@ -97,48 +94,99 @@ struct TransactionEditorView: View {
         return categories.first(where: { $0.id == categoryId })?.name ?? "Category"
     }
 
-    private var formattedAmount: String {
-        let trimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            let digits = MoneyFormat.fractionDigits(for: currencyCode)
-            return digits == 0 ? "0" : "0." + String(repeating: "0", count: digits)
+    private static let currencySymbolFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .current
+        return formatter
+    }()
+
+    private static func pow10Int64(_ digits: Int) -> Int64? {
+        guard digits >= 0 else { return nil }
+        var value: Int64 = 1
+        for _ in 0..<digits {
+            let (next, overflow) = value.multipliedReportingOverflow(by: 10)
+            if overflow { return nil }
+            value = next
+        }
+        return value
+    }
+
+    private static func format(absMinor: Int64, fractionDigits: Int) -> String {
+        guard let multiplier = pow10Int64(fractionDigits), multiplier > 0 else { return "" }
+
+        if fractionDigits == 0 {
+            return String(absMinor)
         }
 
-        switch MoneyFormat.parseMinorUnits(trimmed, currencyCode: currencyCode.uppercased()) {
-        case let .success(minor):
-            let decimal = MoneyFormat.decimal(fromMinorUnits: abs(minor), currencyCode: currencyCode)
-            let formatter = NumberFormatter()
-            formatter.numberStyle = .decimal
-            formatter.locale = .current
-            formatter.minimumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-            formatter.maximumFractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
-            return formatter.string(from: NSDecimalNumber(decimal: decimal)) ?? trimmed
-        case .failure:
-            return trimmed
+        let whole = absMinor / multiplier
+        let fraction = absMinor % multiplier
+        let fractionText = String(fraction)
+        let zeros = String(repeating: "0", count: max(0, fractionDigits - fractionText.count))
+        return "\(whole).\(zeros)\(fractionText)"
+    }
+
+    private static func parseAbsMinor(from input: String, fractionDigits: Int) -> Int64? {
+        let trimmed = input
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+
+        guard !trimmed.isEmpty else { return nil }
+        guard let multiplier = pow10Int64(fractionDigits), multiplier > 0 else { return nil }
+
+        let parts = trimmed.split(separator: ".", omittingEmptySubsequences: false)
+        guard parts.count <= 2 else { return nil }
+
+        let wholePart = parts.first ?? ""
+        let fractionPart = parts.count == 2 ? parts[1] : ""
+
+        guard wholePart.allSatisfy({ $0.isNumber }) else { return nil }
+        guard fractionPart.allSatisfy({ $0.isNumber }) else { return nil }
+
+        let whole: Int64
+        if wholePart.isEmpty {
+            whole = 0
+        } else {
+            guard let parsedWhole = Int64(wholePart) else { return nil }
+            whole = parsedWhole
         }
+        if fractionDigits == 0 {
+            return whole
+        }
+
+        let fractionPrefix = fractionPart.prefix(fractionDigits)
+        let fractionPadded = String(fractionPrefix).padding(toLength: fractionDigits, withPad: "0", startingAt: 0)
+        guard let fraction = Int64(fractionPadded) else { return nil }
+
+        let (scaledWhole, overflow1) = whole.multipliedReportingOverflow(by: multiplier)
+        if overflow1 { return nil }
+        let (total, overflow2) = scaledWhole.addingReportingOverflow(fraction)
+        if overflow2 { return nil }
+        return total
+    }
+
+    private var parsedAbsMinor: Int64? {
+        Self.parseAbsMinor(from: amountText, fractionDigits: fractionDigits)
+    }
+
+    private var formattedAmount: String {
+        guard let parsedAbsMinor else {
+            return fractionDigits == 0 ? "0" : "0." + String(repeating: "0", count: fractionDigits)
+        }
+        return Self.format(absMinor: parsedAbsMinor, fractionDigits: fractionDigits)
     }
 
     private var currencySymbol: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = currencyCode.uppercased()
-        return formatter.currencySymbol ?? currencyCode.uppercased()
+        Self.currencySymbolFormatter.currencyCode = currencyCode.uppercased()
+        return Self.currencySymbolFormatter.currencySymbol ?? currencyCode.uppercased()
     }
 
     private var canSave: Bool {
-        let trimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return false }
-        switch MoneyFormat.parseMinorUnits(trimmed, currencyCode: currencyCode.uppercased()) {
-        case let .success(minor):
-            return abs(minor) > 0
-        case .failure:
-            return false
-        }
+        (parsedAbsMinor ?? 0) > 0
     }
 
     private func appendDigit(_ digit: Int) {
         guard (0...9).contains(digit) else { return }
-        let fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
         let separator = "."
 
         var next = amountText
@@ -165,7 +213,6 @@ struct TransactionEditorView: View {
     }
 
     private func appendDecimalSeparator() {
-        let fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
         guard fractionDigits > 0 else { return }
         let separator = "."
 
@@ -194,7 +241,6 @@ struct TransactionEditorView: View {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: ",", with: "")
 
-        let fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
         if fractionDigits == 0 {
             if let idx = next.firstIndex(of: Character(separator)) {
                 next = String(next[..<idx])
@@ -222,93 +268,71 @@ struct TransactionEditorView: View {
         errorMessage = nil
 
         let amountTrimmed = amountText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !amountTrimmed.isEmpty else {
-            errorMessage = "Amount is required"
+        guard let absMinor = parsedAbsMinor else {
+            errorMessage = amountTrimmed.isEmpty ? "Amount is required" : "Invalid amount"
             return
         }
 
-        let currency = currencyCode.uppercased()
-        let absMinor: Int64
-        switch MoneyFormat.parseMinorUnits(amountTrimmed, currencyCode: currency) {
-        case let .success(minor):
-            absMinor = minor
-        case .failure:
-            errorMessage = "Invalid amount"
-            return
-        }
-
-        let normalizedAbsMinor = abs(absMinor)
-        guard normalizedAbsMinor > 0 else {
+        guard absMinor > 0 else {
             errorMessage = "Amount must be greater than zero"
             return
         }
 
-        let signedMinor = isExpense ? -normalizedAbsMinor : normalizedAbsMinor
+        let currency = currencyCode.uppercased()
+        let signedMinor = isExpense ? -absMinor : absMinor
         let localDate = LocalDate.from(date: dateTime)
         let now = Date()
         let txnTimestamp = dateTime
         let trimmedNote = note.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        do {
-            try database.write { db in
-                switch mode {
-                case .create:
-                    let txn = Transaction(
-                        id: UUID().uuidString.lowercased(),
-                        householdId: householdId,
-                        categoryId: categoryId,
-                        amountMinor: signedMinor,
-                        currencyCode: currency,
-                        txnDate: localDate.yyyymmdd,
-                        note: trimmedNote.isEmpty ? nil : trimmedNote,
-                        createdAt: txnTimestamp,
-                        updatedAt: now
-                    )
-                    try TransactionRepository.upsertTransaction(in: db, transaction: txn)
-                case let .edit(row):
-                    let txn = Transaction(
-                        id: row.id,
-                        householdId: householdId,
-                        categoryId: categoryId,
-                        amountMinor: signedMinor,
-                        currencyCode: currency,
-                        txnDate: localDate.yyyymmdd,
-                        note: trimmedNote.isEmpty ? nil : trimmedNote,
-                        createdAt: txnTimestamp,
-                        updatedAt: now
-                    )
-                    try TransactionRepository.upsertTransaction(in: db, transaction: txn)
-                }
-            }
+        let txnId: String
+        switch mode {
+        case .create:
+            txnId = UUID().uuidString.lowercased()
+        case let .edit(row):
+            txnId = row.id
+        }
 
-            dismiss()
-        } catch {
-            errorMessage = ErrorDisplay.message(error)
+        let txn = Transaction(
+            id: txnId,
+            householdId: householdId,
+            categoryId: categoryId,
+            amountMinor: signedMinor,
+            currencyCode: currency,
+            txnDate: localDate.yyyymmdd,
+            note: trimmedNote.isEmpty ? nil : trimmedNote,
+            createdAt: txnTimestamp,
+            updatedAt: now
+        )
+
+        Task { @MainActor in
+            do {
+                try await db.upsertTransaction(txn)
+                dismiss()
+            } catch {
+                errorMessage = ErrorDisplay.message(error)
+            }
         }
     }
 
     private func deleteTransaction() {
         guard case let .edit(row) = mode else { return }
-        do {
-            try database.write { db in
-                try TransactionRepository.deleteTransaction(in: db, transactionId: row.id)
+
+        let transactionId = row.id
+        Task { @MainActor in
+            do {
+                try await db.deleteTransaction(transactionId: transactionId)
+                dismiss()
+            } catch {
+                errorMessage = ErrorDisplay.message(error)
             }
-            dismiss()
-        } catch {
-            errorMessage = ErrorDisplay.message(error)
         }
     }
 
-    private func loadCategories() {
+    private func loadCategories() async {
         guard categories.isEmpty else { return }
         do {
-            categories = try database.read { db in
-                try OrdinatioCore.Category
-                    .filter(OrdinatioCore.Category.Columns.householdId == householdId)
-                    .filter(OrdinatioCore.Category.Columns.deletedAt == nil)
-                    .order(OrdinatioCore.Category.Columns.sortOrder.asc)
-                    .fetchAll(db)
-            }
+            categories = try await db.fetchCategories(householdId: householdId)
         } catch {
             errorMessage = ErrorDisplay.message(error)
         }
@@ -344,13 +368,16 @@ struct TransactionEditorView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .animation(.easeInOut(duration: 0.20), value: focusedField)
-            .task { loadCategories() }
+            .task { await loadCategories() }
             .sheet(isPresented: $showingCategoryPicker) {
                 CategoryPickerSheet(categories: categories, selection: $categoryId)
             }
             .sheet(isPresented: $showingCurrencyPicker) {
                 CurrencyPickerSheet(selection: $currencyCode)
-                    .onDisappear { normalizeAmountTextForCurrency() }
+                    .onDisappear {
+                        fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
+                        normalizeAmountTextForCurrency()
+                    }
             }
             .sheet(isPresented: $showingDatePicker) {
                 DateTimePickerSheet(
@@ -574,7 +601,7 @@ struct TransactionEditorView: View {
 
             keypadButton(title: ".", role: .secondary) { appendDecimalSeparator() }
                 .accessibilityIdentifier("TransactionKeypadDecimal")
-                .disabled(MoneyFormat.fractionDigits(for: currencyCode) == 0)
+                .disabled(fractionDigits == 0)
 
             keypadButton(title: "0", role: .secondary) { appendDigit(0) }
                 .accessibilityIdentifier("TransactionKeypadDigit0")
@@ -773,6 +800,20 @@ private struct CurrencyPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var searchText = ""
 
+    private static let currencySymbolCache: [String: String] = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = .current
+
+        var cache: [String: String] = [:]
+        for code in Locale.commonISOCurrencyCodes {
+            let upper = code.uppercased()
+            formatter.currencyCode = upper
+            cache[upper] = formatter.currencySymbol ?? upper
+        }
+        return cache
+    }()
+
     private var currencyCodes: [String] {
         let all = Locale.commonISOCurrencyCodes
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -784,12 +825,10 @@ private struct CurrencyPickerSheet: View {
     }
 
     private func currencyTitle(_ code: String) -> String {
-        let name = Locale.current.localizedString(forCurrencyCode: code) ?? code
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .currency
-        formatter.currencyCode = code
-        let symbol = formatter.currencySymbol ?? code
-        return "\(code) — \(name) (\(symbol))"
+        let upper = code.uppercased()
+        let name = Locale.current.localizedString(forCurrencyCode: upper) ?? upper
+        let symbol = Self.currencySymbolCache[upper] ?? upper
+        return "\(upper) — \(name) (\(symbol))"
     }
 
     var body: some View {
@@ -880,4 +919,3 @@ private struct DateTimePickerSheet: View {
         .presentationDetents([.medium])
     }
 }
-

@@ -2,7 +2,6 @@ import SwiftUI
 import OrdinatioCore
 
 struct TransactionsView: View {
-    let database: AppDatabase
     let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
@@ -12,8 +11,7 @@ struct TransactionsView: View {
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
 
-    init(database: AppDatabase, db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
-        self.database = database
+    init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
@@ -118,7 +116,7 @@ struct TransactionsView: View {
             }
             .sheet(item: $editingRow) { row in
                 TransactionEditorView(
-                    database: database,
+                    db: db,
                     householdId: householdId,
                     defaultCurrencyCode: defaultCurrencyCode,
                     mode: .edit(row)

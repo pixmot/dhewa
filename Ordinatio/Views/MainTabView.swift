@@ -12,7 +12,6 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selection) {
             TransactionsView(
-                database: database,
                 db: db,
                 householdId: householdId,
                 defaultCurrencyCode: defaultCurrencyCode
@@ -25,7 +24,7 @@ struct MainTabView: View {
                 .tabItem { Label(OrdinatioTab.insights.title, systemImage: OrdinatioTab.insights.symbolName) }
 
             TransactionEditorView(
-                database: database,
+                db: db,
                 householdId: householdId,
                 defaultCurrencyCode: defaultCurrencyCode,
                 mode: .create,
