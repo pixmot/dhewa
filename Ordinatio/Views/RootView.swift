@@ -29,6 +29,7 @@ struct RootView: View {
                 } else {
                     MainTabView(
                         database: appState.database,
+                        db: appState.db,
                         householdId: activeHouseholdId,
                         defaultCurrencyCode: defaultCurrencyCode
                     )

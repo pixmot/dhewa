@@ -3,6 +3,7 @@ import OrdinatioCore
 
 struct MainTabView: View {
     let database: AppDatabase
+    let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
 
@@ -12,6 +13,7 @@ struct MainTabView: View {
         TabView(selection: $selection) {
             TransactionsView(
                 database: database,
+                db: db,
                 householdId: householdId,
                 defaultCurrencyCode: defaultCurrencyCode
             )

@@ -3,42 +3,21 @@ import OrdinatioCore
 
 struct TransactionsView: View {
     let database: AppDatabase
+    let db: DatabaseClient
     let householdId: String
     let defaultCurrencyCode: String
 
-    @StateObject private var viewModel: TransactionListViewModel
+    @State private var viewModel: TransactionListViewModel
 
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
 
-    init(database: AppDatabase, householdId: String, defaultCurrencyCode: String) {
+    init(database: AppDatabase, db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.database = database
+        self.db = db
         self.householdId = householdId
         self.defaultCurrencyCode = defaultCurrencyCode
-        _viewModel = StateObject(wrappedValue: TransactionListViewModel(database: database, householdId: householdId))
-    }
-
-    private var summaryCurrencyCode: String {
-        if let code = viewModel.filter.currencyCode, !code.isEmpty {
-            return code.uppercased()
-        }
-        return defaultCurrencyCode.uppercased()
-    }
-
-    private var filteredSummaryRows: [TransactionListRow] {
-        viewModel.sections.flatMap(\.rows).filter { $0.currencyCode.uppercased() == summaryCurrencyCode }
-    }
-
-    private var netTotalMinor: Int64 {
-        filteredSummaryRows.reduce(0) { $0 + $1.amountMinor }
-    }
-
-    private var incomeTotalMinor: Int64 {
-        filteredSummaryRows.reduce(0) { $1.amountMinor > 0 ? $0 + $1.amountMinor : $0 }
-    }
-
-    private var expenseTotalAbsMinor: Int64 {
-        filteredSummaryRows.reduce(0) { $1.amountMinor < 0 ? $0 + abs($1.amountMinor) : $0 }
+        _viewModel = State(initialValue: TransactionListViewModel(db: db, householdId: householdId, defaultCurrencyCode: defaultCurrencyCode))
     }
 
     private func sectionTitle(for date: LocalDate) -> String {
@@ -55,16 +34,16 @@ struct TransactionsView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(OrdinatioColor.textSecondary)
 
-            Text(MoneyFormat.format(minorUnits: netTotalMinor, currencyCode: summaryCurrencyCode))
+            Text(MoneyFormat.format(minorUnits: viewModel.netTotalMinor, currencyCode: viewModel.summaryCurrencyCode))
                 .font(.system(size: 40, weight: .semibold, design: .rounded).monospacedDigit())
                 .foregroundStyle(OrdinatioColor.textPrimary)
 
             HStack(spacing: 12) {
-                Text("+\(MoneyFormat.format(minorUnits: incomeTotalMinor, currencyCode: summaryCurrencyCode))")
+                Text("+\(MoneyFormat.format(minorUnits: viewModel.incomeTotalMinor, currencyCode: viewModel.summaryCurrencyCode))")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(OrdinatioColor.income)
 
-                Text("-\(MoneyFormat.format(minorUnits: expenseTotalAbsMinor, currencyCode: summaryCurrencyCode))")
+                Text("-\(MoneyFormat.format(minorUnits: viewModel.expenseTotalAbsMinor, currencyCode: viewModel.summaryCurrencyCode))")
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(OrdinatioColor.expense)
             }
@@ -73,6 +52,8 @@ struct TransactionsView: View {
     }
 
     var body: some View {
+        @Bindable var model = viewModel
+
         NavigationStack {
             List {
                 summaryHeader
@@ -80,7 +61,7 @@ struct TransactionsView: View {
                     .listRowInsets(.init(top: 0, leading: 16, bottom: 6, trailing: 16))
                     .listRowBackground(Color.clear)
 
-                if viewModel.sections.isEmpty {
+                if model.sections.isEmpty {
                     ContentUnavailableView(
                         "No Transactions",
                         systemImage: "tray",
@@ -90,7 +71,7 @@ struct TransactionsView: View {
                     .listRowSeparator(.hidden)
                 }
 
-                ForEach(viewModel.sections) { section in
+                ForEach(model.sections) { section in
                     Section {
                         ForEach(section.rows) { row in
                             TransactionRowView(row: row)
@@ -115,7 +96,7 @@ struct TransactionsView: View {
             .background(OrdinatioColor.background)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $viewModel.searchText, prompt: "Search notes")
+            .searchable(text: $model.searchText, prompt: "Search notes")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
@@ -128,11 +109,11 @@ struct TransactionsView: View {
             }
             .sheet(isPresented: $showFilters) {
                 TransactionFiltersView(
-                    categories: viewModel.categories,
-                    availableCurrencyCodes: viewModel.availableCurrencyCodes,
+                    categories: model.categories,
+                    availableCurrencyCodes: model.availableCurrencyCodes,
                     defaultCurrencyCode: defaultCurrencyCode,
-                    currentFilter: viewModel.filter,
-                    onApply: { viewModel.filter = $0 }
+                    currentFilter: model.filter,
+                    onApply: { model.filter = $0 }
                 )
             }
             .sheet(item: $editingRow) { row in
@@ -144,13 +125,13 @@ struct TransactionsView: View {
                 )
             }
             .alert("Error", isPresented: Binding(get: {
-                viewModel.errorMessage != nil
+                model.errorMessage != nil
             }, set: { newValue in
-                if !newValue { viewModel.errorMessage = nil }
+                if !newValue { model.errorMessage = nil }
             })) {
                 Button("OK", role: .cancel) {}
             } message: {
-                Text(viewModel.errorMessage ?? "")
+                Text(model.errorMessage ?? "")
             }
         }
     }
