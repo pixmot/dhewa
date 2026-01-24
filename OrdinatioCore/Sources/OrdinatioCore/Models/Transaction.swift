@@ -68,6 +68,30 @@ public struct TransactionListRow: FetchableRecord, Decodable, Hashable, Sendable
     public var note: String?
     public var createdAt: Date
     public var updatedAt: Date
+
+    public init(
+        id: String,
+        householdId: String,
+        categoryId: String?,
+        categoryName: String?,
+        amountMinor: Int64,
+        currencyCode: String,
+        txnDate: Int32,
+        note: String?,
+        createdAt: Date,
+        updatedAt: Date
+    ) {
+        self.id = id
+        self.householdId = householdId
+        self.categoryId = categoryId
+        self.categoryName = categoryName
+        self.amountMinor = amountMinor
+        self.currencyCode = currencyCode
+        self.txnDate = txnDate
+        self.note = note
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 public struct TransactionFilter: Hashable, Sendable {
