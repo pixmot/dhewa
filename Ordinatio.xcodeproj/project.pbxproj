@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		01286D53E46DF844F1D6E6F7 /* BudgetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CFF52BEBB7FB11C3DFAA430 /* BudgetsView.swift */; };
+		152950502DBF44A78725D68E /* OrdinatioLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA8900C7BA2841C4B034470F /* OrdinatioLog.swift */; };
 		1E7559FF2FF663F910C8FE9C /* OrdinatioUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */; };
 		2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */; };
 		255E6A56E0007E8A283AEF0A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E93C5510F5A1ADFCD448577F /* Foundation.framework */; };
@@ -75,6 +76,7 @@
 		A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioTabBar.swift; path = Ordinatio/Views/OrdinatioTabBar.swift; sourceTree = "<group>"; };
 		A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionFiltersView.swift; path = Ordinatio/Views/Transactions/TransactionFiltersView.swift; sourceTree = "<group>"; };
 		AA068AF33369D8111517766B /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Ordinatio/Assets.xcassets; sourceTree = "<group>"; };
+		BA8900C7BA2841C4B034470F /* OrdinatioLog.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioLog.swift; path = Ordinatio/Support/OrdinatioLog.swift; sourceTree = "<group>"; };
 		BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PreferencesKeys.swift; path = Ordinatio/Support/PreferencesKeys.swift; sourceTree = "<group>"; };
 		BE6843B794569F11CE7CB7EE /* CategoryEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CategoryEditorView.swift; path = Ordinatio/Views/Categories/CategoryEditorView.swift; sourceTree = "<group>"; };
 		BF61806570AFCCC86E7D1F68 /* OrdinatioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrdinatioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -174,6 +176,7 @@
 				560723CAD7438BC7547B10B7 /* AppState.swift */,
 				A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */,
 				75A2ACE69869C507B9FD2677 /* DatabasePaths.swift */,
+				BA8900C7BA2841C4B034470F /* OrdinatioLog.swift */,
 				F702C167B323D917FEE84D1D /* OrdinatioCoreExtensions.swift */,
 				BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */,
 				132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */,
@@ -330,6 +333,7 @@
 				A11DEB7360BEBBA321401336 /* AppState.swift in Sources */,
 				46E79D4E5DC349BF0123E43E /* OrdinatioApp.swift in Sources */,
 				9837A98E95D48156F9A28DDC /* DatabasePaths.swift in Sources */,
+				152950502DBF44A78725D68E /* OrdinatioLog.swift in Sources */,
 				D7BCDA2CB65CD1F11EF01317 /* OrdinatioCoreExtensions.swift in Sources */,
 				55CBB47B0D6839037EC74CCF /* PreferencesKeys.swift in Sources */,
 				2058BAD919A84CAFA3A26AF1 /* OrdinatioDesignSystem.swift in Sources */,
