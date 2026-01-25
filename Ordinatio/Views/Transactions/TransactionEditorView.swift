@@ -143,24 +143,19 @@ struct TransactionEditorView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    GeometryReader { proxy in
-                        ScrollView {
-                            VStack(spacing: 18) {
-                                amountRow
-                                noteField
-                            }
-                            .padding(.horizontal, OrdinatioMetric.screenPadding)
-                            .padding(.top, 8)
-                            .padding(.bottom, 32)
-                            .frame(maxWidth: .infinity)
-                            .frame(minHeight: proxy.size.height, alignment: .bottom)
-                        }
+                    VStack(spacing: 18) {
+                        amountRow
+                        noteField
                     }
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.top, 8)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
 
                     keypadArea
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.bottom, 22)
-                        .keyboardAwareHeight(isEnabled: focusedField == nil, heightScale: 1.5)
+                        .keyboardAwareHeight(isEnabled: false, heightScale: 1.5)
                 }
             }
             .overlay(alignment: .top) {
