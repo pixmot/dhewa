@@ -232,7 +232,7 @@ struct TransactionEditorView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: "line.3.horizontal")
+                        Image(systemName: "line.3.horizontal.decrease")
                     }
                     .accessibilityLabel("More")
                 }
