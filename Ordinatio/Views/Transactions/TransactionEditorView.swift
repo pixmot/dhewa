@@ -333,11 +333,13 @@ struct TransactionEditorView: View {
             TransactionChip(
                 label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
                 systemImage: "calendar.badge.clock",
-                tint: .blue
+                tint: .blue,
+                expands: true,
+                minHeight: chipMinHeight
             ) {
                 model.showingDatePicker = true
             }
-            .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
+            .layoutPriority(1)
 
             Button {
                 model.showingCategoryPicker = true
@@ -360,9 +362,9 @@ struct TransactionEditorView: View {
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(OrdinatioColor.textSecondary)
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
+                .frame(minHeight: chipMinHeight, alignment: .leading)
                 .background {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
@@ -375,7 +377,7 @@ struct TransactionEditorView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Category")
-            .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
+            .layoutPriority(0)
         }
         .padding(.vertical, 2)
     }

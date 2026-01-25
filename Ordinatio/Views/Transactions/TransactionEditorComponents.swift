@@ -8,6 +8,8 @@ extension TransactionEditorView {
         let systemImage: String
         let tint: Color
         let action: () -> Void
+        let expands: Bool
+        let minHeight: CGFloat?
 
         var body: some View {
             Button(action: action) {
@@ -29,6 +31,8 @@ extension TransactionEditorView {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
+                .frame(maxWidth: expands ? .infinity : nil, alignment: .leading)
+                .frame(minHeight: minHeight, alignment: .leading)
                 .background {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(OrdinatioColor.surface)
