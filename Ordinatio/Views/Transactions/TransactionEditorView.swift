@@ -151,7 +151,7 @@ struct TransactionEditorView: View {
                             }
                             .padding(.horizontal, OrdinatioMetric.screenPadding)
                             .padding(.top, 8)
-                            .padding(.bottom, focusedField == nil ? 32 : 18)
+                            .padding(.bottom, 32)
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: proxy.size.height, alignment: .bottom)
                         }
@@ -160,7 +160,7 @@ struct TransactionEditorView: View {
                     keypadArea
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.bottom, 22)
-                        .keyboardAwareHeight(heightScale: 1.5)
+                        .keyboardAwareHeight(isEnabled: focusedField == nil, heightScale: 1.5)
                 }
             }
             .overlay(alignment: .top) {
@@ -584,11 +584,13 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
     @AppStorage(PreferencesKeys.transactionEditorKeyboardHeight)
     private var savedKeyboardHeight: Double = Double(UIScreen.main.bounds.height / 2.5)
 
+    let isEnabled: Bool
     let minimumUpdateHeight: CGFloat
     let heightAdjustment: CGFloat
     let heightScale: CGFloat
 
-    init(minimumUpdateHeight: CGFloat, heightAdjustment: CGFloat, heightScale: CGFloat) {
+    init(isEnabled: Bool, minimumUpdateHeight: CGFloat, heightAdjustment: CGFloat, heightScale: CGFloat) {
+        self.isEnabled = isEnabled
         self.minimumUpdateHeight = minimumUpdateHeight
         self.heightAdjustment = heightAdjustment
         self.heightScale = heightScale
@@ -597,7 +599,8 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .frame(height: savedKeyboardHeight * Double(heightScale))
-            .task {
+            .task(id: isEnabled) {
+                guard isEnabled else { return }
                 for await notification in NotificationCenter.default.notifications(
                     named: UIResponder.keyboardWillChangeFrameNotification
                 ) {
@@ -623,12 +626,14 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
 
 private extension View {
     func keyboardAwareHeight(
+        isEnabled: Bool = true,
         minimumUpdateHeight: CGFloat = 200,
         heightAdjustment: CGFloat = 0,
         heightScale: CGFloat = 1
     ) -> some View {
         modifier(
             KeyboardAwareHeightModifier(
+                isEnabled: isEnabled,
                 minimumUpdateHeight: minimumUpdateHeight,
                 heightAdjustment: heightAdjustment,
                 heightScale: heightScale
