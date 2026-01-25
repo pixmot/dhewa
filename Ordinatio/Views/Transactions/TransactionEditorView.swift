@@ -159,15 +159,17 @@ struct TransactionEditorView: View {
                         .padding(.bottom, 18)
                     }
 
-                    VStack(spacing: 12) {
-                        keypad
-                        submitButton
+                    if focusedField == nil {
+                        VStack(spacing: 12) {
+                            keypad
+                            submitButton
+                        }
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.bottom, 22)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        Spacer(minLength: 0)
                     }
-                    .padding(.horizontal, OrdinatioMetric.screenPadding)
-                    .padding(.bottom, 22)
-                    .opacity(focusedField == nil ? 1 : 0)
-                    .allowsHitTesting(focusedField == nil)
-                    .accessibilityHidden(focusedField != nil)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
