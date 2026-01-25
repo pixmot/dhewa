@@ -328,8 +328,9 @@ struct TransactionEditorView: View {
         let chipVerticalPadding: CGFloat = 10
         let categoryIconSize: CGFloat = 26
         let chipMinHeight = categoryIconSize + (chipVerticalPadding * 2)
+        let chipSpacing: CGFloat = 10
 
-        return HStack(spacing: 10) {
+        return HStack(spacing: chipSpacing) {
             TransactionChip(
                 label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
                 systemImage: "calendar.badge.clock",
@@ -339,7 +340,7 @@ struct TransactionEditorView: View {
             ) {
                 model.showingDatePicker = true
             }
-            .layoutPriority(1)
+            .containerRelativeFrame(.horizontal, count: 100, span: 65, spacing: chipSpacing)
 
             Button {
                 model.showingCategoryPicker = true
@@ -364,7 +365,7 @@ struct TransactionEditorView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .frame(minHeight: chipMinHeight, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
                 .background {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
@@ -377,7 +378,7 @@ struct TransactionEditorView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Category")
-            .layoutPriority(0)
+            .containerRelativeFrame(.horizontal, count: 100, span: 35, spacing: chipSpacing)
         }
         .padding(.vertical, 2)
     }
