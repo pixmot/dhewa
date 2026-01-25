@@ -334,7 +334,7 @@ struct TransactionEditorView: View {
             let totalWidth = max(proxy.size.width, 0)
             let availableWidth = max(totalWidth - chipSpacing, 0)
 
-            let dateChipWidth = (availableWidth * 0.65).rounded(.down)
+            let dateChipWidth = (availableWidth * 0.60).rounded(.down)
             let categoryChipWidth = max(availableWidth - dateChipWidth, 0)
 
             HStack(spacing: chipSpacing) {
