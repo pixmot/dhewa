@@ -325,10 +325,9 @@ struct TransactionEditorView: View {
     private var chipsRow: some View {
         @Bindable var model = model
 
-        let spacing: CGFloat = 10
-        let totalWidth = max(0, UIScreen.main.bounds.width - (OrdinatioMetric.screenPadding * 2) - spacing)
-        let dateWidth = totalWidth * 0.65
-        let categoryWidth = totalWidth * 0.35
+        let chipVerticalPadding: CGFloat = 10
+        let categoryIconSize: CGFloat = 26
+        let chipMinHeight = categoryIconSize + (chipVerticalPadding * 2)
 
         return HStack(spacing: 10) {
             TransactionChip(
@@ -338,7 +337,7 @@ struct TransactionEditorView: View {
             ) {
                 model.showingDatePicker = true
             }
-            .frame(width: dateWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
 
             Button {
                 model.showingCategoryPicker = true
@@ -347,7 +346,7 @@ struct TransactionEditorView: View {
                     OrdinatioIconTile(
                         symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
                         color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
-                        size: 26
+                        size: categoryIconSize
                     )
 
                     Text(model.categoryId == nil ? "Category" : selectedCategoryName)
@@ -376,7 +375,7 @@ struct TransactionEditorView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Category")
-            .frame(width: categoryWidth, alignment: .leading)
+            .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
         }
         .padding(.vertical, 2)
     }
