@@ -1,6 +1,7 @@
 import Observation
 import OrdinatioCore
 import SwiftUI
+import UIKit
 
 enum TransactionEditorMode: Hashable {
     case create
@@ -61,11 +62,13 @@ struct TransactionEditorView: View {
         let amountTrimmed = model.amountText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let absMinor = model.parsedAbsMinor else {
             model.errorMessage = amountTrimmed.isEmpty ? "Amount is required" : "Invalid amount"
+            playErrorHaptic()
             return
         }
 
         guard absMinor > 0 else {
             model.errorMessage = "Amount must be greater than zero"
+            playErrorHaptic()
             return
         }
 
@@ -138,6 +141,13 @@ struct TransactionEditorView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    if let errorMessage = model.errorMessage {
+                        errorBanner(message: errorMessage)
+                            .padding(.horizontal, OrdinatioMetric.screenPadding)
+                            .padding(.top, 8)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
                     ScrollView {
                         VStack(spacing: 18) {
                             amountRow
@@ -196,20 +206,6 @@ struct TransactionEditorView: View {
                 titleVisibility: .visible
             ) {
                 Button("Delete", role: .destructive) { deleteTransaction() }
-            }
-            .alert(
-                "Error",
-                isPresented: Binding(
-                    get: {
-                        model.errorMessage != nil
-                    },
-                    set: { newValue in
-                        if !newValue { model.errorMessage = nil }
-                    })
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(model.errorMessage ?? "")
             }
             .toolbar {
                 if showsDismissButton {
@@ -432,8 +428,6 @@ struct TransactionEditorView: View {
 
         return keypadButton(title: submitButtonTitle, role: .primary) { save() }
             .accessibilityIdentifier("TransactionSubmitButton")
-            .disabled(!model.canSave)
-            .opacity(model.canSave ? 1 : 0.6)
     }
 
     private var submitButtonTitle: String {
@@ -501,5 +495,35 @@ struct TransactionEditorView: View {
                 }
         }
         .buttonStyle(.plain)
+    }
+
+    private func errorBanner(message: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(OrdinatioColor.expense)
+
+            Text(message)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(OrdinatioColor.expense)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(OrdinatioColor.expense.opacity(0.12))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(OrdinatioColor.expense.opacity(0.4), lineWidth: 1)
+        }
+        .accessibilityIdentifier("TransactionErrorBanner")
+    }
+
+    private func playErrorHaptic() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.error)
     }
 }
