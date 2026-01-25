@@ -53,6 +53,61 @@ extension TransactionEditorView {
         @Environment(\.dismiss) private var dismiss
         @State private var searchText = ""
 
+        private struct CategoryOptionRow: View {
+            let name: String
+            let symbolName: String
+            let accent: Color
+            let selected: Bool
+            let onTap: () -> Void
+
+            private var shape: RoundedRectangle {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+            }
+
+            var body: some View {
+                Button(action: onTap) {
+                    HStack(spacing: 12) {
+                        OrdinatioIconTile(
+                            symbolName: symbolName,
+                            color: accent,
+                            size: 30
+                        )
+
+                        Text(name)
+                            .font(.system(.subheadline, design: .rounded).weight(.medium))
+                            .foregroundStyle(OrdinatioColor.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundStyle(selected ? accent : OrdinatioColor.separator)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(shape.fill(OrdinatioColor.surface))
+                    .overlay {
+                        shape.strokeBorder(
+                            selected ? accent.opacity(0.65) : OrdinatioColor.separator.opacity(0.75),
+                            lineWidth: selected ? 2 : 1
+                        )
+                    }
+                    .overlay {
+                        if selected {
+                            shape.fill(accent.opacity(0.06))
+                        }
+                    }
+                    .contentShape(shape)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+
         private var filtered: [OrdinatioCore.Category] {
             let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
             guard !query.isEmpty else { return categories }
@@ -61,64 +116,39 @@ extension TransactionEditorView {
 
         var body: some View {
             NavigationStack {
-                List {
-                    Button {
-                        selection = nil
-                        dismiss()
-                    } label: {
-                        HStack(spacing: 12) {
-                            OrdinatioIconTile(
-                                symbolName: OrdinatioCategoryVisuals.symbolName(for: "Uncategorized"),
-                                color: OrdinatioCategoryVisuals.color(for: "Uncategorized"),
-                                size: 30
-                            )
-
-                            Text("Uncategorized")
-                                .foregroundStyle(OrdinatioColor.textPrimary)
-
-                            Spacer(minLength: 0)
-
-                            if selection == nil {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .foregroundStyle(.tint)
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        let uncategorizedName = "Uncategorized"
+                        CategoryOptionRow(
+                            name: uncategorizedName,
+                            symbolName: OrdinatioCategoryVisuals.symbolName(for: uncategorizedName),
+                            accent: OrdinatioCategoryVisuals.color(for: uncategorizedName),
+                            selected: selection == nil,
+                            onTap: {
+                                selection = nil
+                                dismiss()
                             }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                    .listRowBackground(OrdinatioColor.background)
+                        )
 
-                    ForEach(filtered) { category in
-                        Button {
-                            selection = category.id
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 12) {
-                                OrdinatioIconTile(
-                                    symbolName: OrdinatioCategoryVisuals.symbolName(for: category.name),
-                                    color: OrdinatioCategoryVisuals.color(for: category.name),
-                                    size: 30
-                                )
-
-                                Text(category.name)
-                                    .foregroundStyle(OrdinatioColor.textPrimary)
-
-                                Spacer(minLength: 0)
-
-                                if selection == category.id {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(.tint)
+                        ForEach(filtered) { category in
+                            CategoryOptionRow(
+                                name: category.name,
+                                symbolName: OrdinatioCategoryVisuals.symbolName(for: category.name),
+                                accent: OrdinatioCategoryVisuals.color(for: category.name),
+                                selected: selection == category.id,
+                                onTap: {
+                                    selection = category.id
+                                    dismiss()
                                 }
-                            }
-                            .padding(.vertical, 4)
+                            )
                         }
-                        .buttonStyle(.plain)
-                        .listRowBackground(OrdinatioColor.background)
                     }
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 }
-                .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.immediately)
+                .scrollIndicators(.hidden)
                 .background(OrdinatioColor.background)
                 .navigationTitle("Category")
                 .searchable(text: $searchText, prompt: "Search categories")
