@@ -15,4 +15,3 @@ extension CategoryKind: DatabaseValueConvertible {
         return CategoryKind(rawValue: rawValue)
     }
 }
-

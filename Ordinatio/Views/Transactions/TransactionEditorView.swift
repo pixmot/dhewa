@@ -557,7 +557,6 @@ struct TransactionEditorView: View {
         }
     }
 
-
     private func keypadNumberRow(_ digits: [Int], height: CGFloat, cornerRadius: CGFloat) -> some View {
         @Bindable var model = model
 
@@ -715,7 +714,6 @@ struct TransactionEditorView: View {
             }
         }
     }
-
 
     private func prepareForAmountKeypadInput(allowsResetForAnyError: Bool) {
         if shouldResetAmountOnNextKeypadInput {

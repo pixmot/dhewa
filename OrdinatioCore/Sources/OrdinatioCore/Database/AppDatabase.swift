@@ -155,7 +155,8 @@ public final class AppDatabase {
             try db.execute(sql: "UPDATE categories SET kind = 1 WHERE lower(name) = 'income'")
 
             try db.execute(
-                sql: "CREATE INDEX IF NOT EXISTS idx_categories_household_kind_sort ON categories(household_id, kind, sort_order)"
+                sql:
+                    "CREATE INDEX IF NOT EXISTS idx_categories_household_kind_sort ON categories(household_id, kind, sort_order)"
             )
         }
 

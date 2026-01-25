@@ -16,7 +16,7 @@ public enum SeedData {
     ]
 
     public static let defaultIncomeCategoryNames: [String] = [
-        "Income",
+        "Income"
     ]
 
     public static func ensureDefaultHouseholdAndCategories(in db: Database) throws -> String {

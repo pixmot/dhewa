@@ -7,7 +7,8 @@ public enum CategoryRepository {
         kind: CategoryKind? = nil
     ) -> ValueObservation<ValueReducers.Fetch<[Category]>> {
         ValueObservation.tracking { db in
-            var request = Category
+            var request =
+                Category
                 .filter(Category.Columns.householdId == householdId)
                 .filter(Category.Columns.deletedAt == nil)
 
@@ -15,7 +16,8 @@ public enum CategoryRepository {
                 request = request.filter(Category.Columns.kind == kind)
             }
 
-            return try request
+            return
+                try request
                 .order(Category.Columns.kind.asc, Category.Columns.sortOrder.asc)
                 .fetchAll(db)
         }

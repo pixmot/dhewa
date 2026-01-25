@@ -18,7 +18,8 @@ public actor DatabaseClient {
 
     public func fetchCategories(householdId: String, kind: CategoryKind? = nil) throws -> [Category] {
         try database.read { db in
-            var request = Category
+            var request =
+                Category
                 .filter(Category.Columns.householdId == householdId)
                 .filter(Category.Columns.deletedAt == nil)
 
@@ -26,7 +27,8 @@ public actor DatabaseClient {
                 request = request.filter(Category.Columns.kind == kind)
             }
 
-            return try request
+            return
+                try request
                 .order(Category.Columns.kind.asc, Category.Columns.sortOrder.asc)
                 .fetchAll(db)
         }
@@ -103,7 +105,9 @@ public actor DatabaseClient {
         }
     }
 
-    public func observeCategories(householdId: String, kind: CategoryKind? = nil) -> AsyncThrowingStream<[Category], Error> {
+    public func observeCategories(householdId: String, kind: CategoryKind? = nil) -> AsyncThrowingStream<
+        [Category], Error
+    > {
         stream(CategoryRepository.observeCategories(householdId: householdId, kind: kind))
     }
 
