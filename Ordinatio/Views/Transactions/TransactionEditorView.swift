@@ -150,7 +150,7 @@ struct TransactionEditorView: View {
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.top, 8)
-                        .padding(.bottom, 18)
+                            .padding(.bottom, focusedField == nil ? 4 : 18)
                     }
 
                     keypadArea
