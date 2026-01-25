@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    var onContinue: (String) -> Void
+    let onContinue: (String) -> Void
 
     enum Step {
         case welcome

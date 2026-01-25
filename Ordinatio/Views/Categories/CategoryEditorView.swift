@@ -8,7 +8,7 @@ struct CategoryEditorView: View {
     }
 
     let mode: Mode
-    var onSave: (String) -> Void
+    let onSave: (String) -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String

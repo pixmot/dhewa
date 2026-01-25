@@ -6,8 +6,8 @@ struct TransactionFiltersView: View {
     let availableCurrencyCodes: [String]
     let defaultCurrencyCode: String
 
-    var currentFilter: TransactionFilter
-    var onApply: (TransactionFilter) -> Void
+    let currentFilter: TransactionFilter
+    let onApply: (TransactionFilter) -> Void
 
     @Environment(\.dismiss) private var dismiss
 

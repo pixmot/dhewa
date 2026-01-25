@@ -7,7 +7,7 @@ extension BudgetComposerView {
         let title: String
         let selected: Bool
         let animation: Namespace.ID
-        var onTap: () -> Void
+        let onTap: () -> Void
 
         var body: some View {
             HStack {
@@ -40,7 +40,7 @@ extension BudgetComposerView {
         let symbol: String
         let accent: Color
         let selected: Bool
-        var onTap: () -> Void
+        let onTap: () -> Void
 
         private var cardShape: RoundedRectangle {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -101,7 +101,7 @@ extension BudgetComposerView {
         let category: OrdinatioCore.Category
         let selected: Bool
         let dimmed: Bool
-        var onTap: () -> Void
+        let onTap: () -> Void
 
         private var name: String { category.name }
         private var emoji: String { OrdinatioCategoryVisuals.emoji(for: name) }
@@ -135,7 +135,7 @@ extension BudgetComposerView {
     }
 
     struct BudgetPickerStyle: ViewModifier {
-        var colorScheme: ColorScheme
+        let colorScheme: ColorScheme
 
         func body(content: Content) -> some View {
             content
@@ -296,7 +296,7 @@ extension BudgetComposerView {
     struct BudgetNumberPad: View {
         @Binding var amountMinor: Int64
         let canSubmit: Bool
-        var onSubmit: () -> Void
+        let onSubmit: () -> Void
 
         private let numPadNumbers = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
 
