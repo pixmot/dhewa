@@ -7,9 +7,9 @@ extension TransactionEditorView {
         let label: String
         let systemImage: String
         let tint: Color
-        let action: () -> Void
         let expands: Bool
         let minHeight: CGFloat?
+        let action: () -> Void
 
         var body: some View {
             Button(action: action) {
