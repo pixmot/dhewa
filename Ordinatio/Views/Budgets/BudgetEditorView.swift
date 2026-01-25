@@ -682,6 +682,7 @@ extension BudgetComposerView {
             do {
                 let created = try await db.createCategory(
                     householdId: householdId,
+                    kind: .expense,
                     name: trimmed,
                     iconIndex: iconIndex
                 )

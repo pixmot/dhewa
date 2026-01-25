@@ -8,6 +8,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
 
     public var id: String
     public var householdId: String
+    public var kind: CategoryKind
     public var name: String
     public var iconIndex: Int?
     public var sortOrder: Int
@@ -18,6 +19,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
     public init(
         id: String,
         householdId: String,
+        kind: CategoryKind,
         name: String,
         iconIndex: Int? = nil,
         sortOrder: Int,
@@ -27,6 +29,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
     ) {
         self.id = id
         self.householdId = householdId
+        self.kind = kind
         self.name = name
         self.iconIndex = iconIndex
         self.sortOrder = sortOrder
@@ -40,6 +43,7 @@ extension Category {
     public enum Columns: String, ColumnExpression {
         case id
         case householdId = "household_id"
+        case kind
         case name
         case iconIndex = "icon_index"
         case sortOrder = "sort_order"

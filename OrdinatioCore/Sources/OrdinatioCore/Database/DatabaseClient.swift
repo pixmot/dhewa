@@ -16,21 +16,33 @@ public actor DatabaseClient {
         }
     }
 
-    public func fetchCategories(householdId: String) throws -> [Category] {
+    public func fetchCategories(householdId: String, kind: CategoryKind? = nil) throws -> [Category] {
         try database.read { db in
-            try Category
+            var request = Category
                 .filter(Category.Columns.householdId == householdId)
                 .filter(Category.Columns.deletedAt == nil)
-                .order(Category.Columns.sortOrder.asc)
+
+            if let kind {
+                request = request.filter(Category.Columns.kind == kind)
+            }
+
+            return try request
+                .order(Category.Columns.kind.asc, Category.Columns.sortOrder.asc)
                 .fetchAll(db)
         }
     }
 
-    public func createCategory(householdId: String, name: String, iconIndex: Int? = nil) throws -> Category {
+    public func createCategory(
+        householdId: String,
+        kind: CategoryKind,
+        name: String,
+        iconIndex: Int? = nil
+    ) throws -> Category {
         try database.write { db in
             try CategoryRepository.createCategory(
                 in: db,
                 householdId: householdId,
+                kind: kind,
                 name: name,
                 iconIndex: iconIndex
             )
@@ -91,8 +103,8 @@ public actor DatabaseClient {
         }
     }
 
-    public func observeCategories(householdId: String) -> AsyncThrowingStream<[Category], Error> {
-        stream(CategoryRepository.observeCategories(householdId: householdId))
+    public func observeCategories(householdId: String, kind: CategoryKind? = nil) -> AsyncThrowingStream<[Category], Error> {
+        stream(CategoryRepository.observeCategories(householdId: householdId, kind: kind))
     }
 
     public func observeBudgets(householdId: String) -> AsyncThrowingStream<[Budget], Error> {

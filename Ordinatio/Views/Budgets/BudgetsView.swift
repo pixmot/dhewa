@@ -219,7 +219,7 @@ private final class BudgetComposerHostModel {
 
         categoriesTask = Task.detached(priority: .userInitiated) { [db, householdId] in
             do {
-                for try await categories in await db.observeCategories(householdId: householdId) {
+                for try await categories in await db.observeCategories(householdId: householdId, kind: .expense) {
                     await MainActor.run { [weak self] in
                         self?.categories = categories
                     }

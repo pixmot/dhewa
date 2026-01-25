@@ -148,6 +148,17 @@ public final class AppDatabase {
             }
         }
 
+        migrator.registerMigration("v4_add_category_kind") { db in
+            try db.execute(sql: "ALTER TABLE categories ADD COLUMN kind INTEGER NOT NULL DEFAULT 0")
+
+            // Best-effort backfill for the seeded "Income" category name.
+            try db.execute(sql: "UPDATE categories SET kind = 1 WHERE lower(name) = 'income'")
+
+            try db.execute(
+                sql: "CREATE INDEX IF NOT EXISTS idx_categories_household_kind_sort ON categories(household_id, kind, sort_order)"
+            )
+        }
+
         return migrator
     }
 }

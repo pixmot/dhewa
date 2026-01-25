@@ -49,6 +49,7 @@ extension TransactionEditorView {
     struct CategoryPickerSheet: View {
         let db: DatabaseClient
         let householdId: String
+        let kind: CategoryKind
         @Binding var categories: [OrdinatioCore.Category]
         @Binding var selection: String?
 
@@ -58,11 +59,20 @@ extension TransactionEditorView {
         @State private var searchText = ""
 
         private var availableCategoryOptions: [OrdinatioCore.Category] {
-            categories
+            categories.filter { $0.kind == kind }
         }
 
         private var emptyState: (icon: String, message: String)? {
-            categories.isEmpty ? (icon: "tray.full.fill", message: "No remaining\ncategories.") : nil
+            availableCategoryOptions.isEmpty ? (icon: "tray.full.fill", message: emptyStateMessage) : nil
+        }
+
+        private var emptyStateMessage: String {
+            switch kind {
+            case .expense:
+                return "No expense\ncategories yet."
+            case .income:
+                return "No income\ncategories yet."
+            }
         }
 
         private var filteredCategoryOptions: [OrdinatioCore.Category] {
@@ -157,11 +167,17 @@ extension TransactionEditorView {
                 do {
                     let created = try await db.createCategory(
                         householdId: householdId,
+                        kind: kind,
                         name: trimmed,
                         iconIndex: iconIndex
                     )
                     categories.append(created)
-                    categories.sort { $0.sortOrder < $1.sortOrder }
+                    categories.sort {
+                        if $0.kind != $1.kind {
+                            return $0.kind.rawValue < $1.kind.rawValue
+                        }
+                        return $0.sortOrder < $1.sortOrder
+                    }
                 } catch {
                     errorMessage = "Couldn't create category"
                 }

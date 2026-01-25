@@ -39,9 +39,10 @@ final class OrdinatioCoreTests: XCTestCase {
         }
 
         let categories = try appDatabase.read { db in
-            try Category
-                .filter(Category.Columns.householdId == householdId)
-                .order(Category.Columns.sortOrder.asc)
+            try OrdinatioCore.Category
+                .filter(OrdinatioCore.Category.Columns.householdId == householdId)
+                .filter(OrdinatioCore.Category.Columns.kind == OrdinatioCore.CategoryKind.expense)
+                .order(OrdinatioCore.Category.Columns.sortOrder.asc)
                 .fetchAll(db)
         }
         XCTAssertGreaterThanOrEqual(categories.count, 3)
@@ -53,9 +54,10 @@ final class OrdinatioCoreTests: XCTestCase {
         }
 
         let after = try appDatabase.read { db in
-            try Category
-                .filter(Category.Columns.householdId == householdId)
-                .order(Category.Columns.sortOrder.asc)
+            try OrdinatioCore.Category
+                .filter(OrdinatioCore.Category.Columns.householdId == householdId)
+                .filter(OrdinatioCore.Category.Columns.kind == OrdinatioCore.CategoryKind.expense)
+                .order(OrdinatioCore.Category.Columns.sortOrder.asc)
                 .fetchAll(db)
         }
         XCTAssertEqual(after.map(\.id), reordered)
@@ -68,9 +70,10 @@ final class OrdinatioCoreTests: XCTestCase {
         }
 
         let now = Date()
-        let category = Category(
+        let category = OrdinatioCore.Category(
             id: UUID().uuidString.lowercased(),
             householdId: householdId,
+            kind: .expense,
             name: "Custom",
             iconIndex: 7,
             sortOrder: 99,
