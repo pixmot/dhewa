@@ -325,6 +325,11 @@ struct TransactionEditorView: View {
     private var chipsRow: some View {
         @Bindable var model = model
 
+        let spacing: CGFloat = 10
+        let totalWidth = max(0, UIScreen.main.bounds.width - (OrdinatioMetric.screenPadding * 2) - spacing)
+        let dateWidth = totalWidth * 0.65
+        let categoryWidth = totalWidth * 0.35
+
         return HStack(spacing: 10) {
             TransactionChip(
                 label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
@@ -333,7 +338,7 @@ struct TransactionEditorView: View {
             ) {
                 model.showingDatePicker = true
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: dateWidth, alignment: .leading)
 
             Button {
                 model.showingCategoryPicker = true
@@ -371,7 +376,7 @@ struct TransactionEditorView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Category")
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: categoryWidth, alignment: .leading)
         }
         .padding(.vertical, 2)
     }
