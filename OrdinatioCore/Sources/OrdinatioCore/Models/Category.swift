@@ -9,6 +9,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
     public var id: String
     public var householdId: String
     public var name: String
+    public var iconIndex: Int?
     public var sortOrder: Int
     public var createdAt: Date
     public var updatedAt: Date
@@ -18,6 +19,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
         id: String,
         householdId: String,
         name: String,
+        iconIndex: Int? = nil,
         sortOrder: Int,
         createdAt: Date,
         updatedAt: Date,
@@ -26,6 +28,7 @@ public struct Category: Codable, FetchableRecord, PersistableRecord, Identifiabl
         self.id = id
         self.householdId = householdId
         self.name = name
+        self.iconIndex = iconIndex
         self.sortOrder = sortOrder
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -38,6 +41,7 @@ extension Category {
         case id
         case householdId = "household_id"
         case name
+        case iconIndex = "icon_index"
         case sortOrder = "sort_order"
         case createdAt = "created_at"
         case updatedAt = "updated_at"

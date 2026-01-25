@@ -15,8 +15,11 @@ struct TransactionRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             OrdinatioIconTile(
-                symbolName: OrdinatioCategoryVisuals.symbolName(for: categoryTitle),
-                color: OrdinatioCategoryVisuals.color(for: categoryTitle),
+                symbolName: OrdinatioCategoryVisuals.symbolName(
+                    for: categoryTitle,
+                    iconIndex: row.categoryIconIndex
+                ),
+                color: OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex),
                 size: 34
             )
 

@@ -26,9 +26,14 @@ public actor DatabaseClient {
         }
     }
 
-    public func createCategory(householdId: String, name: String) throws -> Category {
+    public func createCategory(householdId: String, name: String, iconIndex: Int? = nil) throws -> Category {
         try database.write { db in
-            try CategoryRepository.createCategory(in: db, householdId: householdId, name: name)
+            try CategoryRepository.createCategory(
+                in: db,
+                householdId: householdId,
+                name: name,
+                iconIndex: iconIndex
+            )
         }
     }
 

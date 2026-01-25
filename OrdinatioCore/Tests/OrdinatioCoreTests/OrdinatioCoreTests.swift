@@ -61,6 +61,33 @@ final class OrdinatioCoreTests: XCTestCase {
         XCTAssertEqual(after.map(\.id), reordered)
     }
 
+    func testCategoryIconIndexPersists() throws {
+        let appDatabase = try AppDatabase.inMemory()
+        let householdId = try appDatabase.write { db in
+            try SeedData.ensureDefaultHouseholdAndCategories(in: db)
+        }
+
+        let now = Date()
+        let category = Category(
+            id: UUID().uuidString.lowercased(),
+            householdId: householdId,
+            name: "Custom",
+            iconIndex: 7,
+            sortOrder: 99,
+            createdAt: now,
+            updatedAt: now
+        )
+
+        try appDatabase.write { db in
+            try category.insert(db)
+        }
+
+        let fetched = try appDatabase.read { db in
+            try Category.fetchOne(db, key: category.id)
+        }
+        XCTAssertEqual(fetched?.iconIndex, 7)
+    }
+
     func testBudgetSummariesCountOnlyExpenses() throws {
         let appDatabase = try AppDatabase.inMemory()
         let householdId = try appDatabase.write { db in

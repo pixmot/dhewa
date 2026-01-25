@@ -98,14 +98,30 @@ extension BudgetComposerView {
     }
 
     struct BudgetCategoryChip: View {
-        let category: OrdinatioCore.Category
+        let name: String
+        let iconIndex: Int?
         let selected: Bool
         let dimmed: Bool
         let onTap: () -> Void
 
-        private var name: String { category.name }
-        private var emoji: String { OrdinatioCategoryVisuals.emoji(for: name) }
-        private var color: Color { OrdinatioCategoryVisuals.color(for: name) }
+        init(category: OrdinatioCore.Category, selected: Bool, dimmed: Bool, onTap: @escaping () -> Void) {
+            self.name = category.name
+            self.iconIndex = category.iconIndex
+            self.selected = selected
+            self.dimmed = dimmed
+            self.onTap = onTap
+        }
+
+        init(name: String, iconIndex: Int? = nil, selected: Bool, dimmed: Bool, onTap: @escaping () -> Void) {
+            self.name = name
+            self.iconIndex = iconIndex
+            self.selected = selected
+            self.dimmed = dimmed
+            self.onTap = onTap
+        }
+
+        private var emoji: String { OrdinatioCategoryVisuals.emoji(for: name, iconIndex: iconIndex) }
+        private var color: Color { OrdinatioCategoryVisuals.color(for: name, iconIndex: iconIndex) }
 
         var body: some View {
             Button(action: onTap) {

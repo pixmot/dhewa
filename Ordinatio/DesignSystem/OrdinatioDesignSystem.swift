@@ -26,88 +26,125 @@ enum OrdinatioColor {
 }
 
 enum OrdinatioCategoryVisuals {
-    static func emoji(for categoryName: String) -> String {
-        let emojis = [
-            "🛒",
-            "🍽️",
-            "☕️",
-            "🏠",
-            "🚗",
-            "🚌",
-            "✈️",
-            "🚆",
-            "❤️",
-            "🩺",
-            "🎓",
-            "🎮",
-            "🎁",
-            "🎬",
-            "👕",
-            "🐾",
-            "🌿",
-            "⚡️",
-            "🛍️",
-            "💳",
-            "💵",
-            "🎵",
-            "📚",
-            "✨",
-        ]
+    static let iconCount = emojiPalette.count
 
-        let index = categoryName.ordinatioStableHash % emojis.count
-        return emojis[index]
+    private static let emojiPalette = [
+        "🛒",
+        "🍽️",
+        "☕️",
+        "🏠",
+        "🚗",
+        "🚌",
+        "✈️",
+        "🚆",
+        "❤️",
+        "🩺",
+        "🎓",
+        "🎮",
+        "🎁",
+        "🎬",
+        "👕",
+        "🐾",
+        "🌿",
+        "⚡️",
+        "🛍️",
+        "💳",
+        "💵",
+        "🎵",
+        "📚",
+        "✨",
+    ]
+
+    private static let symbolPalette = [
+        "cart.fill",
+        "fork.knife",
+        "cup.and.saucer.fill",
+        "house.fill",
+        "car.fill",
+        "bus.fill",
+        "airplane",
+        "train.side.front.car",
+        "heart.fill",
+        "cross.case.fill",
+        "graduationcap.fill",
+        "gamecontroller.fill",
+        "gift.fill",
+        "film.fill",
+        "tshirt.fill",
+        "pawprint.fill",
+        "leaf.fill",
+        "bolt.fill",
+        "bag.fill",
+        "creditcard.fill",
+        "dollarsign.circle.fill",
+        "music.note",
+        "book.fill",
+        "sparkles",
+    ]
+
+    private static let colorPalette = [
+        Color(red: 0.16, green: 0.60, blue: 0.96),
+        Color(red: 0.93, green: 0.48, blue: 0.35),
+        Color(red: 0.67, green: 0.40, blue: 0.64),
+        Color(red: 0.77, green: 0.41, blue: 0.97),
+        Color(red: 0.43, green: 0.48, blue: 0.95),
+        Color(red: 0.95, green: 0.75, blue: 0.34),
+        Color(red: 0.93, green: 0.50, blue: 0.64),
+        Color(red: 0.91, green: 0.30, blue: 0.39),
+        Color(red: 0.38, green: 0.78, blue: 0.98),
+        Color(red: 0.42, green: 0.69, blue: 0.63),
+        Color(red: 0.95, green: 0.66, blue: 0.54),
+        Color(red: 0.37, green: 0.69, blue: 0.84),
+    ]
+
+    static func emoji(for index: Int) -> String {
+        emojiPalette[clampedIndex(index, count: emojiPalette.count)]
+    }
+
+    static func symbolName(for index: Int) -> String {
+        symbolPalette[clampedIndex(index, count: symbolPalette.count)]
+    }
+
+    static func color(for index: Int) -> Color {
+        colorPalette[clampedIndex(index, count: colorPalette.count)]
+    }
+
+    static func emoji(for categoryName: String) -> String {
+        emoji(for: resolvedIndex(for: categoryName, iconIndex: nil, count: emojiPalette.count))
+    }
+
+    static func emoji(for categoryName: String, iconIndex: Int?) -> String {
+        emoji(for: resolvedIndex(for: categoryName, iconIndex: iconIndex, count: emojiPalette.count))
     }
 
     static func symbolName(for categoryName: String) -> String {
-        let symbols = [
-            "cart.fill",
-            "fork.knife",
-            "cup.and.saucer.fill",
-            "house.fill",
-            "car.fill",
-            "bus.fill",
-            "airplane",
-            "train.side.front.car",
-            "heart.fill",
-            "cross.case.fill",
-            "graduationcap.fill",
-            "gamecontroller.fill",
-            "gift.fill",
-            "film.fill",
-            "tshirt.fill",
-            "pawprint.fill",
-            "leaf.fill",
-            "bolt.fill",
-            "bag.fill",
-            "creditcard.fill",
-            "dollarsign.circle.fill",
-            "music.note",
-            "book.fill",
-            "sparkles",
-        ]
+        symbolName(for: resolvedIndex(for: categoryName, iconIndex: nil, count: symbolPalette.count))
+    }
 
-        let index = categoryName.ordinatioStableHash % symbols.count
-        return symbols[index]
+    static func symbolName(for categoryName: String, iconIndex: Int?) -> String {
+        symbolName(for: resolvedIndex(for: categoryName, iconIndex: iconIndex, count: symbolPalette.count))
     }
 
     static func color(for categoryName: String) -> Color {
-        let palette = [
-            Color(red: 0.16, green: 0.60, blue: 0.96),
-            Color(red: 0.93, green: 0.48, blue: 0.35),
-            Color(red: 0.67, green: 0.40, blue: 0.64),
-            Color(red: 0.77, green: 0.41, blue: 0.97),
-            Color(red: 0.43, green: 0.48, blue: 0.95),
-            Color(red: 0.95, green: 0.75, blue: 0.34),
-            Color(red: 0.93, green: 0.50, blue: 0.64),
-            Color(red: 0.91, green: 0.30, blue: 0.39),
-            Color(red: 0.38, green: 0.78, blue: 0.98),
-            Color(red: 0.42, green: 0.69, blue: 0.63),
-            Color(red: 0.95, green: 0.66, blue: 0.54),
-            Color(red: 0.37, green: 0.69, blue: 0.84),
-        ]
+        color(for: resolvedIndex(for: categoryName, iconIndex: nil, count: colorPalette.count))
+    }
 
-        let index = categoryName.ordinatioStableHash % palette.count
-        return palette[index]
+    static func color(for categoryName: String, iconIndex: Int?) -> Color {
+        color(for: resolvedIndex(for: categoryName, iconIndex: iconIndex, count: colorPalette.count))
+    }
+
+    private static func resolvedIndex(for categoryName: String, iconIndex: Int?, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        if let iconIndex {
+            return clampedIndex(iconIndex, count: count)
+        }
+        return clampedIndex(categoryName.ordinatioStableHash % count, count: count)
+    }
+
+    private static func clampedIndex(_ index: Int, count: Int) -> Int {
+        guard count > 0 else { return 0 }
+        let mod = index % count
+        return mod >= 0 ? mod : mod + count
     }
 }
 

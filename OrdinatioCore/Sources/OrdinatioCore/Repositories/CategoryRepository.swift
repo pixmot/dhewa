@@ -12,7 +12,12 @@ public enum CategoryRepository {
         }
     }
 
-    public static func createCategory(in db: Database, householdId: String, name: String) throws -> Category {
+    public static func createCategory(
+        in db: Database,
+        householdId: String,
+        name: String,
+        iconIndex: Int?
+    ) throws -> Category {
         let now = Date()
         let maxSortOrder =
             try Int.fetchOne(
@@ -26,6 +31,7 @@ public enum CategoryRepository {
             id: UUID().uuidString.lowercased(),
             householdId: householdId,
             name: name,
+            iconIndex: iconIndex,
             sortOrder: maxSortOrder + 1,
             createdAt: now,
             updatedAt: now

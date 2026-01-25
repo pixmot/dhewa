@@ -62,6 +62,7 @@ public struct TransactionListRow: FetchableRecord, Decodable, Hashable, Sendable
     public var householdId: String
     public var categoryId: String?
     public var categoryName: String?
+    public var categoryIconIndex: Int?
     public var amountMinor: Int64
     public var currencyCode: String
     public var txnDate: Int32
@@ -74,6 +75,7 @@ public struct TransactionListRow: FetchableRecord, Decodable, Hashable, Sendable
         householdId: String,
         categoryId: String?,
         categoryName: String?,
+        categoryIconIndex: Int?,
         amountMinor: Int64,
         currencyCode: String,
         txnDate: Int32,
@@ -85,6 +87,7 @@ public struct TransactionListRow: FetchableRecord, Decodable, Hashable, Sendable
         self.householdId = householdId
         self.categoryId = categoryId
         self.categoryName = categoryName
+        self.categoryIconIndex = categoryIconIndex
         self.amountMinor = amountMinor
         self.currencyCode = currencyCode
         self.txnDate = txnDate

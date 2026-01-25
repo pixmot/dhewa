@@ -142,6 +142,12 @@ public final class AppDatabase {
                 index: "idx_budgets_household_timeframe", on: "budgets", columns: ["household_id", "time_frame"])
         }
 
+        migrator.registerMigration("v3_add_category_icon_index") { db in
+            try db.alter(table: "categories") { t in
+                t.add(column: "icon_index", .integer)
+            }
+        }
+
         return migrator
     }
 }

@@ -75,8 +75,8 @@ struct BudgetComposerView: View {
         }
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .sheet(isPresented: $model.showingCategoryCreator) {
-            CategoryEditorView(mode: .create) { name in
-                createCategory(name: name)
+            CategoryEditorView(mode: .create) { name, iconIndex in
+                createCategory(name: name, iconIndex: iconIndex)
             }
         }
         .animation(.easeOut(duration: 0.2), value: model.showToast)
@@ -674,13 +674,17 @@ extension BudgetComposerView {
         }
     }
 
-    fileprivate func createCategory(name: String) {
+    fileprivate func createCategory(name: String, iconIndex: Int?) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
         Task { @MainActor in
             do {
-                let created = try await db.createCategory(householdId: householdId, name: trimmed)
+                let created = try await db.createCategory(
+                    householdId: householdId,
+                    name: trimmed,
+                    iconIndex: iconIndex
+                )
                 model.categories.append(created)
                 model.categories.sort { $0.sortOrder < $1.sortOrder }
             } catch {

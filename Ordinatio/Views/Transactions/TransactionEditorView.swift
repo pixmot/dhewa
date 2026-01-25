@@ -60,9 +60,17 @@ struct TransactionEditorView: View {
 
     private static let categoryRequiredErrorMessage = "Category is required"
 
+    private var selectedCategory: OrdinatioCore.Category? {
+        guard let categoryId = model.categoryId else { return nil }
+        return categories.first(where: { $0.id == categoryId })
+    }
+
     private var selectedCategoryName: String {
-        guard let categoryId = model.categoryId else { return "Category" }
-        return categories.first(where: { $0.id == categoryId })?.name ?? "Category"
+        selectedCategory?.name ?? "Category"
+    }
+
+    private var selectedCategoryIconIndex: Int? {
+        selectedCategory?.iconIndex
     }
 
     private func save() {
@@ -195,7 +203,12 @@ struct TransactionEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadCategories() }
             .sheet(isPresented: $model.showingCategoryPicker) {
-                CategoryPickerSheet(categories: categories, selection: $model.categoryId)
+                CategoryPickerSheet(
+                    db: db,
+                    householdId: householdId,
+                    categories: $categories,
+                    selection: $model.categoryId
+                )
             }
             .sheet(isPresented: $model.showingCurrencyPicker) {
                 CurrencyPickerSheet(selection: $model.currencyCode)
@@ -378,10 +391,16 @@ struct TransactionEditorView: View {
                 Button {
                     model.showingCategoryPicker = true
                 } label: {
-                    let categoryTint = OrdinatioCategoryVisuals.color(for: selectedCategoryName)
+                    let categoryTint = OrdinatioCategoryVisuals.color(
+                        for: selectedCategoryName,
+                        iconIndex: selectedCategoryIconIndex
+                    )
                     HStack(spacing: 10) {
                         OrdinatioIconTile(
-                            symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
+                            symbolName: OrdinatioCategoryVisuals.symbolName(
+                                for: selectedCategoryName,
+                                iconIndex: selectedCategoryIconIndex
+                            ),
                             color: categoryTint,
                             size: ChipsRowMetrics.categoryIconSize
                         )

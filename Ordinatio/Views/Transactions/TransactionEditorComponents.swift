@@ -47,108 +47,75 @@ extension TransactionEditorView {
     }
 
     struct CategoryPickerSheet: View {
-        let categories: [OrdinatioCore.Category]
+        let db: DatabaseClient
+        let householdId: String
+        @Binding var categories: [OrdinatioCore.Category]
         @Binding var selection: String?
 
         @Environment(\.dismiss) private var dismiss
+        @State private var showingCategoryCreator = false
+        @State private var errorMessage: String?
         @State private var searchText = ""
 
-        private struct CategoryOptionRow: View {
-            let name: String
-            let symbolName: String
-            let accent: Color
-            let selected: Bool
-            let onTap: () -> Void
-
-            private var shape: RoundedRectangle {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-            }
-
-            var body: some View {
-                Button(action: onTap) {
-                    HStack(spacing: 12) {
-                        OrdinatioIconTile(
-                            symbolName: symbolName,
-                            color: accent,
-                            size: 30
-                        )
-
-                        Text(name)
-                            .font(.system(.subheadline, design: .rounded).weight(.medium))
-                            .foregroundStyle(OrdinatioColor.textPrimary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-
-                        Spacer(minLength: 0)
-
-                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundStyle(selected ? accent : OrdinatioColor.separator)
-                            .accessibilityHidden(true)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(shape.fill(OrdinatioColor.surface))
-                    .overlay {
-                        shape.strokeBorder(
-                            selected ? accent.opacity(0.65) : OrdinatioColor.separator.opacity(0.75),
-                            lineWidth: selected ? 2 : 1
-                        )
-                    }
-                    .overlay {
-                        if selected {
-                            shape.fill(accent.opacity(0.06))
-                        }
-                    }
-                    .contentShape(shape)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(selected ? .isSelected : [])
-            }
+        private var availableCategoryOptions: [OrdinatioCore.Category] {
+            categories
         }
 
-        private var filtered: [OrdinatioCore.Category] {
+        private var emptyState: (icon: String, message: String)? {
+            categories.isEmpty ? (icon: "tray.full.fill", message: "No remaining\ncategories.") : nil
+        }
+
+        private var filteredCategoryOptions: [OrdinatioCore.Category] {
             let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-            guard !query.isEmpty else { return categories }
-            return categories.filter { $0.name.lowercased().contains(query) }
+            guard !query.isEmpty else { return availableCategoryOptions }
+            return availableCategoryOptions.filter { $0.name.lowercased().contains(query) }
         }
 
         var body: some View {
             NavigationStack {
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        let uncategorizedName = "Uncategorized"
-                        CategoryOptionRow(
-                            name: uncategorizedName,
-                            symbolName: OrdinatioCategoryVisuals.symbolName(for: uncategorizedName),
-                            accent: OrdinatioCategoryVisuals.color(for: uncategorizedName),
-                            selected: selection == nil,
-                            onTap: {
-                                selection = nil
-                                dismiss()
-                            }
-                        )
+                VStack(spacing: 12) {
+                    if let emptyState {
+                        VStack(spacing: 12) {
+                            Image(systemName: emptyState.icon)
+                                .font(.system(.largeTitle, design: .rounded))
+                                .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
+                                .padding(.top, 20)
 
-                        ForEach(filtered) { category in
-                            CategoryOptionRow(
-                                name: category.name,
-                                symbolName: OrdinatioCategoryVisuals.symbolName(for: category.name),
-                                accent: OrdinatioCategoryVisuals.color(for: category.name),
-                                selected: selection == category.id,
-                                onTap: {
-                                    selection = category.id
-                                    dismiss()
-                                }
-                            )
+                            Text(emptyState.message)
+                                .font(.system(.title3, design: .rounded).weight(.medium))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
+                                .padding(.bottom, 20)
                         }
+                        .frame(maxHeight: .infinity)
+                    } else {
+                        ScrollView(showsIndicators: false) {
+                            BudgetComposerView.FlowLayout(spacing: 10) {
+                                ForEach(filteredCategoryOptions) { category in
+                                    BudgetComposerView.BudgetCategoryChip(
+                                        category: category,
+                                        selected: selection == category.id,
+                                        dimmed: selection != nil && selection != category.id
+                                    ) {
+                                        if selection == category.id {
+                                            selection = nil
+                                        } else {
+                                            selection = category.id
+                                        }
+                                        dismiss()
+                                    }
+                                }
+                            }
+                            .padding(15)
+                        }
+                        .scrollDismissesKeyboard(.immediately)
+                        .scrollIndicators(.hidden)
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal, OrdinatioMetric.screenPadding)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
+
+                    Spacer(minLength: 0)
                 }
-                .scrollDismissesKeyboard(.immediately)
-                .scrollIndicators(.hidden)
+                .padding(20)
                 .background(OrdinatioColor.background)
                 .navigationTitle("Category")
                 .searchable(text: $searchText, prompt: "Search categories")
@@ -156,6 +123,47 @@ extension TransactionEditorView {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Done") { dismiss() }
                     }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            showingCategoryCreator = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .accessibilityLabel("Create Category")
+                    }
+                }
+                .sheet(isPresented: $showingCategoryCreator) {
+                    CategoryEditorView(mode: .create) { name, iconIndex in
+                        createCategory(name: name, iconIndex: iconIndex)
+                    }
+                }
+                .alert(
+                    "Couldn't create category",
+                    isPresented: Binding(
+                        get: { errorMessage != nil },
+                        set: { newValue in if !newValue { errorMessage = nil } }
+                    )
+                ) {
+                    Button("OK", role: .cancel) {}
+                }
+            }
+        }
+
+        private func createCategory(name: String, iconIndex: Int?) {
+            let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return }
+
+            Task { @MainActor in
+                do {
+                    let created = try await db.createCategory(
+                        householdId: householdId,
+                        name: trimmed,
+                        iconIndex: iconIndex
+                    )
+                    categories.append(created)
+                    categories.sort { $0.sortOrder < $1.sortOrder }
+                } catch {
+                    errorMessage = "Couldn't create category"
                 }
             }
         }
