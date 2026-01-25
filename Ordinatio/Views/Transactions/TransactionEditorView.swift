@@ -518,6 +518,6 @@ struct TransactionEditorView: View {
     private func playTypeToggleHaptic() {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.prepare()
-        generator.impactOccurred(intensity: 0.8)
+        generator.impactOccurred(intensity: 1.0)
     }
 }
