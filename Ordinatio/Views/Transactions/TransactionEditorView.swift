@@ -17,6 +17,7 @@ struct TransactionEditorView: View {
     let prefilledCategoryId: String?
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     enum FocusField: Hashable {
         case note
@@ -26,6 +27,7 @@ struct TransactionEditorView: View {
 
     @State private var categories: [OrdinatioCore.Category] = []
     @State private var model: TransactionEditorModel
+    @State private var errorDismissTask: Task<Void, Never>?
 
     init(
         db: DatabaseClient,
@@ -243,6 +245,19 @@ struct TransactionEditorView: View {
                     Button("Done") { focusedField = nil }
                 }
             }
+        }
+        .onChange(of: model.errorMessage) { _, newValue in
+            errorDismissTask?.cancel()
+            guard newValue != nil else { return }
+            errorDismissTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(3))
+                guard !Task.isCancelled else { return }
+                model.errorMessage = nil
+            }
+        }
+        .onDisappear {
+            errorDismissTask?.cancel()
+            errorDismissTask = nil
         }
     }
 
@@ -477,9 +492,20 @@ struct TransactionEditorView: View {
         .buttonStyle(.plain)
     }
 
+    @ViewBuilder
     private func errorBanner(message: String) -> some View {
+        if dynamicTypeSize > .xLarge {
+            errorBannerContent(message: message)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            errorBannerContent(message: message)
+                .frame(width: 250)
+        }
+    }
+
+    private func errorBannerContent(message: String) -> some View {
         HStack(spacing: 6.5) {
-            Image(systemName: "exclamationmark.triangle.fill")
+            Image(systemName: errorSymbolName(for: message))
                 .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(OrdinatioColor.expense)
 
@@ -493,8 +519,18 @@ struct TransactionEditorView: View {
             OrdinatioColor.expense.opacity(0.23),
             in: RoundedRectangle(cornerRadius: 9, style: .continuous)
         )
-        .frame(width: 250)
         .accessibilityIdentifier("TransactionErrorBanner")
+    }
+
+    private func errorSymbolName(for message: String) -> String {
+        switch message {
+        case "Amount is required", "Amount must be greater than zero":
+            return "centsign.circle"
+        case "Invalid amount":
+            return "questionmark.app"
+        default:
+            return "exclamationmark.triangle.fill"
+        }
     }
 
     private func playErrorHaptic() {
