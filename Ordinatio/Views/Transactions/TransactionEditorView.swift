@@ -330,56 +330,65 @@ struct TransactionEditorView: View {
         let chipMinHeight = categoryIconSize + (chipVerticalPadding * 2)
         let chipSpacing: CGFloat = 10
 
-        return HStack(spacing: chipSpacing) {
-            TransactionChip(
-                label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
-                systemImage: "calendar.badge.clock",
-                tint: .blue,
-                expands: true,
-                minHeight: chipMinHeight
-            ) {
-                model.showingDatePicker = true
+        return GeometryReader { proxy in
+            let totalWidth = max(proxy.size.width, 0)
+            let availableWidth = max(totalWidth - chipSpacing, 0)
+
+            let dateChipWidth = (availableWidth * 0.65).rounded(.down)
+            let categoryChipWidth = max(availableWidth - dateChipWidth, 0)
+
+            HStack(spacing: chipSpacing) {
+                TransactionChip(
+                    label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
+                    systemImage: "calendar.badge.clock",
+                    tint: .blue,
+                    expands: true,
+                    minHeight: chipMinHeight
+                ) {
+                    model.showingDatePicker = true
+                }
+                .frame(width: dateChipWidth, alignment: .leading)
+
+                Button {
+                    model.showingCategoryPicker = true
+                } label: {
+                    HStack(spacing: 10) {
+                        OrdinatioIconTile(
+                            symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
+                            color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
+                            size: categoryIconSize
+                        )
+
+                        Text(model.categoryId == nil ? "Category" : selectedCategoryName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(OrdinatioColor.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
+
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(OrdinatioColor.textSecondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(
+                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Category")
+                .frame(width: categoryChipWidth, alignment: .leading)
             }
-            .containerRelativeFrame(.horizontal, count: 100, span: 65, spacing: chipSpacing)
-
-            Button {
-                model.showingCategoryPicker = true
-            } label: {
-                HStack(spacing: 10) {
-                    OrdinatioIconTile(
-                        symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
-                        color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
-                        size: categoryIconSize
-                    )
-
-                    Text(model.categoryId == nil ? "Category" : selectedCategoryName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.textPrimary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .layoutPriority(1)
-
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
-                .background {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(
-                            OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Category")
-            .containerRelativeFrame(.horizontal, count: 100, span: 35, spacing: chipSpacing)
         }
+        .frame(height: chipMinHeight)
         .padding(.vertical, 2)
     }
 
