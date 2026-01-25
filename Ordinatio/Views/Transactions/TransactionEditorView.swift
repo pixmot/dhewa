@@ -151,7 +151,7 @@ struct TransactionEditorView: View {
                             }
                             .padding(.horizontal, OrdinatioMetric.screenPadding)
                             .padding(.top, 8)
-                            .padding(.bottom, focusedField == nil ? 16 : 18)
+                            .padding(.bottom, focusedField == nil ? 32 : 18)
                             .frame(maxWidth: .infinity)
                             .frame(minHeight: proxy.size.height, alignment: .bottom)
                         }
