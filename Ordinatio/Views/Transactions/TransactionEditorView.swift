@@ -579,51 +579,17 @@ struct TransactionEditorView: View {
 
     private struct KeypadButtonStyle: ButtonStyle {
         let reduceMotion: Bool
-        let cornerRadius: CGFloat
-        let role: KeypadRole
 
         func makeBody(configuration: Configuration) -> some View {
-            let isPressed = configuration.isPressed
-            let shadowOpacity: Double = isPressed ? 0.16 : 0.26
-            let shadowRadius: CGFloat = isPressed ? 2 : 6
-            let shadowOffset: CGFloat = isPressed ? 1 : 4
-            let highlightOpacity: Double = isPressed ? 0.16 : 0.05
-            let strokeOpacity: Double = isPressed ? 0.28 : 0.1
-
-            return configuration.label
-                .scaleEffect(isPressed ? 0.94 : 1)
-                .offset(y: isPressed ? 1.5 : 0)
-                .shadow(
-                    color: OrdinatioColor.textPrimary.opacity(shadowOpacity),
-                    radius: shadowRadius,
-                    x: 0,
-                    y: shadowOffset
-                )
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    .white.opacity(highlightOpacity),
-                                    .white.opacity(0)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .blendMode(.screen)
-                        .opacity(role == .primary ? 0.75 : 1)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .stroke(Color.white.opacity(strokeOpacity), lineWidth: 1)
-                        .blendMode(.screen)
-                }
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 0.95 : 1)
+                .opacity(configuration.isPressed ? 0.94 : 1)
+                .brightness(configuration.isPressed ? 0.03 : 0)
                 .animation(
                     reduceMotion
                         ? .easeOut(duration: 0.12)
-                        : .spring(response: 0.2, dampingFraction: 0.6, blendDuration: 0.1),
-                    value: isPressed
+                        : .spring(response: 0.22, dampingFraction: 0.7, blendDuration: 0.05),
+                    value: configuration.isPressed
                 )
         }
     }
@@ -652,7 +618,7 @@ struct TransactionEditorView: View {
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
-        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion, cornerRadius: cornerRadius, role: role))
+        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion))
     }
 
     private func keypadButton(
@@ -679,7 +645,7 @@ struct TransactionEditorView: View {
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
-        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion, cornerRadius: cornerRadius, role: role))
+        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion))
     }
 
     @ViewBuilder
