@@ -271,9 +271,30 @@ struct TransactionEditorView: View {
                     .accessibilityLabel("More")
                 }
 
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focusedField = nil }
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button {
+                            focusedField = nil
+                        } label: {
+                            Label("Close", systemImage: "keyboard.chevron.compact.down")
+                                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                                .foregroundStyle(OrdinatioColor.textPrimary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(OrdinatioColor.surfaceElevated)
+                                }
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Close keyboard")
+                        .accessibilityIdentifier("TransactionNoteCloseKeyboard")
+                    }
                 }
             }
         }
