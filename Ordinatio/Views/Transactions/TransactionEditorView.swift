@@ -155,7 +155,7 @@ struct TransactionEditorView: View {
                     keypadArea
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.bottom, 22)
-                        .keyboardAwareHeight(isEnabled: false, heightScale: 1.5)
+                        .keyboardAwareHeight(isEnabled: false, heightScale: 1.05)
                 }
             }
             .overlay(alignment: .top) {
@@ -393,7 +393,9 @@ struct TransactionEditorView: View {
             let totalRowSpacing = rowSpacing * 5
             let availableForButtons = proxy.size.height - chipHeight - totalRowSpacing
             let buttonHeight = max(availableForButtons / buttonRows, 44)
+            let submitButtonHeight = max(buttonHeight * 0.7, 40)
             let cornerRadius = min(18, buttonHeight / 3)
+            let submitCornerRadius = min(18, submitButtonHeight / 3)
 
             VStack(spacing: rowSpacing) {
                 keypadNumberRow([1, 2, 3], height: buttonHeight, cornerRadius: cornerRadius)
@@ -427,7 +429,12 @@ struct TransactionEditorView: View {
 
                 chipsRow
 
-                keypadButton(title: submitButtonTitle, role: .primary, height: buttonHeight, cornerRadius: cornerRadius) {
+                keypadButton(
+                    title: submitButtonTitle,
+                    role: .primary,
+                    height: submitButtonHeight,
+                    cornerRadius: submitCornerRadius
+                ) {
                     save()
                 }
                 .accessibilityIdentifier("TransactionSubmitButton")
