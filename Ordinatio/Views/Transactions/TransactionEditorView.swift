@@ -147,7 +147,6 @@ struct TransactionEditorView: View {
                         VStack(spacing: 18) {
                             amountRow
                             noteField
-                            chipsRow
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.top, 8)
@@ -211,7 +210,7 @@ struct TransactionEditorView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 220)
-                    .onChange(of: model.isExpense) { _ in
+                    .onChange(of: model.isExpense) {
                         playTypeToggleHaptic()
                     }
                 }
@@ -318,9 +317,7 @@ struct TransactionEditorView: View {
     private var chipsRow: some View {
         @Bindable var model = model
 
-        let chipVerticalPadding: CGFloat = 10
-        let categoryIconSize: CGFloat = 26
-        let chipMinHeight = categoryIconSize + (chipVerticalPadding * 2)
+        let chipMinHeight = ChipsRowMetrics.minHeight
         let chipSpacing: CGFloat = 10
 
         return GeometryReader { proxy in
@@ -349,7 +346,7 @@ struct TransactionEditorView: View {
                         OrdinatioIconTile(
                             symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
                             color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
-                            size: categoryIconSize
+                            size: ChipsRowMetrics.categoryIconSize
                         )
 
                         Text(model.categoryId == nil ? "Category" : selectedCategoryName)
@@ -382,7 +379,7 @@ struct TransactionEditorView: View {
             }
         }
         .frame(height: chipMinHeight)
-        .padding(.vertical, 2)
+        .padding(.vertical, ChipsRowMetrics.verticalPadding)
     }
 
     private var keypadArea: some View {
@@ -392,7 +389,11 @@ struct TransactionEditorView: View {
 
         return GeometryReader { proxy in
             let rowSpacing: CGFloat = 12
-            let buttonHeight = max((proxy.size.height - (rowSpacing * 4)) / 5, 44)
+            let chipHeight = ChipsRowMetrics.height
+            let buttonRows: CGFloat = 5
+            let totalRowSpacing = rowSpacing * 5
+            let availableForButtons = proxy.size.height - chipHeight - totalRowSpacing
+            let buttonHeight = max(availableForButtons / buttonRows, 44)
             let cornerRadius = min(18, buttonHeight / 3)
 
             VStack(spacing: rowSpacing) {
@@ -425,6 +426,8 @@ struct TransactionEditorView: View {
                     .disabled(!hasInput)
                 }
 
+                chipsRow
+
                 keypadButton(title: submitButtonTitle, role: .primary, height: buttonHeight, cornerRadius: cornerRadius) {
                     save()
                 }
@@ -434,6 +437,14 @@ struct TransactionEditorView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Keypad")
         .accessibilityIdentifier("TransactionKeypad")
+    }
+
+    private enum ChipsRowMetrics {
+        static let chipVerticalPadding: CGFloat = 10
+        static let categoryIconSize: CGFloat = 26
+        static let verticalPadding: CGFloat = 2
+        static let minHeight: CGFloat = categoryIconSize + (chipVerticalPadding * 2)
+        static let height: CGFloat = minHeight + (verticalPadding * 2)
     }
 
     private var submitButtonTitle: String {
@@ -562,5 +573,50 @@ struct TransactionEditorView: View {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.prepare()
         generator.impactOccurred(intensity: 1.0)
+    }
+}
+
+private struct KeyboardAwareHeightModifier: ViewModifier {
+    @AppStorage(PreferencesKeys.transactionEditorKeyboardHeight)
+    private var savedKeyboardHeight: Double = Double(UIScreen.main.bounds.height / 2.5)
+
+    let minimumUpdateHeight: CGFloat
+    let heightAdjustment: CGFloat
+
+    init(minimumUpdateHeight: CGFloat, heightAdjustment: CGFloat) {
+        self.minimumUpdateHeight = minimumUpdateHeight
+        self.heightAdjustment = heightAdjustment
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .frame(height: savedKeyboardHeight)
+            .task {
+                for await notification in NotificationCenter.default.notifications(
+                    named: UIResponder.keyboardWillChangeFrameNotification
+                ) {
+                    guard let value = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
+                        continue
+                    }
+
+                    let endFrame = value.cgRectValue
+                    let screenHeight = UIScreen.main.bounds.height
+                    let overlap = max(0, screenHeight - endFrame.minY)
+                    let adjusted = max(0, overlap - heightAdjustment)
+
+                    // Ignore non-keyboard changes (e.g. undocked/floating) and keep the last known good height.
+                    guard adjusted >= minimumUpdateHeight else { continue }
+
+                    await MainActor.run {
+                        savedKeyboardHeight = Double(adjusted)
+                    }
+                }
+            }
+    }
+}
+
+private extension View {
+    func keyboardAwareHeight(minimumUpdateHeight: CGFloat = 200, heightAdjustment: CGFloat = 0) -> some View {
+        modifier(KeyboardAwareHeightModifier(minimumUpdateHeight: minimumUpdateHeight, heightAdjustment: heightAdjustment))
     }
 }
