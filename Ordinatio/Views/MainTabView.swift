@@ -27,7 +27,8 @@ struct MainTabView: View {
                 householdId: householdId,
                 defaultCurrencyCode: defaultCurrencyCode,
                 mode: .create,
-                showsDismissButton: false
+                showsDismissButton: false,
+                onSave: { selection = .log }
             )
             .tag(OrdinatioTab.add)
             .tabItem { Label(OrdinatioTab.add.title, systemImage: OrdinatioTab.add.symbolName) }

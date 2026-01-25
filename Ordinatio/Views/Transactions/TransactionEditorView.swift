@@ -15,6 +15,7 @@ struct TransactionEditorView: View {
     let mode: TransactionEditorMode
     let showsDismissButton: Bool
     let prefilledCategoryId: String?
+    let onSave: (() -> Void)?
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -29,6 +30,8 @@ struct TransactionEditorView: View {
     @State private var model: TransactionEditorModel
     @State private var errorDismissTask: Task<Void, Never>?
     @State private var categoryErrorShakeTrigger = 0
+    @State private var categoryErrorGlow = false
+    @State private var categoryErrorGlowTask: Task<Void, Never>?
 
     init(
         db: DatabaseClient,
@@ -36,7 +39,8 @@ struct TransactionEditorView: View {
         defaultCurrencyCode: String,
         mode: TransactionEditorMode,
         showsDismissButton: Bool = true,
-        prefilledCategoryId: String? = nil
+        prefilledCategoryId: String? = nil,
+        onSave: (() -> Void)? = nil
     ) {
         self.db = db
         self.householdId = householdId
@@ -44,6 +48,7 @@ struct TransactionEditorView: View {
         self.mode = mode
         self.showsDismissButton = showsDismissButton
         self.prefilledCategoryId = prefilledCategoryId
+        self.onSave = onSave
         _model = State(
             initialValue: TransactionEditorModel(
                 defaultCurrencyCode: defaultCurrencyCode,
@@ -79,9 +84,7 @@ struct TransactionEditorView: View {
 
         if case .create = mode, model.categoryId == nil {
             model.errorMessage = Self.categoryRequiredErrorMessage
-            withAnimation(.linear(duration: 0.45)) {
-                categoryErrorShakeTrigger += 1
-            }
+            triggerCategoryErrorFeedback()
             playErrorHaptic()
             return
         }
@@ -116,6 +119,10 @@ struct TransactionEditorView: View {
         Task { @MainActor in
             do {
                 try await db.upsertTransaction(txn)
+                if case .create = mode {
+                    playSuccessHaptic()
+                    onSave?()
+                }
                 dismiss()
             } catch {
                 model.errorMessage = ErrorDisplay.message(error)
@@ -255,16 +262,27 @@ struct TransactionEditorView: View {
         }
         .onChange(of: model.errorMessage) { _, newValue in
             errorDismissTask?.cancel()
-            guard newValue != nil else { return }
+            guard let newValue else {
+                categoryErrorGlowTask?.cancel()
+                categoryErrorGlow = false
+                return
+            }
             errorDismissTask = Task { @MainActor in
                 try? await Task.sleep(for: .seconds(3))
                 guard !Task.isCancelled else { return }
                 model.errorMessage = nil
             }
+
+            if newValue != Self.categoryRequiredErrorMessage {
+                categoryErrorGlowTask?.cancel()
+                categoryErrorGlow = false
+            }
         }
         .onDisappear {
             errorDismissTask?.cancel()
             errorDismissTask = nil
+            categoryErrorGlowTask?.cancel()
+            categoryErrorGlowTask = nil
         }
     }
 
@@ -331,6 +349,8 @@ struct TransactionEditorView: View {
         let chipMinHeight = ChipsRowMetrics.minHeight
         let chipSpacing: CGFloat = 10
         let isCategoryError = model.errorMessage == Self.categoryRequiredErrorMessage
+        let glowOpacity: CGFloat = isCategoryError && categoryErrorGlow ? 1 : 0
+        let glowOpacityDouble = Double(glowOpacity)
 
         return GeometryReader { proxy in
             let totalWidth = max(proxy.size.width, 0)
@@ -387,11 +407,27 @@ struct TransactionEditorView: View {
                                 lineWidth: 1.3
                             )
                     }
+                    .overlay {
+                        if isCategoryError {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(OrdinatioColor.expense.opacity(0.9 * glowOpacityDouble), lineWidth: 2)
+                                .shadow(
+                                    color: OrdinatioColor.expense.opacity(0.55 * glowOpacityDouble),
+                                    radius: 10 * glowOpacity
+                                )
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Category")
                 .frame(width: categoryChipWidth, alignment: .leading)
-                .modifier(ShakeEffect(animatableData: CGFloat(categoryErrorShakeTrigger)))
+                .modifier(
+                    ShakeEffect(
+                        travelDistance: 4,
+                        shakesPerUnit: 2,
+                        animatableData: CGFloat(categoryErrorShakeTrigger)
+                    )
+                )
             }
         }
         .frame(height: chipMinHeight)
@@ -504,7 +540,10 @@ struct TransactionEditorView: View {
         cornerRadius: CGFloat,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button {
+            playKeypadHaptic(intensity: 0.5)
+            action()
+        } label: {
             Text(title)
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
@@ -528,7 +567,10 @@ struct TransactionEditorView: View {
         cornerRadius: CGFloat,
         action: @escaping () -> Void
     ) -> some View {
-        Button(action: action) {
+        Button {
+            playKeypadHaptic(intensity: 0.5)
+            action()
+        } label: {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
@@ -599,11 +641,41 @@ struct TransactionEditorView: View {
         generator.prepare()
         generator.impactOccurred(intensity: 1.0)
     }
+
+    private func playKeypadHaptic(intensity: CGFloat) {
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.prepare()
+        generator.impactOccurred(intensity: min(intensity, 1.0))
+    }
+
+    private func playSuccessHaptic() {
+        let generator = UINotificationFeedbackGenerator()
+        generator.prepare()
+        generator.notificationOccurred(.success)
+    }
+
+    private func triggerCategoryErrorFeedback() {
+        categoryErrorGlowTask?.cancel()
+        categoryErrorGlow = false
+        withAnimation(.easeInOut(duration: 0.55)) {
+            categoryErrorShakeTrigger += 1
+        }
+        withAnimation(.easeOut(duration: 0.15)) {
+            categoryErrorGlow = true
+        }
+        categoryErrorGlowTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.6)) {
+                categoryErrorGlow = false
+            }
+        }
+    }
 }
 
 private struct ShakeEffect: GeometryEffect {
-    var travelDistance: CGFloat = 8
-    var shakesPerUnit: CGFloat = 3
+    var travelDistance: CGFloat = 4
+    var shakesPerUnit: CGFloat = 2
     var animatableData: CGFloat
 
     func effectValue(size: CGSize) -> ProjectionTransform {
