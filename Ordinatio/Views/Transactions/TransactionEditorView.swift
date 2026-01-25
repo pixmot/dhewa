@@ -325,58 +325,55 @@ struct TransactionEditorView: View {
     private var chipsRow: some View {
         @Bindable var model = model
 
-        let maxChipWidth = max(0, UIScreen.main.bounds.width - (OrdinatioMetric.screenPadding * 2))
-
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                TransactionChip(
-                    label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
-                    systemImage: "calendar.badge.clock",
-                    tint: .blue
-                ) {
-                    model.showingDatePicker = true
-                }
-                .frame(maxWidth: maxChipWidth)
-
-                Button {
-                    model.showingCategoryPicker = true
-                } label: {
-                    HStack(spacing: 10) {
-                        OrdinatioIconTile(
-                            symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
-                            color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
-                            size: 26
-                        )
-
-                        Text(model.categoryId == nil ? "Category" : selectedCategoryName)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(OrdinatioColor.textPrimary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(OrdinatioColor.textSecondary)
-                    }
-                    .frame(maxWidth: maxChipWidth, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 10)
-                    .background {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(
-                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Category")
+        return HStack(spacing: 10) {
+            TransactionChip(
+                label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
+                systemImage: "calendar.badge.clock",
+                tint: .blue
+            ) {
+                model.showingDatePicker = true
             }
-            .padding(.vertical, 2)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                model.showingCategoryPicker = true
+            } label: {
+                HStack(spacing: 10) {
+                    OrdinatioIconTile(
+                        symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
+                        color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
+                        size: 26
+                    )
+
+                    Text(model.categoryId == nil ? "Category" : selectedCategoryName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(
+                            OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Category")
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .scrollClipDisabled()
+        .padding(.vertical, 2)
     }
 
     private var keypad: some View {
