@@ -38,19 +38,6 @@
 - Use repo’s package manager/runtime; no swaps w/o approval.
 - Use Codex background for long jobs; tmux only for interactive/persistent (debugger/server).
 
-## Git
-- Safe by default: `git status/diff/log`. Push only when user asks.
-- `git checkout` ok for PR review / explicit request.
-- Branch changes require user consent.
-- Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
-- Remotes under `~/Projects`: prefer HTTPS; flip SSH->HTTPS before pull/push.
-- Don’t delete/rename unexpected stuff; stop + ask.
-- No repo-wide S/R scripts; keep edits small/reviewable.
-- Avoid manual `git stash`; if Git auto-stashes during pull/rebase, that’s fine (hint, not hard guardrail).
-- If user types a command (“pull and push”), that’s consent for that command.
-- No amend unless asked.
-- Big review: `git --no-pager diff --color=never`.
-
 ## Language/Stack Notes
 - Swift: use workspace helper/daemon; validate `swift build` + tests; keep concurrency attrs right.
 - TypeScript: use repo PM; run `docs:list`; keep files small; follow existing patterns.
