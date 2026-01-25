@@ -150,14 +150,21 @@ struct TransactionEditorView: View {
                             .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
-                    ScrollView {
-                        VStack(spacing: 18) {
-                            amountRow
-                            noteField
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 18) {
+                                amountRow
+                                noteField
+                            }
+                            .padding(.horizontal, OrdinatioMetric.screenPadding)
+                            .padding(.top, 8)
+                            .padding(.bottom, 18)
+                            .frame(maxWidth: .infinity)
+                            .frame(
+                                minHeight: focusedField == nil ? proxy.size.height : 0,
+                                alignment: focusedField == nil ? .bottom : .top
+                            )
                         }
-                        .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.top, 8)
-                        .padding(.bottom, 18)
                     }
 
                     if focusedField == nil {
