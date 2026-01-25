@@ -252,4 +252,37 @@ extension TransactionEditorView {
             .presentationDetents([.medium])
         }
     }
+
+    struct DateAndTimePickerSheet: View {
+        @Binding var selection: Date
+
+        @Environment(\.dismiss) private var dismiss
+
+        var body: some View {
+            NavigationStack {
+                VStack(spacing: 0) {
+                    DatePicker("Date", selection: $selection, displayedComponents: .date)
+                        .datePickerStyle(.graphical)
+                        .labelsHidden()
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.top, 10)
+
+                    DatePicker("Time", selection: $selection, displayedComponents: .hourAndMinute)
+                        .datePickerStyle(.wheel)
+                        .labelsHidden()
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+
+                    Spacer(minLength: 0)
+                }
+                .background(OrdinatioColor.background)
+                .navigationTitle("Date & Time")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                    }
+                }
+            }
+            .presentationDetents([.medium, .large])
+        }
+    }
 }

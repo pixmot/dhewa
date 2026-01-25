@@ -183,12 +183,7 @@ struct TransactionEditorView: View {
                     }
             }
             .sheet(isPresented: $model.showingDatePicker) {
-                DateTimePickerSheet(
-                    title: "Date & Time",
-                    selection: $model.dateTime,
-                    displayedComponents: [.date, .hourAndMinute],
-                    style: .wheel
-                )
+                DateAndTimePickerSheet(selection: $model.dateTime)
             }
             .confirmationDialog(
                 "Delete this transaction?",
