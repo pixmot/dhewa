@@ -214,6 +214,7 @@ struct TransactionEditorView: View {
                 CategoryPickerSheet(
                     db: db,
                     householdId: householdId,
+                    kind: model.isExpense ? .expense : .income,
                     categories: $categories,
                     selection: $model.categoryId
                 )
@@ -255,6 +256,7 @@ struct TransactionEditorView: View {
                     .frame(maxWidth: 220)
                     .onChange(of: model.isExpense) {
                         playTypeToggleHaptic()
+                        clearSelectedCategoryIfNeeded()
                     }
                 }
 
@@ -279,31 +281,6 @@ struct TransactionEditorView: View {
                     .accessibilityLabel("More")
                 }
 
-                ToolbarItem(placement: .keyboard) {
-                    HStack {
-                        Spacer()
-                        Button {
-                            focusedField = nil
-                        } label: {
-                            Label("Close", systemImage: "keyboard.chevron.compact.down")
-                                .font(.system(.footnote, design: .rounded).weight(.semibold))
-                                .foregroundStyle(OrdinatioColor.textPrimary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(OrdinatioColor.surfaceElevated)
-                                }
-                                .overlay {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
-                                }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Close keyboard")
-                        .accessibilityIdentifier("TransactionNoteCloseKeyboard")
-                    }
-                }
             }
         }
         .onChange(of: model.errorMessage) { _, newValue in
@@ -365,6 +342,12 @@ struct TransactionEditorView: View {
                 .autocorrectionDisabled(false)
                 .foregroundStyle(OrdinatioColor.textPrimary)
                 .accessibilityIdentifier("TransactionNoteField")
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        closeKeyboardButton
+                    }
+                }
 
             if !model.note.isEmpty {
                 Button {
@@ -573,6 +556,29 @@ struct TransactionEditorView: View {
         }
     }
 
+    private var closeKeyboardButton: some View {
+        Button {
+            focusedField = nil
+        } label: {
+            Label("Close", systemImage: "keyboard.chevron.compact.down")
+                .font(.system(.footnote, design: .rounded).weight(.semibold))
+                .foregroundStyle(OrdinatioColor.textPrimary)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(OrdinatioColor.surfaceElevated)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close keyboard")
+        .accessibilityIdentifier("TransactionNoteCloseKeyboard")
+    }
+
     private func keypadNumberRow(_ digits: [Int], height: CGFloat, cornerRadius: CGFloat) -> some View {
         @Bindable var model = model
 
@@ -765,6 +771,16 @@ struct TransactionEditorView: View {
         default:
             return false
         }
+    }
+
+    private func clearSelectedCategoryIfNeeded() {
+        guard let categoryId = model.categoryId else { return }
+        guard let selectedCategory = categories.first(where: { $0.id == categoryId }) else { return }
+
+        let requiredKind: CategoryKind = model.isExpense ? .expense : .income
+        guard selectedCategory.kind != requiredKind else { return }
+
+        model.categoryId = nil
     }
 }
 
