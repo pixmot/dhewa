@@ -509,14 +509,14 @@ struct TransactionEditorView: View {
 
                 HStack(spacing: 12) {
                     keypadButton(title: ".", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
-                        prepareForAmountKeypadInput()
+                        prepareForAmountKeypadInput(allowsResetForAnyError: false)
                         model.appendDecimalSeparator()
                     }
                     .accessibilityIdentifier("TransactionKeypadDecimal")
                     .disabled(model.fractionDigits == 0)
 
                     keypadButton(title: "0", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
-                        prepareForAmountKeypadInput()
+                        prepareForAmountKeypadInput(allowsResetForAnyError: true)
                         model.appendDigit(0)
                     }
                     .accessibilityIdentifier("TransactionKeypadDigit0")
@@ -579,7 +579,7 @@ struct TransactionEditorView: View {
         return HStack(spacing: 12) {
             ForEach(digits, id: \.self) { digit in
                 keypadButton(title: "\(digit)", role: .secondary, height: height, cornerRadius: cornerRadius) {
-                    prepareForAmountKeypadInput()
+                    prepareForAmountKeypadInput(allowsResetForAnyError: true)
                     model.appendDigit(digit)
                 }
                 .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
@@ -731,15 +731,29 @@ struct TransactionEditorView: View {
         }
     }
 
-    private func prepareForAmountKeypadInput() {
+    private func prepareForAmountKeypadInput(allowsResetForAnyError: Bool) {
         if shouldResetAmountOnNextKeypadInput {
             model.amountText = ""
             shouldResetAmountOnNextKeypadInput = false
+        } else if allowsResetForAnyError, model.errorMessage != nil, wouldIgnoreDigitAppend() {
+            model.amountText = ""
         }
 
         if isAmountValidationError(model.errorMessage) {
             model.errorMessage = nil
         }
+    }
+
+    private func wouldIgnoreDigitAppend() -> Bool {
+        let separator: Character = "."
+        let trimmed =
+            model.amountText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+
+        guard let separatorIndex = trimmed.firstIndex(of: separator) else { return false }
+        let fractionCount = trimmed.distance(from: trimmed.index(after: separatorIndex), to: trimmed.endIndex)
+        return fractionCount >= model.fractionDigits
     }
 
     private func isAmountValidationError(_ message: String?) -> Bool {
