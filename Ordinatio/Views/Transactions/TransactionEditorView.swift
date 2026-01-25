@@ -33,7 +33,6 @@ struct TransactionEditorView: View {
     @State private var categoryErrorShakeTrigger = 0
     @State private var categoryErrorGlow = false
     @State private var categoryErrorGlowTask: Task<Void, Never>?
-    @State private var keyboardHeight: CGFloat = 0
 
     init(
         db: DatabaseClient,
@@ -207,24 +206,10 @@ struct TransactionEditorView: View {
                         .allowsHitTesting(false)
                 }
             }
-            .overlay(alignment: .bottom) {
-                if focusedField == .note, keyboardHeight > 0 {
-                    HStack {
-                        Spacer()
-                        closeKeyboardButton
-                    }
-                    .padding(.horizontal, OrdinatioMetric.screenPadding)
-                    .padding(.bottom, keyboardHeight + 12)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
             .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
-            .animation(.easeInOut(duration: 0.2), value: keyboardHeight)
-            .animation(.easeInOut(duration: 0.2), value: focusedField)
             .ignoresSafeArea(.keyboard, edges: .bottom)
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadCategories() }
-            .task { await observeKeyboard() }
             .sheet(isPresented: $model.showingCategoryPicker) {
                 CategoryPickerSheet(
                     db: db,
@@ -416,6 +401,7 @@ struct TransactionEditorView: View {
                         for: selectedCategoryName,
                         iconIndex: selectedCategoryIconIndex
                     )
+                    let usesDefaultCategoryStyle = !isCategoryError && model.categoryId == nil
                     HStack(spacing: 10) {
                         OrdinatioIconTile(
                             symbolName: OrdinatioCategoryVisuals.symbolName(
@@ -442,13 +428,19 @@ struct TransactionEditorView: View {
                     .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
                     .background {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill((isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.14))
+                            .fill(
+                                usesDefaultCategoryStyle
+                                    ? OrdinatioColor.surface
+                                    : (isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.14)
+                            )
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .strokeBorder(
-                                (isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.40),
-                                lineWidth: 1.3
+                                usesDefaultCategoryStyle
+                                    ? OrdinatioColor.separator.opacity(0.7)
+                                    : (isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.40),
+                                lineWidth: usesDefaultCategoryStyle ? 1 : 1.3
                             )
                     }
                     .overlay {
@@ -565,28 +557,6 @@ struct TransactionEditorView: View {
         }
     }
 
-    private var closeKeyboardButton: some View {
-        Button {
-            focusedField = nil
-        } label: {
-            Label("Close", systemImage: "keyboard.chevron.compact.down")
-                .font(.system(.footnote, design: .rounded).weight(.semibold))
-                .foregroundStyle(OrdinatioColor.textPrimary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(OrdinatioColor.surfaceElevated)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
-                }
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Close keyboard")
-        .accessibilityIdentifier("TransactionNoteCloseKeyboard")
-    }
 
     private func keypadNumberRow(_ digits: [Int], height: CGFloat, cornerRadius: CGFloat) -> some View {
         @Bindable var model = model
@@ -746,24 +716,6 @@ struct TransactionEditorView: View {
         }
     }
 
-    private func observeKeyboard() async {
-        for await notification in NotificationCenter.default.notifications(
-            named: UIResponder.keyboardWillChangeFrameNotification
-        ) {
-            guard let value = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
-                continue
-            }
-
-            let endFrame = value.cgRectValue
-            let screenHeight = UIScreen.main.bounds.height
-            let overlap = max(0, screenHeight - endFrame.minY)
-            let resolvedHeight = overlap < 10 ? 0 : overlap
-
-            await MainActor.run {
-                keyboardHeight = resolvedHeight
-            }
-        }
-    }
 
     private func prepareForAmountKeypadInput(allowsResetForAnyError: Bool) {
         if shouldResetAmountOnNextKeypadInput {
@@ -793,8 +745,8 @@ struct TransactionEditorView: View {
     private func isAmountValidationError(_ message: String?) -> Bool {
         switch message {
         case Self.amountRequiredErrorMessage,
-             Self.invalidAmountErrorMessage,
-             Self.amountMustBeGreaterThanZeroErrorMessage:
+            Self.invalidAmountErrorMessage,
+            Self.amountMustBeGreaterThanZeroErrorMessage:
             return true
         default:
             return false
@@ -867,8 +819,8 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
     }
 }
 
-private extension View {
-    func keyboardAwareHeight(
+extension View {
+    fileprivate func keyboardAwareHeight(
         isEnabled: Bool = true,
         minimumUpdateHeight: CGFloat = 200,
         heightAdjustment: CGFloat = 0,
