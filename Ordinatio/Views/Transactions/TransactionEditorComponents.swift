@@ -347,7 +347,7 @@ extension TransactionEditorView {
                     }
                 }
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.large])
         }
     }
 }

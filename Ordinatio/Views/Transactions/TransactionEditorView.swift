@@ -28,6 +28,7 @@ struct TransactionEditorView: View {
     @State private var categories: [OrdinatioCore.Category] = []
     @State private var model: TransactionEditorModel
     @State private var errorDismissTask: Task<Void, Never>?
+    @State private var categoryErrorShakeTrigger = 0
 
     init(
         db: DatabaseClient,
@@ -52,6 +53,8 @@ struct TransactionEditorView: View {
         )
     }
 
+    private static let categoryRequiredErrorMessage = "Category is required"
+
     private var selectedCategoryName: String {
         guard let categoryId = model.categoryId else { return "Category" }
         return categories.first(where: { $0.id == categoryId })?.name ?? "Category"
@@ -70,6 +73,15 @@ struct TransactionEditorView: View {
 
         guard absMinor > 0 else {
             model.errorMessage = "Amount must be greater than zero"
+            playErrorHaptic()
+            return
+        }
+
+        if case .create = mode, model.categoryId == nil {
+            model.errorMessage = Self.categoryRequiredErrorMessage
+            withAnimation(.linear(duration: 0.45)) {
+                categoryErrorShakeTrigger += 1
+            }
             playErrorHaptic()
             return
         }
@@ -318,6 +330,7 @@ struct TransactionEditorView: View {
 
         let chipMinHeight = ChipsRowMetrics.minHeight
         let chipSpacing: CGFloat = 10
+        let isCategoryError = model.errorMessage == Self.categoryRequiredErrorMessage
 
         return GeometryReader { proxy in
             let totalWidth = max(proxy.size.width, 0)
@@ -341,10 +354,11 @@ struct TransactionEditorView: View {
                 Button {
                     model.showingCategoryPicker = true
                 } label: {
+                    let categoryTint = OrdinatioCategoryVisuals.color(for: selectedCategoryName)
                     HStack(spacing: 10) {
                         OrdinatioIconTile(
                             symbolName: OrdinatioCategoryVisuals.symbolName(for: selectedCategoryName),
-                            color: OrdinatioCategoryVisuals.color(for: selectedCategoryName),
+                            color: categoryTint,
                             size: ChipsRowMetrics.categoryIconSize
                         )
 
@@ -364,17 +378,20 @@ struct TransactionEditorView: View {
                     .frame(maxWidth: .infinity, minHeight: chipMinHeight, alignment: .leading)
                     .background {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.14))
+                            .fill((isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.14))
                     }
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .strokeBorder(
-                                OrdinatioCategoryVisuals.color(for: selectedCategoryName).opacity(0.30), lineWidth: 1)
+                                (isCategoryError ? OrdinatioColor.expense : categoryTint).opacity(0.40),
+                                lineWidth: 1.3
+                            )
                     }
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Category")
                 .frame(width: categoryChipWidth, alignment: .leading)
+                .modifier(ShakeEffect(animatableData: CGFloat(categoryErrorShakeTrigger)))
             }
         }
         .frame(height: chipMinHeight)
@@ -564,6 +581,8 @@ struct TransactionEditorView: View {
             return "centsign.circle"
         case "Invalid amount":
             return "questionmark.app"
+        case Self.categoryRequiredErrorMessage:
+            return "tag.fill"
         default:
             return "exclamationmark.triangle.fill"
         }
@@ -579,6 +598,17 @@ struct TransactionEditorView: View {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.prepare()
         generator.impactOccurred(intensity: 1.0)
+    }
+}
+
+private struct ShakeEffect: GeometryEffect {
+    var travelDistance: CGFloat = 8
+    var shakesPerUnit: CGFloat = 3
+    var animatableData: CGFloat
+
+    func effectValue(size: CGSize) -> ProjectionTransform {
+        let translation = travelDistance * sin(animatableData * .pi * shakesPerUnit)
+        return ProjectionTransform(CGAffineTransform(translationX: translation, y: 0))
     }
 }
 
