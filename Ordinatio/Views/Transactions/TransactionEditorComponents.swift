@@ -19,6 +19,9 @@ extension TransactionEditorView {
                     Text(label)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(OrdinatioColor.textPrimary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
 
                     Image(systemName: "chevron.up.chevron.down")
                         .font(.system(size: 12, weight: .semibold))

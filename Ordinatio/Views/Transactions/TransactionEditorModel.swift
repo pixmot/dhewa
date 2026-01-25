@@ -18,7 +18,6 @@ final class TransactionEditorModel {
     var showingCategoryPicker = false
     var showingCurrencyPicker = false
     var showingDatePicker = false
-    var showingTimePicker = false
 
     init(
         defaultCurrencyCode: String,

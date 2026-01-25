@@ -186,17 +186,9 @@ struct TransactionEditorView: View {
             }
             .sheet(isPresented: $model.showingDatePicker) {
                 DateTimePickerSheet(
-                    title: "Date",
+                    title: "Date & Time",
                     selection: $model.dateTime,
-                    displayedComponents: .date,
-                    style: .graphical
-                )
-            }
-            .sheet(isPresented: $model.showingTimePicker) {
-                DateTimePickerSheet(
-                    title: "Time",
-                    selection: $model.dateTime,
-                    displayedComponents: .hourAndMinute,
+                    displayedComponents: [.date, .hourAndMinute],
                     style: .wheel
                 )
             }
@@ -337,23 +329,18 @@ struct TransactionEditorView: View {
     private var chipsRow: some View {
         @Bindable var model = model
 
+        let maxChipWidth = max(0, UIScreen.main.bounds.width - (OrdinatioMetric.screenPadding * 2))
+
         return ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
                 TransactionChip(
-                    label: model.dateTime.formatted(date: .abbreviated, time: .omitted),
-                    systemImage: "calendar",
+                    label: model.dateTime.formatted(date: .abbreviated, time: .shortened),
+                    systemImage: "calendar.badge.clock",
                     tint: .blue
                 ) {
                     model.showingDatePicker = true
                 }
-
-                TransactionChip(
-                    label: model.dateTime.formatted(date: .omitted, time: .shortened),
-                    systemImage: "clock",
-                    tint: .orange
-                ) {
-                    model.showingTimePicker = true
-                }
+                .frame(maxWidth: maxChipWidth)
 
                 Button {
                     model.showingCategoryPicker = true
@@ -368,11 +355,14 @@ struct TransactionEditorView: View {
                         Text(model.categoryId == nil ? "Category" : selectedCategoryName)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(OrdinatioColor.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
 
                         Image(systemName: "chevron.up.chevron.down")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(OrdinatioColor.textSecondary)
                     }
+                    .frame(maxWidth: maxChipWidth, alignment: .leading)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 10)
                     .background {
