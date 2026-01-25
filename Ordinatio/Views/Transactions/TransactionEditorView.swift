@@ -29,6 +29,7 @@ struct TransactionEditorView: View {
     @State private var categories: [OrdinatioCore.Category] = []
     @State private var model: TransactionEditorModel
     @State private var errorDismissTask: Task<Void, Never>?
+    @State private var shouldResetAmountOnNextKeypadInput = false
     @State private var categoryErrorShakeTrigger = 0
     @State private var categoryErrorGlow = false
     @State private var categoryErrorGlowTask: Task<Void, Never>?
@@ -58,6 +59,9 @@ struct TransactionEditorView: View {
         )
     }
 
+    private static let amountRequiredErrorMessage = "Amount is required"
+    private static let invalidAmountErrorMessage = "Invalid amount"
+    private static let amountMustBeGreaterThanZeroErrorMessage = "Amount must be greater than zero"
     private static let categoryRequiredErrorMessage = "Category is required"
 
     private var selectedCategory: OrdinatioCore.Category? {
@@ -79,13 +83,16 @@ struct TransactionEditorView: View {
 
         let amountTrimmed = model.amountText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let absMinor = model.parsedAbsMinor else {
-            model.errorMessage = amountTrimmed.isEmpty ? "Amount is required" : "Invalid amount"
+            model.errorMessage =
+                amountTrimmed.isEmpty ? Self.amountRequiredErrorMessage : Self.invalidAmountErrorMessage
+            shouldResetAmountOnNextKeypadInput = true
             playErrorHaptic()
             return
         }
 
         guard absMinor > 0 else {
-            model.errorMessage = "Amount must be greater than zero"
+            model.errorMessage = Self.amountMustBeGreaterThanZeroErrorMessage
+            shouldResetAmountOnNextKeypadInput = true
             playErrorHaptic()
             return
         }
@@ -129,6 +136,7 @@ struct TransactionEditorView: View {
                 try await db.upsertTransaction(txn)
                 if case .create = mode {
                     playSuccessHaptic()
+                    shouldResetAmountOnNextKeypadInput = false
                     model.resetForCreate(
                         defaultCurrencyCode: defaultCurrencyCode,
                         prefilledCategoryId: prefilledCategoryId
@@ -501,12 +509,14 @@ struct TransactionEditorView: View {
 
                 HStack(spacing: 12) {
                     keypadButton(title: ".", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
+                        prepareForAmountKeypadInput()
                         model.appendDecimalSeparator()
                     }
                     .accessibilityIdentifier("TransactionKeypadDecimal")
                     .disabled(model.fractionDigits == 0)
 
                     keypadButton(title: "0", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
+                        prepareForAmountKeypadInput()
                         model.appendDigit(0)
                     }
                     .accessibilityIdentifier("TransactionKeypadDigit0")
@@ -517,6 +527,10 @@ struct TransactionEditorView: View {
                         height: buttonHeight,
                         cornerRadius: cornerRadius
                     ) {
+                        shouldResetAmountOnNextKeypadInput = false
+                        if isAmountValidationError(model.errorMessage) {
+                            model.errorMessage = nil
+                        }
                         model.deleteLastInput()
                     }
                     .accessibilityLabel("Backspace")
@@ -565,6 +579,7 @@ struct TransactionEditorView: View {
         return HStack(spacing: 12) {
             ForEach(digits, id: \.self) { digit in
                 keypadButton(title: "\(digit)", role: .secondary, height: height, cornerRadius: cornerRadius) {
+                    prepareForAmountKeypadInput()
                     model.appendDigit(digit)
                 }
                 .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
@@ -663,9 +678,9 @@ struct TransactionEditorView: View {
 
     private func errorSymbolName(for message: String) -> String {
         switch message {
-        case "Amount is required", "Amount must be greater than zero":
+        case Self.amountRequiredErrorMessage, Self.amountMustBeGreaterThanZeroErrorMessage:
             return "centsign.circle"
-        case "Invalid amount":
+        case Self.invalidAmountErrorMessage:
             return "questionmark.app"
         case Self.categoryRequiredErrorMessage:
             return "tag.fill"
@@ -713,6 +728,28 @@ struct TransactionEditorView: View {
             withAnimation(.easeOut(duration: 0.6)) {
                 categoryErrorGlow = false
             }
+        }
+    }
+
+    private func prepareForAmountKeypadInput() {
+        if shouldResetAmountOnNextKeypadInput {
+            model.amountText = ""
+            shouldResetAmountOnNextKeypadInput = false
+        }
+
+        if isAmountValidationError(model.errorMessage) {
+            model.errorMessage = nil
+        }
+    }
+
+    private func isAmountValidationError(_ message: String?) -> Bool {
+        switch message {
+        case Self.amountRequiredErrorMessage,
+             Self.invalidAmountErrorMessage,
+             Self.amountMustBeGreaterThanZeroErrorMessage:
+            return true
+        default:
+            return false
         }
     }
 }
