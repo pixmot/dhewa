@@ -6,6 +6,7 @@
 - Targets: Ordinatio app assumes iOS 17+; OrdinatioCore stays iOS 16+. Guard newer APIs with availability + fallback.
 - Prefer Observation + Swift Concurrency (`@Observable/@Bindable`, `async/await`, `AsyncSequence`); avoid new Combine/callback APIs.
 - Actor hygiene: UI state is `@MainActor`; never block the main actor with DB/file/network or heavy formatting.
+- Immutability: default to `let` for view inputs/dependencies/derived values and async snapshots; use `var` only for owned mutable state (`@State`, `@Observable`, local accumulators).
 - Dependencies: no singletons; inject dependencies via initializers/Environment; keep OrdinatioCore free of SwiftUI/app types.
 - Concurrency: prefer structured concurrency; avoid `Task.detached` unless required; handle cancellation and avoid task leaks.
 - Concurrency escapes: ban `@unchecked Sendable`, `nonisolated(unsafe)`, and `DispatchQueue.main.async` "fixes" unless there is a written justification.
