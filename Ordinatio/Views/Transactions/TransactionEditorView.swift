@@ -33,6 +33,7 @@ struct TransactionEditorView: View {
     @State private var categoryErrorShakeTrigger = 0
     @State private var categoryErrorGlow = false
     @State private var categoryErrorGlowTask: Task<Void, Never>?
+    @State private var keyboardHeight: CGFloat = 0
 
     init(
         db: DatabaseClient,
@@ -206,10 +207,24 @@ struct TransactionEditorView: View {
                         .allowsHitTesting(false)
                 }
             }
+            .overlay(alignment: .bottom) {
+                if focusedField == .note, keyboardHeight > 0 {
+                    HStack {
+                        Spacer()
+                        closeKeyboardButton
+                    }
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.bottom, keyboardHeight + 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
             .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
+            .animation(.easeInOut(duration: 0.2), value: keyboardHeight)
+            .animation(.easeInOut(duration: 0.2), value: focusedField)
             .ignoresSafeArea(.keyboard, edges: .bottom)
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadCategories() }
+            .task { await observeKeyboard() }
             .sheet(isPresented: $model.showingCategoryPicker) {
                 CategoryPickerSheet(
                     db: db,
@@ -342,12 +357,6 @@ struct TransactionEditorView: View {
                 .autocorrectionDisabled(false)
                 .foregroundStyle(OrdinatioColor.textPrimary)
                 .accessibilityIdentifier("TransactionNoteField")
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        closeKeyboardButton
-                    }
-                }
 
             if !model.note.isEmpty {
                 Button {
@@ -733,6 +742,25 @@ struct TransactionEditorView: View {
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.6)) {
                 categoryErrorGlow = false
+            }
+        }
+    }
+
+    private func observeKeyboard() async {
+        for await notification in NotificationCenter.default.notifications(
+            named: UIResponder.keyboardWillChangeFrameNotification
+        ) {
+            guard let value = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {
+                continue
+            }
+
+            let endFrame = value.cgRectValue
+            let screenHeight = UIScreen.main.bounds.height
+            let overlap = max(0, screenHeight - endFrame.minY)
+            let resolvedHeight = overlap < 10 ? 0 : overlap
+
+            await MainActor.run {
+                keyboardHeight = resolvedHeight
             }
         }
     }
