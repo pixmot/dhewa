@@ -166,14 +166,12 @@ struct TransactionEditorView: View {
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.bottom, 22)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         Spacer(minLength: 0)
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .animation(.easeInOut(duration: 0.20), value: focusedField)
             .task { await loadCategories() }
             .sheet(isPresented: $model.showingCategoryPicker) {
                 CategoryPickerSheet(categories: categories, selection: $model.categoryId)
