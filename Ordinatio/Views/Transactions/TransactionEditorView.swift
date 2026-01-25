@@ -170,6 +170,7 @@ struct TransactionEditorView: View {
                         Spacer(minLength: 0)
                     }
                 }
+                .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
             }
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadCategories() }
@@ -477,26 +478,22 @@ struct TransactionEditorView: View {
     }
 
     private func errorBanner(message: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(spacing: 6.5) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(.subheadline, design: .rounded).weight(.semibold))
                 .foregroundStyle(OrdinatioColor.expense)
 
             Text(message)
-                .font(.subheadline.weight(.semibold))
+                .font(.system(.callout, design: .rounded).weight(.semibold))
                 .foregroundStyle(OrdinatioColor.expense)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(OrdinatioColor.expense.opacity(0.12))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(OrdinatioColor.expense.opacity(0.4), lineWidth: 1)
-        }
+        .padding(8)
+        .background(
+            OrdinatioColor.expense.opacity(0.23),
+            in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+        )
+        .frame(width: 250)
         .accessibilityIdentifier("TransactionErrorBanner")
     }
 
