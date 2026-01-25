@@ -258,26 +258,6 @@ struct TransactionEditorView: View {
                 .foregroundStyle(OrdinatioColor.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.55)
-
-            Button {
-                model.deleteLastInput()
-            } label: {
-                Image(systemName: "delete.left")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .background {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(OrdinatioColor.surface)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .strokeBorder(OrdinatioColor.separator.opacity(0.8), lineWidth: 1)
-                    }
-            }
-            .buttonStyle(.plain)
-            .disabled(model.amountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityLabel("Backspace")
         }
         .frame(maxWidth: .infinity, alignment: .center)
         .padding(.vertical, 4)
