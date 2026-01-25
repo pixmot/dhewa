@@ -395,9 +395,11 @@ struct TransactionEditorView: View {
             let rowSpacing: CGFloat = 12
             let chipHeight = ChipsRowMetrics.height
             let buttonRows: CGFloat = 5
+            let buttonScale: CGFloat = 1.5
             let totalRowSpacing = rowSpacing * 5
             let availableForButtons = proxy.size.height - chipHeight - totalRowSpacing
-            let buttonHeight = max(availableForButtons / buttonRows, 44)
+            let baseButtonHeight = max(availableForButtons / buttonRows, 44)
+            let buttonHeight = baseButtonHeight * buttonScale
             let cornerRadius = min(18, buttonHeight / 3)
 
             VStack(spacing: rowSpacing) {
