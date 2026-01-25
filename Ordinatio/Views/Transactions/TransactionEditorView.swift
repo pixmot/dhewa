@@ -19,6 +19,7 @@ struct TransactionEditorView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     enum FocusField: Hashable {
         case note
@@ -576,6 +577,23 @@ struct TransactionEditorView: View {
         case secondary
     }
 
+    private struct KeypadButtonStyle: ButtonStyle {
+        let reduceMotion: Bool
+
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 0.95 : 1)
+                .opacity(configuration.isPressed ? 0.94 : 1)
+                .brightness(configuration.isPressed ? 0.03 : 0)
+                .animation(
+                    reduceMotion
+                        ? .easeOut(duration: 0.12)
+                        : .spring(response: 0.22, dampingFraction: 0.7, blendDuration: 0.05),
+                    value: configuration.isPressed
+                )
+        }
+    }
+
     private func keypadButton(
         title: String,
         role: KeypadRole,
@@ -600,7 +618,7 @@ struct TransactionEditorView: View {
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion))
     }
 
     private func keypadButton(
@@ -627,7 +645,7 @@ struct TransactionEditorView: View {
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(KeypadButtonStyle(reduceMotion: reduceMotion))
     }
 
     @ViewBuilder
