@@ -137,6 +137,69 @@ extension TransactionEditorView {
         @Environment(\.dismiss) private var dismiss
         @State private var searchText = ""
 
+        private struct CurrencyOptionRow: View {
+            let code: String
+            let name: String
+            let symbol: String
+            let accent: Color
+            let selected: Bool
+            let onTap: () -> Void
+
+            private var shape: RoundedRectangle {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+            }
+
+            var body: some View {
+                Button(action: onTap) {
+                    HStack(spacing: 12) {
+                        HStack(spacing: 6) {
+                            Text(code)
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(accent)
+
+                            Text(symbol)
+                                .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                                .foregroundStyle(OrdinatioColor.textSecondary)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
+                        .background(accent.opacity(0.12), in: Capsule(style: .continuous))
+
+                        Text(name)
+                            .font(.system(.subheadline, design: .rounded).weight(.medium))
+                            .foregroundStyle(OrdinatioColor.textPrimary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .foregroundStyle(selected ? accent : OrdinatioColor.separator)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(shape.fill(OrdinatioColor.surface))
+                    .overlay {
+                        shape.strokeBorder(
+                            selected ? accent.opacity(0.65) : OrdinatioColor.separator.opacity(0.75),
+                            lineWidth: selected ? 2 : 1
+                        )
+                    }
+                    .overlay {
+                        if selected {
+                            shape.fill(accent.opacity(0.06))
+                        }
+                    }
+                    .contentShape(shape)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
+        }
+
         private static let currencySymbolCache: [String: String] = {
             let formatter = NumberFormatter()
             formatter.numberStyle = .currency
@@ -168,39 +231,37 @@ extension TransactionEditorView {
             return "\(upper) — \(name) (\(symbol))"
         }
 
+        private func currencyRow(code: String) -> some View {
+            let upper = code.uppercased()
+            return CurrencyOptionRow(
+                code: upper,
+                name: Locale.current.localizedString(forCurrencyCode: upper) ?? upper,
+                symbol: Self.currencySymbolCache[upper] ?? upper,
+                accent: OrdinatioCategoryVisuals.color(for: upper),
+                selected: selection.uppercased() == upper,
+                onTap: {
+                    selection = upper
+                    dismiss()
+                }
+            )
+            .accessibilityIdentifier("currency.\(upper)")
+            .accessibilityLabel(currencyTitle(upper))
+        }
+
         var body: some View {
             NavigationStack {
-                List {
-                    ForEach(currencyCodes, id: \.self) { code in
-                        Button {
-                            selection = code.uppercased()
-                            dismiss()
-                        } label: {
-                            HStack(spacing: 12) {
-                                OrdinatioIconTile(
-                                    symbolName: "banknote.fill",
-                                    color: OrdinatioCategoryVisuals.color(for: code),
-                                    size: 30
-                                )
-
-                                Text(currencyTitle(code))
-                                    .foregroundStyle(OrdinatioColor.textPrimary)
-
-                                Spacer(minLength: 0)
-
-                                if selection.uppercased() == code.uppercased() {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundStyle(.tint)
-                                }
-                            }
-                            .padding(.vertical, 4)
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        ForEach(currencyCodes, id: \.self) { code in
+                            currencyRow(code: code)
                         }
-                        .buttonStyle(.plain)
-                        .listRowBackground(OrdinatioColor.background)
                     }
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
                 }
-                .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.immediately)
+                .scrollIndicators(.hidden)
                 .background(OrdinatioColor.background)
                 .navigationTitle("Currency")
                 .searchable(text: $searchText, prompt: "Search currencies")
