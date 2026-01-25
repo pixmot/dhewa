@@ -44,6 +44,21 @@ final class TransactionEditorModel {
         }
     }
 
+    func resetForCreate(defaultCurrencyCode: String, prefilledCategoryId: String?) {
+        isExpense = true
+        amountText = ""
+        currencyCode = defaultCurrencyCode.uppercased()
+        fractionDigits = MoneyFormat.fractionDigits(for: defaultCurrencyCode)
+        dateTime = Date()
+        categoryId = prefilledCategoryId
+        note = ""
+        errorMessage = nil
+        confirmDelete = false
+        showingCategoryPicker = false
+        showingCurrencyPicker = false
+        showingDatePicker = false
+    }
+
     func didSelectCurrency() {
         fractionDigits = MoneyFormat.fractionDigits(for: currencyCode)
         normalizeAmountTextForCurrency()

@@ -121,6 +121,10 @@ struct TransactionEditorView: View {
                 try await db.upsertTransaction(txn)
                 if case .create = mode {
                     playSuccessHaptic()
+                    model.resetForCreate(
+                        defaultCurrencyCode: defaultCurrencyCode,
+                        prefilledCategoryId: prefilledCategoryId
+                    )
                     onSave?()
                 }
                 dismiss()
