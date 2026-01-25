@@ -218,6 +218,9 @@ struct TransactionEditorView: View {
                     }
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 220)
+                    .onChange(of: model.isExpense) { _ in
+                        playTypeToggleHaptic()
+                    }
                 }
 
                 ToolbarItem(placement: .primaryAction) {
@@ -515,5 +518,11 @@ struct TransactionEditorView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.prepare()
         generator.notificationOccurred(.error)
+    }
+
+    private func playTypeToggleHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.8)
     }
 }
