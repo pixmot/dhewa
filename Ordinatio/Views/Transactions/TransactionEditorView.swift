@@ -152,7 +152,6 @@ struct TransactionEditorView: View {
                         VStack(spacing: 18) {
                             amountRow
                             noteField
-                            chipsRow
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.top, 8)
@@ -162,6 +161,7 @@ struct TransactionEditorView: View {
                     if focusedField == nil {
                         VStack(spacing: 12) {
                             keypad
+                            chipsRow
                             submitButton
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
@@ -232,7 +232,7 @@ struct TransactionEditorView: View {
                             }
                         }
                     } label: {
-                        Image(systemName: "arrow.2.circlepath")
+                        Image(systemName: "line.3.horizontal")
                     }
                     .accessibilityLabel("More")
                 }
