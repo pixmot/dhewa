@@ -393,7 +393,7 @@ struct TransactionEditorView: View {
             let totalRowSpacing = rowSpacing * 5
             let availableForButtons = proxy.size.height - chipHeight - totalRowSpacing
             let buttonHeight = max(availableForButtons / buttonRows, 44)
-            let submitButtonHeight = max(buttonHeight * 0.7, 40)
+            let submitButtonHeight = max(buttonHeight * 0.85, 48)
             let cornerRadius = min(18, buttonHeight / 3)
             let submitCornerRadius = min(18, submitButtonHeight / 3)
 
