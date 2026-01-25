@@ -160,7 +160,7 @@ struct TransactionEditorView: View {
                     keypadArea
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
                         .padding(.bottom, 22)
-                        .keyboardAwareHeight()
+                        .keyboardAwareHeight(heightScale: 1.5)
                 }
             }
             .overlay(alignment: .top) {
@@ -395,11 +395,9 @@ struct TransactionEditorView: View {
             let rowSpacing: CGFloat = 12
             let chipHeight = ChipsRowMetrics.height
             let buttonRows: CGFloat = 5
-            let buttonScale: CGFloat = 1.5
             let totalRowSpacing = rowSpacing * 5
             let availableForButtons = proxy.size.height - chipHeight - totalRowSpacing
-            let baseButtonHeight = max(availableForButtons / buttonRows, 44)
-            let buttonHeight = baseButtonHeight * buttonScale
+            let buttonHeight = max(availableForButtons / buttonRows, 44)
             let cornerRadius = min(18, buttonHeight / 3)
 
             VStack(spacing: rowSpacing) {
@@ -588,15 +586,17 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
 
     let minimumUpdateHeight: CGFloat
     let heightAdjustment: CGFloat
+    let heightScale: CGFloat
 
-    init(minimumUpdateHeight: CGFloat, heightAdjustment: CGFloat) {
+    init(minimumUpdateHeight: CGFloat, heightAdjustment: CGFloat, heightScale: CGFloat) {
         self.minimumUpdateHeight = minimumUpdateHeight
         self.heightAdjustment = heightAdjustment
+        self.heightScale = heightScale
     }
 
     func body(content: Content) -> some View {
         content
-            .frame(height: savedKeyboardHeight)
+            .frame(height: savedKeyboardHeight * Double(heightScale))
             .task {
                 for await notification in NotificationCenter.default.notifications(
                     named: UIResponder.keyboardWillChangeFrameNotification
@@ -622,7 +622,17 @@ private struct KeyboardAwareHeightModifier: ViewModifier {
 }
 
 private extension View {
-    func keyboardAwareHeight(minimumUpdateHeight: CGFloat = 200, heightAdjustment: CGFloat = 0) -> some View {
-        modifier(KeyboardAwareHeightModifier(minimumUpdateHeight: minimumUpdateHeight, heightAdjustment: heightAdjustment))
+    func keyboardAwareHeight(
+        minimumUpdateHeight: CGFloat = 200,
+        heightAdjustment: CGFloat = 0,
+        heightScale: CGFloat = 1
+    ) -> some View {
+        modifier(
+            KeyboardAwareHeightModifier(
+                minimumUpdateHeight: minimumUpdateHeight,
+                heightAdjustment: heightAdjustment,
+                heightScale: heightScale
+            )
+        )
     }
 }
