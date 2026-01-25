@@ -143,14 +143,18 @@ struct TransactionEditorView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    ScrollView {
-                        VStack(spacing: 18) {
-                            amountRow
-                            noteField
-                        }
-                        .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.top, 8)
+                    GeometryReader { proxy in
+                        ScrollView {
+                            VStack(spacing: 18) {
+                                amountRow
+                                noteField
+                            }
+                            .padding(.horizontal, OrdinatioMetric.screenPadding)
+                            .padding(.top, 8)
                             .padding(.bottom, focusedField == nil ? 4 : 18)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: proxy.size.height, alignment: .bottom)
+                        }
                     }
 
                     keypadArea
