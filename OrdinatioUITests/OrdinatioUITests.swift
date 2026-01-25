@@ -90,7 +90,7 @@ final class OrdinatioUITests: XCTestCase {
         noteInput.typeText("UITest Transaction 1")
         dismissKeyboard(in: app)
 
-        let saveButton = app.buttons["TransactionKeypadSave"]
+        let saveButton = app.buttons["TransactionSubmitButton"]
         XCTAssertTrue(saveButton.waitForExistence(timeout: 5))
         saveButton.tap()
 

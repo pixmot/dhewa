@@ -150,10 +150,13 @@ struct TransactionEditorView: View {
                     }
 
                     if focusedField == nil {
-                        keypad
-                            .padding(.horizontal, OrdinatioMetric.screenPadding)
-                            .padding(.bottom, 22)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        VStack(spacing: 12) {
+                            keypad
+                            submitButton
+                        }
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.bottom, 22)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         Spacer(minLength: 0)
                     }
@@ -397,6 +400,8 @@ struct TransactionEditorView: View {
     private var keypad: some View {
         @Bindable var model = model
 
+        let hasInput = !model.amountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
         return LazyVGrid(
             columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
             spacing: 12
@@ -412,13 +417,32 @@ struct TransactionEditorView: View {
             keypadButton(title: "0", role: .secondary) { model.appendDigit(0) }
                 .accessibilityIdentifier("TransactionKeypadDigit0")
 
-            keypadButton(systemImage: "checkmark", role: .primary) { save() }
-                .accessibilityIdentifier("TransactionKeypadSave")
-                .disabled(!model.canSave)
+            keypadButton(systemImage: "delete.left", role: .secondary) { model.deleteLastInput() }
+                .accessibilityLabel("Backspace")
+                .accessibilityIdentifier("TransactionKeypadBackspace")
+                .disabled(!hasInput)
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Keypad")
         .accessibilityIdentifier("TransactionKeypad")
+    }
+
+    private var submitButton: some View {
+        @Bindable var model = model
+
+        return keypadButton(title: submitButtonTitle, role: .primary) { save() }
+            .accessibilityIdentifier("TransactionSubmitButton")
+            .disabled(!model.canSave)
+            .opacity(model.canSave ? 1 : 0.6)
+    }
+
+    private var submitButtonTitle: String {
+        switch mode {
+        case .create:
+            return "Add"
+        case .edit:
+            return "Save"
+        }
     }
 
     private func keypadNumberRow(_ digits: [Int]) -> some View {
@@ -477,6 +501,5 @@ struct TransactionEditorView: View {
                 }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Save")
     }
 }
