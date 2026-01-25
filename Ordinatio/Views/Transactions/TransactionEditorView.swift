@@ -143,44 +143,34 @@ struct TransactionEditorView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    if let errorMessage = model.errorMessage {
-                        errorBanner(message: errorMessage)
-                            .padding(.horizontal, OrdinatioMetric.screenPadding)
-                            .padding(.top, 8)
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    GeometryReader { proxy in
-                        ScrollView {
-                            VStack(spacing: 18) {
-                                amountRow
-                                noteField
-                            }
-                            .padding(.horizontal, OrdinatioMetric.screenPadding)
-                            .padding(.top, 8)
-                            .padding(.bottom, 18)
-                            .frame(maxWidth: .infinity)
-                            .frame(
-                                minHeight: focusedField == nil ? proxy.size.height : 0,
-                                alignment: focusedField == nil ? .bottom : .top
-                            )
-                        }
-                    }
-
-                    if focusedField == nil {
-                        VStack(spacing: 12) {
-                            keypad
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            amountRow
+                            noteField
                             chipsRow
-                            submitButton
                         }
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.bottom, 22)
-                    } else {
-                        Spacer(minLength: 0)
+                        .padding(.top, 8)
+                        .padding(.bottom, 18)
                     }
+
+                    keypadArea
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.bottom, 22)
+                        .keyboardAwareHeight()
                 }
-                .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
             }
+            .overlay(alignment: .top) {
+                if let errorMessage = model.errorMessage {
+                    errorBanner(message: errorMessage)
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: model.errorMessage)
+            .ignoresSafeArea(.keyboard, edges: .bottom)
             .navigationBarTitleDisplayMode(.inline)
             .task { await loadCategories() }
             .sheet(isPresented: $model.showingCategoryPicker) {
@@ -395,41 +385,55 @@ struct TransactionEditorView: View {
         .padding(.vertical, 2)
     }
 
-    private var keypad: some View {
+    private var keypadArea: some View {
         @Bindable var model = model
 
         let hasInput = !model.amountText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-        return LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3),
-            spacing: 12
-        ) {
-            keypadNumberRow([1, 2, 3])
-            keypadNumberRow([4, 5, 6])
-            keypadNumberRow([7, 8, 9])
+        return GeometryReader { proxy in
+            let rowSpacing: CGFloat = 12
+            let buttonHeight = max((proxy.size.height - (rowSpacing * 4)) / 5, 44)
+            let cornerRadius = min(18, buttonHeight / 3)
 
-            keypadButton(title: ".", role: .secondary) { model.appendDecimalSeparator() }
-                .accessibilityIdentifier("TransactionKeypadDecimal")
-                .disabled(model.fractionDigits == 0)
+            VStack(spacing: rowSpacing) {
+                keypadNumberRow([1, 2, 3], height: buttonHeight, cornerRadius: cornerRadius)
+                keypadNumberRow([4, 5, 6], height: buttonHeight, cornerRadius: cornerRadius)
+                keypadNumberRow([7, 8, 9], height: buttonHeight, cornerRadius: cornerRadius)
 
-            keypadButton(title: "0", role: .secondary) { model.appendDigit(0) }
-                .accessibilityIdentifier("TransactionKeypadDigit0")
+                HStack(spacing: 12) {
+                    keypadButton(title: ".", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
+                        model.appendDecimalSeparator()
+                    }
+                    .accessibilityIdentifier("TransactionKeypadDecimal")
+                    .disabled(model.fractionDigits == 0)
 
-            keypadButton(systemImage: "delete.left", role: .secondary) { model.deleteLastInput() }
-                .accessibilityLabel("Backspace")
-                .accessibilityIdentifier("TransactionKeypadBackspace")
-                .disabled(!hasInput)
+                    keypadButton(title: "0", role: .secondary, height: buttonHeight, cornerRadius: cornerRadius) {
+                        model.appendDigit(0)
+                    }
+                    .accessibilityIdentifier("TransactionKeypadDigit0")
+
+                    keypadButton(
+                        systemImage: "delete.left",
+                        role: .secondary,
+                        height: buttonHeight,
+                        cornerRadius: cornerRadius
+                    ) {
+                        model.deleteLastInput()
+                    }
+                    .accessibilityLabel("Backspace")
+                    .accessibilityIdentifier("TransactionKeypadBackspace")
+                    .disabled(!hasInput)
+                }
+
+                keypadButton(title: submitButtonTitle, role: .primary, height: buttonHeight, cornerRadius: cornerRadius) {
+                    save()
+                }
+                .accessibilityIdentifier("TransactionSubmitButton")
+            }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Keypad")
         .accessibilityIdentifier("TransactionKeypad")
-    }
-
-    private var submitButton: some View {
-        @Bindable var model = model
-
-        return keypadButton(title: submitButtonTitle, role: .primary) { save() }
-            .accessibilityIdentifier("TransactionSubmitButton")
     }
 
     private var submitButtonTitle: String {
@@ -441,12 +445,16 @@ struct TransactionEditorView: View {
         }
     }
 
-    private func keypadNumberRow(_ digits: [Int]) -> some View {
+    private func keypadNumberRow(_ digits: [Int], height: CGFloat, cornerRadius: CGFloat) -> some View {
         @Bindable var model = model
 
-        return ForEach(digits, id: \.self) { digit in
-            keypadButton(title: "\(digit)", role: .secondary) { model.appendDigit(digit) }
+        return HStack(spacing: 12) {
+            ForEach(digits, id: \.self) { digit in
+                keypadButton(title: "\(digit)", role: .secondary, height: height, cornerRadius: cornerRadius) {
+                    model.appendDigit(digit)
+                }
                 .accessibilityIdentifier("TransactionKeypadDigit\(digit)")
+            }
         }
     }
 
@@ -458,19 +466,21 @@ struct TransactionEditorView: View {
     private func keypadButton(
         title: String,
         role: KeypadRole,
+        height: CGFloat,
+        cornerRadius: CGFloat,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                 .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 58)
+                .frame(maxWidth: .infinity, minHeight: height)
                 .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
@@ -480,19 +490,21 @@ struct TransactionEditorView: View {
     private func keypadButton(
         systemImage: String,
         role: KeypadRole,
+        height: CGFloat,
+        cornerRadius: CGFloat,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                 .foregroundStyle(role == .primary ? OrdinatioColor.background : OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 58)
+                .frame(maxWidth: .infinity, minHeight: height)
                 .background {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .fill(role == .primary ? OrdinatioColor.textPrimary : OrdinatioColor.surface)
                 }
                 .overlay {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: role == .primary ? 0 : 1)
                 }
         }
