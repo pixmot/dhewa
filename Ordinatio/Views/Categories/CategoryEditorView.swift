@@ -12,7 +12,6 @@ struct CategoryEditorView: View {
 
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isNameFocused: Bool
-    @Namespace private var selectionAnimation
 
     @State private var name: String
     @State private var selectedIconIndex: Int?
@@ -150,9 +149,7 @@ struct CategoryEditorView: View {
                     accent: previewColor,
                     selected: selectedIconIndex == nil
                 ) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedIconIndex = nil
-                    }
+                    selectedIconIndex = nil
                 }
 
                 ForEach(0..<OrdinatioCategoryVisuals.iconCount, id: \.self) { index in
@@ -161,9 +158,7 @@ struct CategoryEditorView: View {
                         accent: OrdinatioCategoryVisuals.color(for: index),
                         selected: selectedIconIndex == index
                     ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            selectedIconIndex = index
-                        }
+                        selectedIconIndex = index
                     }
                 }
             }
@@ -180,46 +175,42 @@ struct CategoryEditorView: View {
         action: @escaping () -> Void
     ) -> some View {
         let accessibilityLabel = title ?? emoji ?? "Icon"
-        Button(action: action) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(OrdinatioColor.surface)
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        let strokeColor = selected ? accent.opacity(0.9) : OrdinatioColor.separator.opacity(0.7)
+        let strokeWidth: CGFloat = selected ? 2 : 1
 
-                if selected {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(accent.opacity(0.9), lineWidth: 2)
-                        .matchedGeometryEffect(id: "icon_selection", in: selectionAnimation)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(accent.opacity(0.08))
-                        }
-                } else {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+        return Button(action: action) {
+            VStack(spacing: 6) {
+                if let emoji {
+                    Text(emoji)
+                        .font(.system(size: 24))
+                } else if let symbolName {
+                    Image(systemName: symbolName)
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundStyle(accent)
                 }
 
-                VStack(spacing: 6) {
-                    if let emoji {
-                        Text(emoji)
-                            .font(.system(size: 24))
-                    } else if let symbolName {
-                        Image(systemName: symbolName)
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
-                            .foregroundStyle(accent)
-                    }
-
-                    if let title {
-                        Text(title)
-                            .font(.system(.caption2, design: .rounded).weight(.semibold))
-                            .foregroundStyle(OrdinatioColor.textSecondary)
-                    }
+                if let title {
+                    Text(title)
+                        .font(.system(.caption2, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
                 }
-                .padding(.vertical, 6)
-                .frame(maxWidth: .infinity)
             }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
             .frame(height: 56)
+            .background(shape.fill(OrdinatioColor.surface))
+            .overlay {
+                if selected {
+                    shape.fill(accent.opacity(0.08))
+                }
+            }
+            .overlay {
+                shape.strokeBorder(strokeColor, lineWidth: strokeWidth)
+            }
+            .contentShape(shape)
         }
-        .buttonStyle(BudgetComposerView.BouncyButtonStyle(duration: 0.2, scale: 0.96))
+        .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
     }
 }
