@@ -93,8 +93,8 @@ private struct OrdinatioEmojiTile: View {
     }
 }
 
-private extension Int64 {
-    var ordinatioSafeAbs: Int64 {
+extension Int64 {
+    fileprivate var ordinatioSafeAbs: Int64 {
         self == .min ? .max : Swift.abs(self)
     }
 }

@@ -137,9 +137,9 @@ struct TransactionsView: View {
             .contentShape(Rectangle())
 
             if let currencyCode = viewModel.summaryCurrencyCode,
-               let income = viewModel.incomeTotalMinor,
-               let expenseAbs = viewModel.expenseTotalAbsMinor,
-               income > 0 || expenseAbs > 0
+                let income = viewModel.incomeTotalMinor,
+                let expenseAbs = viewModel.expenseTotalAbsMinor,
+                income > 0 || expenseAbs > 0
             {
                 HStack {
                     if income > 0 {
@@ -405,8 +405,8 @@ private struct AnimatedGraphPath: Shape {
     }
 }
 
-private extension Int64 {
-    var ordinatioSafeAbs: Int64 {
+extension Int64 {
+    fileprivate var ordinatioSafeAbs: Int64 {
         self == .min ? .max : Swift.abs(self)
     }
 }

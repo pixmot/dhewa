@@ -126,7 +126,8 @@ final class TransactionListViewModel {
         let defaultCurrencyCode = defaultCurrencyCode
         let summaryTimeFrame = summaryTimeFrame
 
-        transactionsTask = Task.detached(priority: .userInitiated) { [db, householdId, defaultCurrencyCode, summaryTimeFrame] in
+        transactionsTask = Task.detached(priority: .userInitiated) {
+            [db, householdId, defaultCurrencyCode, summaryTimeFrame] in
             do {
                 for try await rows in await db.observeTransactionListRows(householdId: householdId, filter: filter) {
                     let computed = TransactionListComputation.compute(
@@ -438,8 +439,8 @@ enum SparklineComputation {
     }
 }
 
-private extension Set {
-    var onlyElement: Element? {
+extension Set {
+    fileprivate var onlyElement: Element? {
         count == 1 ? first : nil
     }
 }
