@@ -35,13 +35,13 @@ struct TransactionsView: View {
         return OrdinatioColor.textSecondary
     }
 
-    private func dayTotal(for section: TransactionSection) -> (text: String, color: Color)? {
+    private func dayTotalText(for section: TransactionSection) -> String? {
         guard let currencyCode = viewModel.summaryCurrencyCode else { return nil }
         guard let netTotalMinor = section.netTotalMinor else { return nil }
         let formatted = MoneyFormat.format(minorUnits: netTotalMinor.ordinatioSafeAbs, currencyCode: currencyCode)
-        if netTotalMinor > 0 { return ("+\(formatted)", OrdinatioColor.income) }
-        if netTotalMinor < 0 { return ("-\(formatted)", OrdinatioColor.expense) }
-        return (formatted, OrdinatioColor.textSecondary)
+        if netTotalMinor > 0 { return "+\(formatted)" }
+        if netTotalMinor < 0 { return "-\(formatted)" }
+        return formatted
     }
 
     private func dayHeader(for section: TransactionSection) -> some View {
@@ -52,26 +52,21 @@ struct TransactionsView: View {
 
                 Spacer()
 
-                if let total = dayTotal(for: section) {
-                    Text(total.text)
-                        .font(.caption2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(total.color)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
+                if let total = dayTotalText(for: section) {
+                    Text(total)
                         .layoutPriority(1)
                 }
             }
-            .font(.caption2.weight(.semibold))
+            .font(.system(.callout, design: .rounded).weight(.semibold))
             .foregroundStyle(OrdinatioColor.textSecondary)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
 
-            Rectangle()
-                .fill(OrdinatioColor.separator.opacity(0.7))
-                .frame(height: 1)
+            Line()
+                .stroke(OrdinatioColor.separator, style: StrokeStyle(lineWidth: 1.3, lineCap: .round))
         }
         .padding(.horizontal, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
+        .padding(.top, 10)
     }
 
     private var currencySummaryText: String {
@@ -191,11 +186,10 @@ struct TransactionsView: View {
 
                                 ForEach(section.rows) { row in
                                     TransactionRowView(row: row)
-                                        .contentShape(Rectangle())
                                         .onTapGesture { editingRow = row }
                                 }
                             }
-                            .padding(.bottom, 12)
+                            .padding(.bottom, 18)
                         }
                     }
                 }
@@ -248,6 +242,15 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
+    }
+}
+
+private struct Line: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: 0))
+        path.addLine(to: CGPoint(x: rect.width, y: 0))
+        return path
     }
 }
 

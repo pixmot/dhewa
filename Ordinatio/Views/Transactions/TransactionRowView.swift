@@ -8,6 +8,14 @@ struct TransactionRowView: View {
         row.categoryName?.isEmpty == false ? (row.categoryName ?? "") : "Uncategorized"
     }
 
+    private var categoryEmoji: String {
+        OrdinatioCategoryVisuals.emoji(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
+    private var categoryColor: Color {
+        OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
         return categoryTitle
@@ -23,8 +31,7 @@ struct TransactionRowView: View {
 
     private var amountColor: Color {
         if row.amountMinor > 0 { return OrdinatioColor.income }
-        if row.amountMinor < 0 { return OrdinatioColor.expense }
-        return OrdinatioColor.textSecondary
+        return OrdinatioColor.textPrimary
     }
 
     private var amountText: String {
@@ -36,24 +43,18 @@ struct TransactionRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 10) {
-            OrdinatioIconTile(
-                symbolName: OrdinatioCategoryVisuals.symbolName(
-                    for: categoryTitle,
-                    iconIndex: row.categoryIconIndex
-                ),
-                color: OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex),
-                size: 28
-            )
+        HStack(spacing: 12) {
+            OrdinatioEmojiTile(emoji: categoryEmoji, color: categoryColor)
+                .fixedSize(horizontal: true, vertical: true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(titleText)
-                    .font(.callout.weight(.semibold))
+                    .font(.system(.body, design: .rounded).weight(.medium))
                     .foregroundStyle(OrdinatioColor.textPrimary)
                     .lineLimit(1)
 
                 Text(subtitleText)
-                    .font(.caption2)
+                    .font(.system(.subheadline, design: .rounded).weight(.medium))
                     .foregroundStyle(OrdinatioColor.textSecondary)
                     .lineLimit(1)
             }
@@ -62,14 +63,33 @@ struct TransactionRowView: View {
             Spacer(minLength: 0)
 
             Text(amountText)
-                .font(.callout.monospacedDigit().weight(.semibold))
+                .font(.system(.title3, design: .rounded).weight(.medium))
                 .foregroundStyle(amountColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .layoutPriority(1)
         }
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
+    }
+}
+
+private struct OrdinatioEmojiTile: View {
+    let emoji: String
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(color.opacity(0.73))
+
+            Text(emoji)
+                .font(.system(.title3))
+                .padding(8)
+                .accessibilityHidden(true)
+        }
+        .opacity(0.95)
     }
 }
 
