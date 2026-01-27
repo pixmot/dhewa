@@ -35,20 +35,43 @@ struct TransactionsView: View {
         return OrdinatioColor.textSecondary
     }
 
-    private func dayTotalText(for section: TransactionSection) -> String {
-        guard let currencyCode = viewModel.summaryCurrencyCode else { return "—" }
-        guard let netTotalMinor = section.netTotalMinor else { return "—" }
-        let formatted = MoneyFormat.format(minorUnits: abs(netTotalMinor), currencyCode: currencyCode)
-        if netTotalMinor > 0 { return "+\(formatted)" }
-        if netTotalMinor < 0 { return "-\(formatted)" }
-        return formatted
+    private func dayTotal(for section: TransactionSection) -> (text: String, color: Color)? {
+        guard let currencyCode = viewModel.summaryCurrencyCode else { return nil }
+        guard let netTotalMinor = section.netTotalMinor else { return nil }
+        let formatted = MoneyFormat.format(minorUnits: netTotalMinor.ordinatioSafeAbs, currencyCode: currencyCode)
+        if netTotalMinor > 0 { return ("+\(formatted)", OrdinatioColor.income) }
+        if netTotalMinor < 0 { return ("-\(formatted)", OrdinatioColor.expense) }
+        return (formatted, OrdinatioColor.textSecondary)
     }
 
-    private func dayTotalColor(for section: TransactionSection) -> Color {
-        guard let netTotalMinor = section.netTotalMinor else { return OrdinatioColor.textSecondary }
-        if netTotalMinor > 0 { return OrdinatioColor.income }
-        if netTotalMinor < 0 { return OrdinatioColor.expense }
-        return OrdinatioColor.textSecondary
+    private func dayHeader(for section: TransactionSection) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(sectionTitle(for: section.date))
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                if let total = dayTotal(for: section) {
+                    Text(total.text)
+                        .font(.caption2.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(total.color)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .layoutPriority(1)
+                }
+            }
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(OrdinatioColor.textSecondary)
+            .frame(maxWidth: .infinity)
+
+            Rectangle()
+                .fill(OrdinatioColor.separator.opacity(0.7))
+                .frame(height: 1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
     }
 
     private var currencySummaryText: String {
@@ -147,54 +170,38 @@ struct TransactionsView: View {
         @Bindable var model = viewModel
 
         NavigationStack {
-            List {
-                summaryHeader
-                    .listRowSeparator(.hidden)
-                    .listRowInsets(.init(top: 0, leading: 12, bottom: 10, trailing: 12))
-                    .listRowBackground(Color.clear)
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    summaryHeader
+                        .padding(.horizontal, 12)
+                        .padding(.top, 2)
+                        .padding(.bottom, 10)
 
-                if model.sections.isEmpty {
-                    ContentUnavailableView(
-                        "No Transactions",
-                        systemImage: "tray",
-                        description: Text("Add your first transaction to get started.")
-                    )
-                    .listRowBackground(Color.clear)
-                    .listRowSeparator(.hidden)
-                }
+                    if model.sections.isEmpty {
+                        ContentUnavailableView(
+                            "No Transactions",
+                            systemImage: "tray",
+                            description: Text("Add your first transaction to get started.")
+                        )
+                        .padding(.top, 48)
+                    } else {
+                        ForEach(model.sections) { section in
+                            VStack(spacing: 0) {
+                                dayHeader(for: section)
 
-                ForEach(model.sections) { section in
-                    Section {
-                        ForEach(section.rows) { row in
-                            TransactionRowView(row: row)
-                                .contentShape(Rectangle())
-                                .onTapGesture { editingRow = row }
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(OrdinatioColor.background)
+                                ForEach(section.rows) { row in
+                                    TransactionRowView(row: row)
+                                        .contentShape(Rectangle())
+                                        .onTapGesture { editingRow = row }
+                                }
+                            }
+                            .padding(.bottom, 12)
                         }
-                    } header: {
-                        HStack {
-                            Text(sectionTitle(for: section.date))
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(OrdinatioColor.textSecondary)
-                                .textCase(.uppercase)
-
-                            Spacer()
-
-                            Text(dayTotalText(for: section))
-                                .font(.caption2.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(dayTotalColor(for: section))
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.75)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 6)
-                        .padding(.bottom, 2)
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 12)
             }
-            .listStyle(.plain)
-            .scrollContentBackground(.hidden)
             .background(OrdinatioColor.background)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
@@ -264,7 +271,7 @@ private struct SummaryAmountText: View {
 
     private func amountLine(fontSize: CGFloat) -> some View {
         let prefix = valueMinor < 0 ? "-\(currencyCode)" : currencyCode
-        let absMinor = abs(valueMinor)
+        let absMinor = valueMinor.ordinatioSafeAbs
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
         let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
         let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
@@ -292,13 +299,19 @@ private struct MiniSignedAmountText: View {
 
     var body: some View {
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
-        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor.ordinatioSafeAbs, currencyCode: currencyCode)
         let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
         Text("\(sign)\(number)")
             .font(.caption.monospacedDigit().weight(.semibold))
             .foregroundStyle(tint)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
+    }
+}
+
+private extension Int64 {
+    var ordinatioSafeAbs: Int64 {
+        self == .min ? .max : Swift.abs(self)
     }
 }
 

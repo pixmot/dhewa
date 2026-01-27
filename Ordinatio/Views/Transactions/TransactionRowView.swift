@@ -8,8 +8,31 @@ struct TransactionRowView: View {
         row.categoryName?.isEmpty == false ? (row.categoryName ?? "") : "Uncategorized"
     }
 
+    private var titleText: String {
+        if let note = row.note, !note.isEmpty { return note }
+        return categoryTitle
+    }
+
+    private var subtitleText: String {
+        let time = row.createdAt.formatted(date: .omitted, time: .shortened)
+        if let note = row.note, !note.isEmpty {
+            return "\(categoryTitle) · \(time)"
+        }
+        return time
+    }
+
     private var amountColor: Color {
-        row.amountMinor < 0 ? OrdinatioColor.expense : OrdinatioColor.income
+        if row.amountMinor > 0 { return OrdinatioColor.income }
+        if row.amountMinor < 0 { return OrdinatioColor.expense }
+        return OrdinatioColor.textSecondary
+    }
+
+    private var amountText: String {
+        let absMinor = row.amountMinor.ordinatioSafeAbs
+        let formatted = MoneyFormat.format(minorUnits: absMinor, currencyCode: row.currencyCode)
+        if row.amountMinor > 0 { return "+\(formatted)" }
+        if row.amountMinor < 0 { return "-\(formatted)" }
+        return formatted
     }
 
     var body: some View {
@@ -20,32 +43,38 @@ struct TransactionRowView: View {
                     iconIndex: row.categoryIconIndex
                 ),
                 color: OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex),
-                size: 30
+                size: 28
             )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(categoryTitle)
-                    .font(.subheadline.weight(.semibold))
+                Text(titleText)
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(OrdinatioColor.textPrimary)
+                    .lineLimit(1)
 
-                if let note = row.note, !note.isEmpty {
-                    Text(note)
-                        .font(.caption)
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                        .lineLimit(1)
-                } else {
-                    Text(row.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.caption)
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                }
+                Text(subtitleText)
+                    .font(.caption2)
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+                    .lineLimit(1)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 
-            Text(MoneyFormat.format(minorUnits: row.amountMinor, currencyCode: row.currencyCode))
-                .font(.subheadline.monospacedDigit().weight(.semibold))
+            Text(amountText)
+                .font(.callout.monospacedDigit().weight(.semibold))
                 .foregroundStyle(amountColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .layoutPriority(1)
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+}
+
+private extension Int64 {
+    var ordinatioSafeAbs: Int64 {
+        self == .min ? .max : Swift.abs(self)
     }
 }
