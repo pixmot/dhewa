@@ -13,29 +13,29 @@ struct TransactionRowView: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             OrdinatioIconTile(
                 symbolName: OrdinatioCategoryVisuals.symbolName(
                     for: categoryTitle,
                     iconIndex: row.categoryIconIndex
                 ),
                 color: OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex),
-                size: 34
+                size: 30
             )
 
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(categoryTitle)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(OrdinatioColor.textPrimary)
 
                 if let note = row.note, !note.isEmpty {
                     Text(note)
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(OrdinatioColor.textSecondary)
                         .lineLimit(1)
                 } else {
                     Text(row.createdAt.formatted(date: .omitted, time: .shortened))
-                        .font(.subheadline)
+                        .font(.caption)
                         .foregroundStyle(OrdinatioColor.textSecondary)
                 }
             }
@@ -43,9 +43,9 @@ struct TransactionRowView: View {
             Spacer(minLength: 0)
 
             Text(MoneyFormat.format(minorUnits: row.amountMinor, currencyCode: row.currencyCode))
-                .font(.headline.monospacedDigit())
+                .font(.subheadline.monospacedDigit().weight(.semibold))
                 .foregroundStyle(amountColor)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 4)
     }
 }

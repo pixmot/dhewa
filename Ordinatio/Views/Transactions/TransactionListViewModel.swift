@@ -19,10 +19,10 @@ final class TransactionListViewModel {
 
     var errorMessage: String?
 
-    var summaryCurrencyCode: String
-    var netTotalMinor: Int64 = 0
-    var incomeTotalMinor: Int64 = 0
-    var expenseTotalAbsMinor: Int64 = 0
+    var summaryCurrencyCode: String?
+    var netTotalMinor: Int64?
+    var incomeTotalMinor: Int64?
+    var expenseTotalAbsMinor: Int64?
     var sparklineValues: [Int64] = []
 
     private let db: DatabaseClient
@@ -133,10 +133,10 @@ enum TransactionListComputation {
     struct Result: Sendable {
         var sections: [TransactionSection]
         var availableCurrencyCodes: [String]
-        var summaryCurrencyCode: String
-        var netTotalMinor: Int64
-        var incomeTotalMinor: Int64
-        var expenseTotalAbsMinor: Int64
+        var summaryCurrencyCode: String?
+        var netTotalMinor: Int64?
+        var incomeTotalMinor: Int64?
+        var expenseTotalAbsMinor: Int64?
         var sparklineValues: [Int64]
     }
 
@@ -146,21 +146,45 @@ enum TransactionListComputation {
         defaultCurrencyCode: String
     ) -> Result {
         let currencyFilter = filter.currencyCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let summaryCurrencyCode = (currencyFilter.isEmpty ? defaultCurrencyCode : currencyFilter).uppercased()
 
         let currencies = Set(rows.map { $0.currencyCode.uppercased() })
         let availableCurrencyCodes = Array(currencies).sorted()
 
-        var netTotalMinor: Int64 = 0
-        var incomeTotalMinor: Int64 = 0
-        var expenseTotalAbsMinor: Int64 = 0
+        let summaryCurrencyCode: String?
+        if !currencyFilter.isEmpty {
+            summaryCurrencyCode = currencyFilter.uppercased()
+        } else if let single = currencies.onlyElement {
+            summaryCurrencyCode = single
+        } else if rows.isEmpty {
+            summaryCurrencyCode = defaultCurrencyCode.uppercased()
+        } else {
+            summaryCurrencyCode = nil
+        }
 
-        for row in rows where row.currencyCode.uppercased() == summaryCurrencyCode {
-            netTotalMinor += row.amountMinor
-            if row.amountMinor > 0 {
-                incomeTotalMinor += row.amountMinor
-            } else if row.amountMinor < 0 {
-                expenseTotalAbsMinor += abs(row.amountMinor)
+        var netTotalMinor: Int64?
+        var incomeTotalMinor: Int64?
+        var expenseTotalAbsMinor: Int64?
+
+        if let summaryCurrencyCode {
+            var net: Int64 = 0
+            var income: Int64 = 0
+            var expenseAbs: Int64 = 0
+            var hasAny = false
+
+            for row in rows where row.currencyCode.uppercased() == summaryCurrencyCode {
+                hasAny = true
+                net += row.amountMinor
+                if row.amountMinor > 0 {
+                    income += row.amountMinor
+                } else if row.amountMinor < 0 {
+                    expenseAbs += abs(row.amountMinor)
+                }
+            }
+
+            if hasAny {
+                netTotalMinor = net
+                incomeTotalMinor = income
+                expenseTotalAbsMinor = expenseAbs
             }
         }
 
@@ -193,7 +217,7 @@ enum TransactionListComputation {
                 currentRows.append(row)
             }
 
-            if row.currencyCode.uppercased() == summaryCurrencyCode {
+            if let summaryCurrencyCode, row.currencyCode.uppercased() == summaryCurrencyCode {
                 currentNetTotalMinor += row.amountMinor
                 currentNetHasSummaryCurrency = true
             }
@@ -201,7 +225,12 @@ enum TransactionListComputation {
 
         finalizeSection()
 
-        let sparklineValues = sections.prefix(14).reversed().map { $0.netTotalMinor ?? 0 }
+        let sparklineValues: [Int64]
+        if summaryCurrencyCode == nil || netTotalMinor == nil {
+            sparklineValues = []
+        } else {
+            sparklineValues = sections.prefix(14).reversed().map { $0.netTotalMinor ?? 0 }
+        }
 
         return Result(
             sections: sections,
@@ -212,5 +241,11 @@ enum TransactionListComputation {
             expenseTotalAbsMinor: expenseTotalAbsMinor,
             sparklineValues: sparklineValues
         )
+    }
+}
+
+private extension Set {
+    var onlyElement: Element? {
+        count == 1 ? first : nil
     }
 }

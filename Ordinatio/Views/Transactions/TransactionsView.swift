@@ -29,17 +29,16 @@ struct TransactionsView: View {
     }
 
     private var trendLineColor: Color {
-        if viewModel.netTotalMinor > 0 { return OrdinatioColor.income }
-        if viewModel.netTotalMinor < 0 { return OrdinatioColor.expense }
+        guard let netTotalMinor = viewModel.netTotalMinor else { return OrdinatioColor.textSecondary }
+        if netTotalMinor > 0 { return OrdinatioColor.income }
+        if netTotalMinor < 0 { return OrdinatioColor.expense }
         return OrdinatioColor.textSecondary
     }
 
     private func dayTotalText(for section: TransactionSection) -> String {
+        guard let currencyCode = viewModel.summaryCurrencyCode else { return "—" }
         guard let netTotalMinor = section.netTotalMinor else { return "—" }
-        let formatted = MoneyFormat.format(
-            minorUnits: abs(netTotalMinor),
-            currencyCode: viewModel.summaryCurrencyCode
-        )
+        let formatted = MoneyFormat.format(minorUnits: abs(netTotalMinor), currencyCode: currencyCode)
         if netTotalMinor > 0 { return "+\(formatted)" }
         if netTotalMinor < 0 { return "-\(formatted)" }
         return formatted
@@ -52,50 +51,96 @@ struct TransactionsView: View {
         return OrdinatioColor.textSecondary
     }
 
-    private var summaryHeader: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                Text("Net total")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
+    private var currencySummaryText: String {
+        let codes = viewModel.availableCurrencyCodes
+        guard !codes.isEmpty else { return "No transactions yet" }
 
-                Text("All time")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background {
-                        Capsule(style: .continuous)
-                            .fill(OrdinatioColor.surfaceElevated)
-                    }
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
-                    }
-            }
-
-            Text(MoneyFormat.format(minorUnits: viewModel.netTotalMinor, currencyCode: viewModel.summaryCurrencyCode))
-                .font(.system(size: 40, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(OrdinatioColor.textPrimary)
-
-            HStack(spacing: 12) {
-                Text(
-                    "+\(MoneyFormat.format(minorUnits: viewModel.incomeTotalMinor, currencyCode: viewModel.summaryCurrencyCode))"
-                )
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(OrdinatioColor.income)
-
-                Text(
-                    "-\(MoneyFormat.format(minorUnits: viewModel.expenseTotalAbsMinor, currencyCode: viewModel.summaryCurrencyCode))"
-                )
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(OrdinatioColor.expense)
-            }
-
-            MiniTrendChart(values: viewModel.sparklineValues, lineColor: trendLineColor)
-                .accessibilityLabel("Net total trend")
+        if codes.count <= 3 {
+            return codes.joined(separator: " · ")
         }
-        .padding(.vertical, 8)
+        let head = codes.prefix(3).joined(separator: " · ")
+        return "\(head) +\(codes.count - 3)"
+    }
+
+    private var summaryHeader: some View {
+        VStack(spacing: 6) {
+            VStack(spacing: 3) {
+                HStack(spacing: 6) {
+                    Text("Net total")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+
+                    Text("All time")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background {
+                            Capsule(style: .continuous)
+                                .fill(OrdinatioColor.surfaceElevated)
+                        }
+                        .overlay {
+                            Capsule(style: .continuous)
+                                .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+                        }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+
+                if let currencyCode = viewModel.summaryCurrencyCode, let netTotalMinor = viewModel.netTotalMinor {
+                    SummaryAmountText(valueMinor: netTotalMinor, currencyCode: currencyCode)
+                        .accessibilityLabel(
+                            MoneyFormat.format(minorUnits: netTotalMinor, currencyCode: currencyCode)
+                        )
+
+                    if let income = viewModel.incomeTotalMinor, let expenseAbs = viewModel.expenseTotalAbsMinor {
+                        HStack(spacing: 12) {
+                            MiniSignedAmountText(
+                                sign: "+",
+                                absMinor: income,
+                                currencyCode: currencyCode,
+                                tint: OrdinatioColor.income
+                            )
+
+                            MiniSignedAmountText(
+                                sign: "-",
+                                absMinor: expenseAbs,
+                                currencyCode: currencyCode,
+                                tint: OrdinatioColor.expense
+                            )
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .accessibilityElement(children: .combine)
+                    }
+                } else if viewModel.availableCurrencyCodes.count > 1 {
+                    Text("Multiple currencies")
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+
+                    Text(currencySummaryText)
+                        .font(.caption)
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                } else {
+                    Text("—")
+                        .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                }
+            }
+            .frame(maxWidth: 340)
+            .frame(maxWidth: .infinity, alignment: .center)
+
+            if !viewModel.sparklineValues.isEmpty {
+                MiniTrendChart(values: viewModel.sparklineValues, lineColor: trendLineColor)
+                    .accessibilityLabel("Net total trend")
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     var body: some View {
@@ -105,7 +150,7 @@ struct TransactionsView: View {
             List {
                 summaryHeader
                     .listRowSeparator(.hidden)
-                    .listRowInsets(.init(top: 0, leading: 16, bottom: 12, trailing: 16))
+                    .listRowInsets(.init(top: 0, leading: 12, bottom: 10, trailing: 12))
                     .listRowBackground(Color.clear)
 
                 if model.sections.isEmpty {
@@ -130,19 +175,21 @@ struct TransactionsView: View {
                     } header: {
                         HStack {
                             Text(sectionTitle(for: section.date))
-                                .font(.caption.weight(.semibold))
+                                .font(.caption2.weight(.semibold))
                                 .foregroundStyle(OrdinatioColor.textSecondary)
                                 .textCase(.uppercase)
 
                             Spacer()
 
                             Text(dayTotalText(for: section))
-                                .font(.caption.weight(.semibold).monospacedDigit())
+                                .font(.caption2.weight(.semibold).monospacedDigit())
                                 .foregroundStyle(dayTotalColor(for: section))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 10)
-                        .padding(.bottom, 4)
+                        .padding(.top, 6)
+                        .padding(.bottom, 2)
                     }
                 }
             }
@@ -197,6 +244,64 @@ struct TransactionsView: View {
     }
 }
 
+private struct SummaryAmountText: View {
+    let valueMinor: Int64
+    let currencyCode: String
+
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            amountLine(fontSize: 38)
+            amountLine(fontSize: 34)
+            amountLine(fontSize: 30)
+            amountLine(fontSize: 26)
+        }
+        .lineLimit(1)
+        .minimumScaleFactor(0.8)
+        .frame(maxWidth: .infinity, alignment: .center)
+    }
+
+    private func amountLine(fontSize: CGFloat) -> some View {
+        let prefix = valueMinor < 0 ? "-\(currencyCode)" : currencyCode
+        let absMinor = abs(valueMinor)
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+
+        return HStack(alignment: .firstTextBaseline, spacing: 0) {
+            Text(prefix)
+                .font(.system(size: fontSize * 0.55, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(OrdinatioColor.textSecondary)
+
+            Text(number)
+                .font(.system(size: fontSize, weight: .semibold, design: .rounded).monospacedDigit())
+                .foregroundStyle(OrdinatioColor.textPrimary)
+        }
+        .fixedSize(horizontal: true, vertical: false)
+    }
+}
+
+private struct MiniSignedAmountText: View {
+    let sign: String
+    let absMinor: Int64
+    let currencyCode: String
+    let tint: Color
+
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+        Text("\(sign)\(number)")
+            .font(.caption.monospacedDigit().weight(.semibold))
+            .foregroundStyle(tint)
+            .lineLimit(1)
+            .minimumScaleFactor(0.8)
+    }
+}
+
 private struct MiniTrendChart: View {
     let values: [Int64]
     let lineColor: Color
@@ -230,7 +335,7 @@ private struct MiniTrendChart: View {
                 }
             }
         }
-        .frame(height: 48)
+        .frame(height: 34)
     }
 
     private func sparklineLayout(in size: CGSize) -> (points: [CGPoint], baselineY: CGFloat) {
