@@ -28,13 +28,6 @@ struct TransactionsView: View {
         return date.formatted(dateStyle: .medium)
     }
 
-    private var trendLineColor: Color {
-        guard let netTotalMinor = viewModel.netTotalMinor else { return OrdinatioColor.textSecondary }
-        if netTotalMinor > 0 { return OrdinatioColor.income }
-        if netTotalMinor < 0 { return OrdinatioColor.expense }
-        return OrdinatioColor.textSecondary
-    }
-
     private func dayTotalText(for section: TransactionSection) -> String? {
         guard let currencyCode = viewModel.summaryCurrencyCode else { return nil }
         guard let netTotalMinor = section.netTotalMinor else { return nil }
@@ -80,85 +73,109 @@ struct TransactionsView: View {
         return "\(head) +\(codes.count - 3)"
     }
 
-    private var summaryHeader: some View {
-        VStack(spacing: 6) {
-            VStack(spacing: 3) {
-                HStack(spacing: 6) {
-                    Text("Net total")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
+    private var summaryTrendColor: Color {
+        guard viewModel.sparklineValues.count > 1 else { return OrdinatioColor.textSecondary }
+        let first = viewModel.sparklineValues.first ?? 0
+        let last = viewModel.sparklineValues.last ?? 0
+        if last > first { return OrdinatioColor.income }
+        if last < first { return OrdinatioColor.expense }
+        return OrdinatioColor.textSecondary
+    }
 
-                    Text("All time")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background {
-                            Capsule(style: .continuous)
-                                .fill(OrdinatioColor.surfaceElevated)
+    private var summaryHeader: some View {
+        VStack(spacing: -3) {
+            VStack(spacing: 2) {
+                HStack(spacing: 4) {
+                    Text("Net total")
+                        .font(.system(.body, design: .rounded).weight(.medium))
+                        .foregroundStyle(OrdinatioColor.textPrimary.opacity(0.9))
+
+                    Menu {
+                        ForEach(TransactionSummaryTimeFrame.allCases) { timeFrame in
+                            Button(timeFrame.label) { viewModel.summaryTimeFrame = timeFrame }
                         }
-                        .overlay {
-                            Capsule(style: .continuous)
-                                .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
-                        }
+                    } label: {
+                        Text(viewModel.summaryTimeFrame.label)
+                            .padding(2)
+                            .padding(.horizontal, 6)
+                            .font(.system(.body, design: .rounded).weight(.medium))
+                            .foregroundStyle(OrdinatioColor.textPrimary.opacity(0.9))
+                            .overlay {
+                                Capsule()
+                                    .stroke(OrdinatioColor.separator, lineWidth: 1.3)
+                            }
+                    }
+                    .accessibilityLabel("Timeframe")
                 }
-                .frame(maxWidth: .infinity, alignment: .center)
 
                 if let currencyCode = viewModel.summaryCurrencyCode, let netTotalMinor = viewModel.netTotalMinor {
-                    SummaryAmountText(valueMinor: netTotalMinor, currencyCode: currencyCode)
+                    NetTotalAmountText(valueMinor: netTotalMinor, currencyCode: currencyCode)
                         .accessibilityLabel(
                             MoneyFormat.format(minorUnits: netTotalMinor, currencyCode: currencyCode)
                         )
-
-                    if let income = viewModel.incomeTotalMinor, let expenseAbs = viewModel.expenseTotalAbsMinor {
-                        HStack(spacing: 12) {
-                            MiniSignedAmountText(
-                                sign: "+",
-                                absMinor: income,
-                                currencyCode: currencyCode,
-                                tint: OrdinatioColor.income
-                            )
-
-                            MiniSignedAmountText(
-                                sign: "-",
-                                absMinor: expenseAbs,
-                                currencyCode: currencyCode,
-                                tint: OrdinatioColor.expense
-                            )
-                        }
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .accessibilityElement(children: .combine)
-                    }
                 } else if viewModel.availableCurrencyCodes.count > 1 {
                     Text("Multiple currencies")
-                        .font(.headline.weight(.semibold))
+                        .font(.system(.title3, design: .rounded).weight(.medium))
                         .foregroundStyle(OrdinatioColor.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .center)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+                        .minimumScaleFactor(0.8)
 
                     Text(currencySummaryText)
-                        .font(.caption)
+                        .font(.system(.body, design: .rounded).weight(.medium))
                         .foregroundStyle(OrdinatioColor.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 } else {
                     Text("—")
-                        .font(.system(size: 34, weight: .semibold, design: .rounded).monospacedDigit())
+                        .font(.system(.largeTitle, design: .rounded).weight(.regular))
                         .foregroundStyle(OrdinatioColor.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .frame(maxWidth: 340)
-            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(7)
+            .frame(maxWidth: 360)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
 
-            if !viewModel.sparklineValues.isEmpty {
-                MiniTrendChart(values: viewModel.sparklineValues, lineColor: trendLineColor)
+            if let currencyCode = viewModel.summaryCurrencyCode,
+               let income = viewModel.incomeTotalMinor,
+               let expenseAbs = viewModel.expenseTotalAbsMinor,
+               income > 0 || expenseAbs > 0
+            {
+                HStack {
+                    if income > 0 {
+                        Text("+\(formatAbsNumber(minorUnits: income, currencyCode: currencyCode))")
+                            .font(.system(.title2, design: .rounded).weight(.medium))
+                            .minimumScaleFactor(0.5)
+                            .foregroundStyle(OrdinatioColor.income)
+                            .lineLimit(1)
+                    }
+
+                    if income > 0 && expenseAbs > 0 {
+                        DottedLine()
+                            .stroke(style: StrokeStyle(lineWidth: 1.7, lineCap: .round))
+                            .frame(width: 1.7, height: 15)
+                            .foregroundStyle(OrdinatioColor.separator)
+                    }
+
+                    if expenseAbs > 0 {
+                        Text("-\(formatAbsNumber(minorUnits: expenseAbs, currencyCode: currencyCode))")
+                            .font(.system(.title2, design: .rounded).weight(.medium))
+                            .minimumScaleFactor(0.5)
+                            .foregroundStyle(OrdinatioColor.expense)
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.bottom, 13)
+            }
+
+            if viewModel.sparklineValues.count > 1 {
+                MiniLineGraph(values: viewModel.sparklineValues, color: summaryTrendColor)
                     .accessibilityLabel("Net total trend")
+                    .frame(height: 25)
+                    .padding(.horizontal, 60)
+                    .padding(.top, 16)
             }
         }
-        .padding(.vertical, 4)
     }
 
     var body: some View {
@@ -168,7 +185,7 @@ struct TransactionsView: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     summaryHeader
-                        .padding(.horizontal, 12)
+                        .padding(.horizontal, 20)
                         .padding(.top, 2)
                         .padding(.bottom, 10)
 
@@ -254,61 +271,137 @@ private struct Line: Shape {
     }
 }
 
-private struct SummaryAmountText: View {
-    let valueMinor: Int64
-    let currencyCode: String
-
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        ViewThatFits(in: .horizontal) {
-            amountLine(fontSize: 38)
-            amountLine(fontSize: 34)
-            amountLine(fontSize: 30)
-            amountLine(fontSize: 26)
-        }
-        .lineLimit(1)
-        .minimumScaleFactor(0.8)
-        .frame(maxWidth: .infinity, alignment: .center)
-    }
-
-    private func amountLine(fontSize: CGFloat) -> some View {
-        let prefix = valueMinor < 0 ? "-\(currencyCode)" : currencyCode
-        let absMinor = valueMinor.ordinatioSafeAbs
-        let digits = MoneyFormat.fractionDigits(for: currencyCode)
-        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
-
-        return HStack(alignment: .firstTextBaseline, spacing: 0) {
-            Text(prefix)
-                .font(.system(size: fontSize * 0.55, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(OrdinatioColor.textSecondary)
-
-            Text(number)
-                .font(.system(size: fontSize, weight: .semibold, design: .rounded).monospacedDigit())
-                .foregroundStyle(OrdinatioColor.textPrimary)
-        }
-        .fixedSize(horizontal: true, vertical: false)
+private struct DottedLine: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.width / 2, y: 0))
+        path.addLine(to: CGPoint(x: rect.width / 2, y: rect.height))
+        return path
     }
 }
 
-private struct MiniSignedAmountText: View {
-    let sign: String
-    let absMinor: Int64
+private struct NetTotalAmountText: View {
+    let valueMinor: Int64
     let currencyCode: String
-    let tint: Color
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.locale) private var locale
 
-    var body: some View {
+    private var prefix: String {
+        valueMinor >= 0 ? "+\(currencyCode)" : "-\(currencyCode)"
+    }
+
+    private var numberText: String {
+        let absMinor = valueMinor.ordinatioSafeAbs
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
-        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor.ordinatioSafeAbs, currencyCode: currencyCode)
-        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
-        Text("\(sign)\(number)")
-            .font(.caption.monospacedDigit().weight(.semibold))
-            .foregroundStyle(tint)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+    }
+
+    private var numberFontSize: CGFloat {
+        switch dynamicTypeSize {
+        case .xSmall: 46
+        case .small: 47
+        case .medium: 48
+        case .large: 50
+        case .xLarge: 56
+        case .xxLarge: 58
+        case .xxxLarge: 62
+        default: 50
+        }
+    }
+
+    var body: some View {
+        HStack(alignment: .lastTextBaseline, spacing: 2) {
+            Text(prefix)
+                .font(.system(.largeTitle, design: .rounded))
+                .foregroundStyle(OrdinatioColor.textSecondary)
+            Text(numberText)
+                .font(.system(size: numberFontSize, weight: .regular, design: .rounded))
+                .foregroundStyle(OrdinatioColor.textPrimary)
+        }
+        .minimumScaleFactor(0.5)
+        .lineLimit(1)
+    }
+}
+
+private struct MiniLineGraph: View {
+    let values: [Int64]
+    let color: Color
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { proxy in
+            let points = graphPoints(in: proxy.size)
+            ZStack {
+                if points.count > 1 {
+                    AnimatedGraphPath(progress: progress, points: points)
+                        .stroke(
+                            LinearGradient(
+                                colors: [OrdinatioColor.separator, color],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+                        )
+                        .shadow(
+                            color: color.opacity(colorScheme == .dark ? 0.18 : 0.12),
+                            radius: 8,
+                            x: 0,
+                            y: 6
+                        )
+                }
+            }
+        }
+        .task(id: values) {
+            progress = 0
+            try? await Task.sleep(for: .milliseconds(120))
+            withAnimation(.easeInOut(duration: 1.15)) {
+                progress = 1
+            }
+        }
+    }
+
+    private func graphPoints(in size: CGSize) -> [CGPoint] {
+        guard values.count > 1 else { return [] }
+        let height = size.height
+        let stepX = size.width / CGFloat(values.count - 1)
+        let minValue = values.min() ?? 0
+        let maxValue = values.max() ?? 0
+        let range = maxValue - minValue
+
+        return values.enumerated().map { index, value in
+            let progress: CGFloat
+            if range == 0 {
+                progress = 0.5
+            } else {
+                progress = CGFloat(value - minValue) / CGFloat(range)
+            }
+
+            let y = -progress * height + height
+            return CGPoint(x: CGFloat(index) * stepX, y: y)
+        }
+    }
+}
+
+private struct AnimatedGraphPath: Shape {
+    var progress: CGFloat
+    var points: [CGPoint]
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
+
+    func path(in _: CGRect) -> Path {
+        Path { path in
+            guard let first = points.first else { return }
+            path.move(to: first)
+            path.addLines(points)
+        }
+        .trimmedPath(from: 0, to: progress)
     }
 }
 
@@ -318,74 +411,9 @@ private extension Int64 {
     }
 }
 
-private struct MiniTrendChart: View {
-    let values: [Int64]
-    let lineColor: Color
-    var baselineColor: Color = OrdinatioColor.separator.opacity(0.6)
-
-    var body: some View {
-        GeometryReader { proxy in
-            let layout = sparklineLayout(in: proxy.size)
-
-            ZStack {
-                Path { path in
-                    path.move(to: CGPoint(x: 0, y: layout.baselineY))
-                    path.addLine(to: CGPoint(x: proxy.size.width, y: layout.baselineY))
-                }
-                .stroke(baselineColor, lineWidth: 1)
-
-                if layout.points.count > 1 {
-                    Path { path in
-                        guard let first = layout.points.first else { return }
-                        path.move(to: first)
-                        for point in layout.points.dropFirst() {
-                            path.addLine(to: point)
-                        }
-                    }
-                    .stroke(lineColor, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
-                } else if let point = layout.points.first {
-                    Circle()
-                        .fill(lineColor)
-                        .frame(width: 4, height: 4)
-                        .position(point)
-                }
-            }
-        }
-        .frame(height: 34)
-    }
-
-    private func sparklineLayout(in size: CGSize) -> (points: [CGPoint], baselineY: CGFloat) {
-        guard !values.isEmpty else {
-            return ([], size.height * 0.7)
-        }
-
-        let minValue = values.min() ?? 0
-        let maxValue = values.max() ?? 0
-        let range = maxValue - minValue
-        let verticalPadding = size.height * 0.2
-        let drawableHeight = max(size.height - verticalPadding * 2, 1)
-
-        func yPosition(for value: Int64) -> CGFloat {
-            let normalized: CGFloat
-            if range == 0 {
-                normalized = 0.5
-            } else {
-                normalized = CGFloat(value - minValue) / CGFloat(range)
-            }
-            return size.height - verticalPadding - normalized * drawableHeight
-        }
-
-        if values.count == 1 {
-            let point = CGPoint(x: size.width * 0.5, y: yPosition(for: values[0]))
-            let baselineY = range == 0 ? point.y : size.height - verticalPadding
-            return ([point], baselineY)
-        }
-
-        let stepX = size.width / CGFloat(max(values.count - 1, 1))
-        let points = values.enumerated().map { index, value in
-            CGPoint(x: CGFloat(index) * stepX, y: yPosition(for: value))
-        }
-        let baselineY = range == 0 ? points.first?.y ?? size.height * 0.5 : size.height - verticalPadding
-        return (points, baselineY)
-    }
+private func formatAbsNumber(minorUnits: Int64, currencyCode: String, locale: Locale = .current) -> String {
+    let absMinor = minorUnits.ordinatioSafeAbs
+    let digits = MoneyFormat.fractionDigits(for: currencyCode)
+    let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+    return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
 }

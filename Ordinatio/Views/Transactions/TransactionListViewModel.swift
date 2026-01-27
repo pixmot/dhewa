@@ -2,12 +2,36 @@ import Foundation
 import Observation
 import OrdinatioCore
 
+enum TransactionSummaryTimeFrame: Int, CaseIterable, Hashable, Sendable, Identifiable {
+    case today
+    case thisWeek
+    case thisMonth
+    case thisYear
+    case allTime
+
+    var id: Int { rawValue }
+
+    var label: String {
+        switch self {
+        case .today: "today"
+        case .thisWeek: "this week"
+        case .thisMonth: "this month"
+        case .thisYear: "this year"
+        case .allTime: "all time"
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class TransactionListViewModel {
     var sections: [TransactionSection] = []
     var categories: [OrdinatioCore.Category] = []
     var availableCurrencyCodes: [String] = []
+
+    var summaryTimeFrame: TransactionSummaryTimeFrame = .thisMonth {
+        didSet { scheduleTransactionObservation(debounce: false) }
+    }
 
     var filter = TransactionFilter() {
         didSet { scheduleTransactionObservation(debounce: false) }
@@ -100,14 +124,16 @@ final class TransactionListViewModel {
         let db = db
         let householdId = householdId
         let defaultCurrencyCode = defaultCurrencyCode
+        let summaryTimeFrame = summaryTimeFrame
 
-        transactionsTask = Task.detached(priority: .userInitiated) { [db, householdId, defaultCurrencyCode] in
+        transactionsTask = Task.detached(priority: .userInitiated) { [db, householdId, defaultCurrencyCode, summaryTimeFrame] in
             do {
                 for try await rows in await db.observeTransactionListRows(householdId: householdId, filter: filter) {
                     let computed = TransactionListComputation.compute(
                         rows: rows,
                         filter: filter,
-                        defaultCurrencyCode: defaultCurrencyCode
+                        defaultCurrencyCode: defaultCurrencyCode,
+                        summaryTimeFrame: summaryTimeFrame
                     )
                     await MainActor.run { [weak self] in
                         guard let self else { return }
@@ -143,7 +169,8 @@ enum TransactionListComputation {
     static func compute(
         rows: [TransactionListRow],
         filter: TransactionFilter,
-        defaultCurrencyCode: String
+        defaultCurrencyCode: String,
+        summaryTimeFrame: TransactionSummaryTimeFrame
     ) -> Result {
         let currencyFilter = filter.currencyCode?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
@@ -161,6 +188,34 @@ enum TransactionListComputation {
             summaryCurrencyCode = nil
         }
 
+        let calendar = Calendar.current
+        let now = Date()
+        let today = LocalDate.from(date: now, calendar: calendar)
+        let todayYyyymmdd = today.yyyymmdd
+
+        func startDateYyyymmdd() -> Int32? {
+            switch summaryTimeFrame {
+            case .today:
+                return todayYyyymmdd
+            case .thisWeek:
+                let components = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: now)
+                guard let start = calendar.date(from: components) else { return nil }
+                return LocalDate.from(date: start, calendar: calendar).yyyymmdd
+            case .thisMonth:
+                let components = calendar.dateComponents([.year, .month], from: now)
+                guard let start = calendar.date(from: components) else { return nil }
+                return LocalDate.from(date: start, calendar: calendar).yyyymmdd
+            case .thisYear:
+                let components = calendar.dateComponents([.year], from: now)
+                guard let start = calendar.date(from: components) else { return nil }
+                return LocalDate.from(date: start, calendar: calendar).yyyymmdd
+            case .allTime:
+                return nil
+            }
+        }
+
+        let summaryStartYyyymmdd = startDateYyyymmdd()
+
         var netTotalMinor: Int64?
         var incomeTotalMinor: Int64?
         var expenseTotalAbsMinor: Int64?
@@ -172,6 +227,8 @@ enum TransactionListComputation {
             var hasAny = false
 
             for row in rows where row.currencyCode.uppercased() == summaryCurrencyCode {
+                guard row.txnDate <= todayYyyymmdd else { continue }
+                if let summaryStartYyyymmdd, row.txnDate < summaryStartYyyymmdd { continue }
                 hasAny = true
                 net += row.amountMinor
                 if row.amountMinor > 0 {
@@ -225,12 +282,14 @@ enum TransactionListComputation {
 
         finalizeSection()
 
-        let sparklineValues: [Int64]
-        if summaryCurrencyCode == nil || netTotalMinor == nil {
-            sparklineValues = []
-        } else {
-            sparklineValues = sections.prefix(14).reversed().map { $0.netTotalMinor ?? 0 }
-        }
+        let sparklineValues = SparklineComputation.compute(
+            sections: sections,
+            summaryCurrencyCode: summaryCurrencyCode,
+            netTotalMinor: netTotalMinor,
+            summaryTimeFrame: summaryTimeFrame,
+            today: today,
+            calendar: calendar
+        )
 
         return Result(
             sections: sections,
@@ -241,6 +300,141 @@ enum TransactionListComputation {
             expenseTotalAbsMinor: expenseTotalAbsMinor,
             sparklineValues: sparklineValues
         )
+    }
+}
+
+enum SparklineComputation {
+    static func compute(
+        sections: [TransactionSection],
+        summaryCurrencyCode: String?,
+        netTotalMinor: Int64?,
+        summaryTimeFrame: TransactionSummaryTimeFrame,
+        today: LocalDate,
+        calendar: Calendar
+    ) -> [Int64] {
+        guard summaryCurrencyCode != nil else { return [] }
+        guard netTotalMinor != nil else { return [] }
+
+        switch summaryTimeFrame {
+        case .thisWeek:
+            return dailyCumulative(
+                sections: sections,
+                startYyyymmdd: startOfWeekYyyymmdd(calendar: calendar, today: today),
+                endYyyymmdd: today.yyyymmdd,
+                calendar: calendar
+            )
+        case .thisMonth:
+            return dailyCumulative(
+                sections: sections,
+                startYyyymmdd: startOfMonthYyyymmdd(calendar: calendar, today: today),
+                endYyyymmdd: today.yyyymmdd,
+                calendar: calendar
+            )
+        case .thisYear:
+            return monthlyCumulative(
+                sections: sections,
+                startYyyymmdd: startOfYearYyyymmdd(calendar: calendar, today: today),
+                endYyyymmdd: today.yyyymmdd,
+                calendar: calendar
+            )
+        case .today, .allTime:
+            return []
+        }
+    }
+
+    private static func dailyCumulative(
+        sections: [TransactionSection],
+        startYyyymmdd: Int32,
+        endYyyymmdd: Int32,
+        calendar: Calendar
+    ) -> [Int64] {
+        guard startYyyymmdd <= endYyyymmdd else { return [] }
+
+        let dayNetByDate = sections.reduce(into: [Int32: Int64]()) { partialResult, section in
+            if let net = section.netTotalMinor {
+                partialResult[section.date.yyyymmdd] = net
+            }
+        }
+
+        let startDate = LocalDate(yyyymmdd: startYyyymmdd).date(calendar: calendar)
+        let endDate = LocalDate(yyyymmdd: endYyyymmdd).date(calendar: calendar)
+
+        var points: [Int64] = [0]
+        var running: Int64 = 0
+
+        var cursor = startDate
+        while cursor <= endDate {
+            let date = LocalDate.from(date: cursor, calendar: calendar)
+            running += dayNetByDate[date.yyyymmdd] ?? 0
+            points.append(running)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        return points.count > 1 ? points : []
+    }
+
+    private static func monthlyCumulative(
+        sections: [TransactionSection],
+        startYyyymmdd: Int32,
+        endYyyymmdd: Int32,
+        calendar: Calendar
+    ) -> [Int64] {
+        guard startYyyymmdd <= endYyyymmdd else { return [] }
+        let end = LocalDate(yyyymmdd: endYyyymmdd)
+        let start = LocalDate(yyyymmdd: startYyyymmdd)
+        guard start <= end else { return [] }
+
+        var netByMonth: [Int: Int64] = [:]
+        for section in sections {
+            guard section.date >= start, section.date <= end else { continue }
+            guard let net = section.netTotalMinor else { continue }
+            let key = section.date.year * 100 + section.date.month
+            netByMonth[key, default: 0] += net
+        }
+
+        let startDate = start.date(calendar: calendar)
+        let endDate = end.date(calendar: calendar)
+
+        var points: [Int64] = [0]
+        var running: Int64 = 0
+
+        var cursorComponents = calendar.dateComponents([.year, .month], from: startDate)
+        cursorComponents.day = 1
+        guard var cursor = calendar.date(from: cursorComponents) else { return [] }
+
+        while cursor <= endDate {
+            let local = LocalDate.from(date: cursor, calendar: calendar)
+            let key = local.year * 100 + local.month
+            running += netByMonth[key] ?? 0
+            points.append(running)
+
+            guard let next = calendar.date(byAdding: .month, value: 1, to: cursor) else { break }
+            cursor = next
+        }
+
+        return points.count > 1 ? points : []
+    }
+
+    private static func startOfWeekYyyymmdd(calendar: Calendar, today: LocalDate) -> Int32 {
+        let todayDate = today.date(calendar: calendar)
+        let components = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: todayDate)
+        let start = calendar.date(from: components) ?? todayDate
+        return LocalDate.from(date: start, calendar: calendar).yyyymmdd
+    }
+
+    private static func startOfMonthYyyymmdd(calendar: Calendar, today: LocalDate) -> Int32 {
+        let todayDate = today.date(calendar: calendar)
+        let components = calendar.dateComponents([.year, .month], from: todayDate)
+        let start = calendar.date(from: components) ?? todayDate
+        return LocalDate.from(date: start, calendar: calendar).yyyymmdd
+    }
+
+    private static func startOfYearYyyymmdd(calendar: Calendar, today: LocalDate) -> Int32 {
+        let todayDate = today.date(calendar: calendar)
+        let components = calendar.dateComponents([.year], from: todayDate)
+        let start = calendar.date(from: components) ?? todayDate
+        return LocalDate.from(date: start, calendar: calendar).yyyymmdd
     }
 }
 
