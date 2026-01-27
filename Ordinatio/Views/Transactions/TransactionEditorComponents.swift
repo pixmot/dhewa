@@ -100,30 +100,33 @@ extension TransactionEditorView {
                         .frame(maxHeight: .infinity)
                     } else {
                         ScrollView(showsIndicators: false) {
-                            BudgetComposerView.FlowLayout(spacing: 10) {
-                                ForEach(filteredCategoryOptions) { category in
-                                    BudgetComposerView.BudgetCategoryChip(
-                                        category: category,
-                                        selected: selection == category.id,
-                                        dimmed: selection != nil && selection != category.id
-                                    ) {
-                                        if selection == category.id {
-                                            selection = nil
-                                        } else {
-                                            selection = category.id
+                            VStack(spacing: 0) {
+                                Spacer(minLength: 0)
+
+                                BudgetComposerView.FlowLayout(spacing: 10) {
+                                    ForEach(filteredCategoryOptions) { category in
+                                        BudgetComposerView.BudgetCategoryChip(
+                                            category: category,
+                                            selected: selection == category.id,
+                                            dimmed: selection != nil && selection != category.id
+                                        ) {
+                                            if selection == category.id {
+                                                selection = nil
+                                            } else {
+                                                selection = category.id
+                                            }
+                                            dismiss()
                                         }
-                                        dismiss()
                                     }
                                 }
+                                .padding(15)
                             }
-                            .padding(15)
+                            .containerRelativeFrame(.vertical, alignment: .bottom)
                         }
                         .scrollDismissesKeyboard(.immediately)
                         .scrollIndicators(.hidden)
                         .frame(maxWidth: .infinity)
                     }
-
-                    Spacer(minLength: 0)
                 }
                 .padding(20)
                 .background(OrdinatioColor.background)
