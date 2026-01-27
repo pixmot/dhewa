@@ -29,6 +29,8 @@ final class TransactionListViewModel {
     var categories: [OrdinatioCore.Category] = []
     var availableCurrencyCodes: [String] = []
 
+    var netTotalMinorByCurrency: [String: Int64] = [:]
+
     var summaryTimeFrame: TransactionSummaryTimeFrame = .thisMonth {
         didSet { scheduleTransactionObservation(debounce: false) }
     }
@@ -140,6 +142,7 @@ final class TransactionListViewModel {
                         guard let self else { return }
                         self.sections = computed.sections
                         self.availableCurrencyCodes = computed.availableCurrencyCodes
+                        self.netTotalMinorByCurrency = computed.netTotalMinorByCurrency
                         self.summaryCurrencyCode = computed.summaryCurrencyCode
                         self.netTotalMinor = computed.netTotalMinor
                         self.incomeTotalMinor = computed.incomeTotalMinor
@@ -160,6 +163,7 @@ enum TransactionListComputation {
     struct Result: Sendable {
         var sections: [TransactionSection]
         var availableCurrencyCodes: [String]
+        var netTotalMinorByCurrency: [String: Int64]
         var summaryCurrencyCode: String?
         var netTotalMinor: Int64?
         var incomeTotalMinor: Int64?
@@ -217,6 +221,13 @@ enum TransactionListComputation {
 
         let summaryStartYyyymmdd = startDateYyyymmdd()
 
+        var netTotalMinorByCurrency: [String: Int64] = [:]
+        for row in rows {
+            guard row.txnDate <= todayYyyymmdd else { continue }
+            if let summaryStartYyyymmdd, row.txnDate < summaryStartYyyymmdd { continue }
+            netTotalMinorByCurrency[row.currencyCode.uppercased(), default: 0] += row.amountMinor
+        }
+
         var netTotalMinor: Int64?
         var incomeTotalMinor: Int64?
         var expenseTotalAbsMinor: Int64?
@@ -233,7 +244,7 @@ enum TransactionListComputation {
                 if row.amountMinor > 0 {
                     income += row.amountMinor
                 } else if row.amountMinor < 0 {
-                    expenseAbs += abs(row.amountMinor)
+                    expenseAbs += safeAbs(row.amountMinor)
                 }
             }
 
@@ -291,12 +302,17 @@ enum TransactionListComputation {
         return Result(
             sections: sections,
             availableCurrencyCodes: availableCurrencyCodes,
+            netTotalMinorByCurrency: netTotalMinorByCurrency,
             summaryCurrencyCode: summaryCurrencyCode,
             netTotalMinor: netTotalMinor,
             incomeTotalMinor: incomeTotalMinor,
             expenseTotalAbsMinor: expenseTotalAbsMinor,
             sparklineValues: sparklineValues
         )
+    }
+
+    private static func safeAbs(_ value: Int64) -> Int64 {
+        value == .min ? .max : Swift.abs(value)
     }
 }
 

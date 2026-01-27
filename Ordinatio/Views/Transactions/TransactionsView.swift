@@ -6,6 +6,10 @@ struct TransactionsView: View {
     let householdId: String
     let defaultCurrencyCode: String
 
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
+
     @State private var viewModel: TransactionListViewModel
 
     @State private var showFilters = false
@@ -21,17 +25,20 @@ struct TransactionsView: View {
     }
 
     private func sectionTitle(for date: LocalDate) -> String {
-        let calendar = Calendar.current
         let value = date.date(calendar: calendar)
         if calendar.isDateInToday(value) { return "Today" }
         if calendar.isDateInYesterday(value) { return "Yesterday" }
-        return date.formatted(dateStyle: .medium)
+        return date.formatted(dateStyle: .medium, locale: locale, calendar: calendar, timeZone: timeZone)
     }
 
     private func dayTotalText(for section: TransactionSection) -> String? {
         guard let currencyCode = viewModel.summaryCurrencyCode else { return nil }
         guard let netTotalMinor = section.netTotalMinor else { return nil }
-        let formatted = MoneyFormat.format(minorUnits: netTotalMinor.ordinatioSafeAbs, currencyCode: currencyCode)
+        let formatted = MoneyFormat.format(
+            minorUnits: netTotalMinor.ordinatioSafeAbs,
+            currencyCode: currencyCode,
+            locale: locale
+        )
         if netTotalMinor > 0 { return "+\(formatted)" }
         if netTotalMinor < 0 { return "-\(formatted)" }
         return formatted
@@ -71,6 +78,12 @@ struct TransactionsView: View {
         }
         let head = codes.prefix(3).joined(separator: " · ")
         return "\(head) +\(codes.count - 3)"
+    }
+
+    private var multiCurrencyNetTotals: [(code: String, netTotalMinor: Int64)] {
+        viewModel.netTotalMinorByCurrency
+            .map { (code: $0.key, netTotalMinor: $0.value) }
+            .sorted { $0.code < $1.code }
     }
 
     private var summaryTrendColor: Color {
@@ -120,11 +133,27 @@ struct TransactionsView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.8)
 
-                    Text(currencySummaryText)
-                        .font(.system(.body, design: .rounded).weight(.medium))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                    if multiCurrencyNetTotals.isEmpty {
+                        Text(currencySummaryText)
+                            .font(.system(.body, design: .rounded).weight(.medium))
+                            .foregroundStyle(OrdinatioColor.textSecondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                    } else {
+                        VStack(spacing: 4) {
+                            ForEach(multiCurrencyNetTotals.prefix(3), id: \.code) { item in
+                                NetTotalCompactLine(valueMinor: item.netTotalMinor, currencyCode: item.code)
+                            }
+
+                            if multiCurrencyNetTotals.count > 3 {
+                                Text("+\(multiCurrencyNetTotals.count - 3) more")
+                                    .font(.system(.body, design: .rounded).weight(.medium))
+                                    .foregroundStyle(OrdinatioColor.textSecondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .padding(.top, 5)
+                    }
                 } else {
                     Text("—")
                         .font(.system(.largeTitle, design: .rounded).weight(.regular))
@@ -143,7 +172,7 @@ struct TransactionsView: View {
             {
                 HStack {
                     if income > 0 {
-                        Text("+\(formatAbsNumber(minorUnits: income, currencyCode: currencyCode))")
+                        Text("+\(formatAbsNumber(minorUnits: income, currencyCode: currencyCode, locale: locale))")
                             .font(.system(.title2, design: .rounded).weight(.medium))
                             .minimumScaleFactor(0.5)
                             .foregroundStyle(OrdinatioColor.income)
@@ -158,7 +187,7 @@ struct TransactionsView: View {
                     }
 
                     if expenseAbs > 0 {
-                        Text("-\(formatAbsNumber(minorUnits: expenseAbs, currencyCode: currencyCode))")
+                        Text("-\(formatAbsNumber(minorUnits: expenseAbs, currencyCode: currencyCode, locale: locale))")
                             .font(.system(.title2, design: .rounded).weight(.medium))
                             .minimumScaleFactor(0.5)
                             .foregroundStyle(OrdinatioColor.expense)
@@ -168,12 +197,17 @@ struct TransactionsView: View {
                 .padding(.bottom, 13)
             }
 
-            if viewModel.sparklineValues.count > 1 {
-                MiniLineGraph(values: viewModel.sparklineValues, color: summaryTrendColor)
-                    .accessibilityLabel("Net total trend")
-                    .frame(height: 25)
-                    .padding(.horizontal, 60)
-                    .padding(.top, 16)
+            if let currencyCode = viewModel.summaryCurrencyCode, viewModel.sparklineValues.count > 1 {
+                MiniLineGraph(
+                    values: viewModel.sparklineValues,
+                    color: summaryTrendColor,
+                    currencyCode: currencyCode,
+                    timeFrame: viewModel.summaryTimeFrame
+                )
+                .accessibilityLabel("Net total trend")
+                .frame(height: 25)
+                .padding(.horizontal, 60)
+                .padding(.top, 16)
             }
         }
     }
@@ -325,35 +359,101 @@ private struct NetTotalAmountText: View {
     }
 }
 
+private struct NetTotalCompactLine: View {
+    let valueMinor: Int64
+    let currencyCode: String
+
+    @Environment(\.locale) private var locale
+
+    private var prefix: String {
+        valueMinor >= 0 ? "+\(currencyCode)" : "-\(currencyCode)"
+    }
+
+    private var numberText: String {
+        let absMinor = valueMinor.ordinatioSafeAbs
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+    }
+
+    var body: some View {
+        HStack(alignment: .lastTextBaseline, spacing: 2) {
+            Text(prefix)
+                .font(.system(.body, design: .rounded).weight(.medium))
+                .foregroundStyle(OrdinatioColor.textSecondary)
+
+            Text(numberText)
+                .font(.system(.title3, design: .rounded).weight(.medium))
+                .foregroundStyle(OrdinatioColor.textPrimary)
+        }
+        .minimumScaleFactor(0.65)
+        .lineLimit(1)
+    }
+}
+
 private struct MiniLineGraph: View {
     let values: [Int64]
     let color: Color
+    let currencyCode: String
+    let timeFrame: TransactionSummaryTimeFrame
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.calendar) private var calendar
+    @Environment(\.locale) private var locale
+    @Environment(\.timeZone) private var timeZone
     @State private var progress: CGFloat = 0
+
+    @State private var currentIndex: Int?
+    @State private var indicatorOffset: CGSize = .zero
+    @State private var showIndicator = false
+    @GestureState private var isDragging: Bool = false
 
     var body: some View {
         GeometryReader { proxy in
             let points = graphPoints(in: proxy.size)
+            let stepX = proxy.size.width / CGFloat(max(values.count - 1, 1))
             ZStack {
                 if points.count > 1 {
                     AnimatedGraphPath(progress: progress, points: points)
-                        .stroke(
-                            LinearGradient(
-                                colors: [OrdinatioColor.separator, color],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            ),
-                            style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round)
+                        .stroke(lineGradient, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                        .shadow(color: color.opacity(colorScheme == .dark ? 0.12 : 0.08), radius: 4, x: 0, y: 3)
+
+                    if showIndicator, let currentIndex, points.indices.contains(currentIndex) {
+                        MiniLineGraphIndicator(
+                            label: label(for: currentIndex),
+                            amountText: amountText(for: values[currentIndex]),
+                            accentColor: color
                         )
-                        .shadow(
-                            color: color.opacity(colorScheme == .dark ? 0.18 : 0.12),
-                            radius: 8,
-                            x: 0,
-                            y: 6
-                        )
+                        .frame(width: 88)
+                        .offset(y: 6)
+                        .offset(indicatorOffset)
+                        .opacity(showIndicator ? 1 : 0)
+                        .accessibilityHidden(true)
+                    }
                 }
             }
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        guard points.count > 1 else { return }
+                        showIndicator = true
+
+                        let x = min(max(value.location.x, 0), proxy.size.width)
+                        let rawIndex = Int((x / stepX).rounded())
+                        let clampedIndex = min(max(rawIndex, 1), values.count - 1)
+                        currentIndex = clampedIndex
+
+                        let point = points[clampedIndex]
+                        indicatorOffset = CGSize(width: point.x - 44, height: point.y - proxy.size.height)
+                    }
+                    .onEnded { _ in
+                        showIndicator = false
+                    }
+                    .updating($isDragging) { _, state, _ in
+                        state = true
+                    }
+            )
         }
         .task(id: values) {
             progress = 0
@@ -361,6 +461,9 @@ private struct MiniLineGraph: View {
             withAnimation(.easeInOut(duration: 1.15)) {
                 progress = 1
             }
+        }
+        .onChange(of: isDragging) { dragging in
+            if !dragging { showIndicator = false }
         }
     }
 
@@ -382,6 +485,106 @@ private struct MiniLineGraph: View {
 
             let y = -progress * height + height
             return CGPoint(x: CGFloat(index) * stepX, y: y)
+        }
+    }
+
+    private var lineGradient: LinearGradient {
+        let stop = 0.82
+        return LinearGradient(
+            gradient: Gradient(stops: [
+                .init(color: OrdinatioColor.separator, location: max(0, stop - 0.015)),
+                .init(color: color, location: stop),
+            ]),
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    }
+
+    private func label(for index: Int) -> String {
+        guard index > 0 else { return "" }
+
+        let now = Date()
+        let startComponents: DateComponents
+
+        switch timeFrame {
+        case .today:
+            startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        case .thisWeek:
+            startComponents = calendar.dateComponents([.weekOfYear, .yearForWeekOfYear], from: now)
+        case .thisMonth:
+            startComponents = calendar.dateComponents([.year, .month], from: now)
+        case .thisYear:
+            startComponents = calendar.dateComponents([.year], from: now)
+        case .allTime:
+            startComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        }
+
+        guard let start = calendar.date(from: startComponents) else { return "" }
+
+        let date: Date?
+        if timeFrame == .thisYear {
+            date = calendar.date(byAdding: .month, value: index - 1, to: start)
+        } else {
+            date = calendar.date(byAdding: .day, value: index - 1, to: start)
+        }
+
+        guard let date else { return "" }
+
+        var style = Date.FormatStyle(date: .omitted, time: .omitted)
+        style.locale = locale
+        style.calendar = calendar
+        style.timeZone = timeZone
+
+        switch timeFrame {
+        case .thisWeek:
+            return date.formatted(style.weekday(.abbreviated))
+        case .thisYear:
+            return date.formatted(style.month(.abbreviated))
+        case .today, .thisMonth, .allTime:
+            return date.formatted(style.month(.abbreviated).day())
+        }
+    }
+
+    private func amountText(for valueMinor: Int64) -> String {
+        let absMinor = valueMinor.ordinatioSafeAbs
+        let digits = MoneyFormat.fractionDigits(for: currencyCode)
+        let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
+        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+        let prefix = valueMinor >= 0 ? "+\(currencyCode)" : "-\(currencyCode)"
+        return "\(prefix) \(number)"
+    }
+}
+
+private struct MiniLineGraphIndicator: View {
+    let label: String
+    let amountText: String
+    let accentColor: Color
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(spacing: 1) {
+                Text(label)
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+
+                Text(amountText)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textPrimary)
+            }
+            .frame(height: 33)
+            .padding(.horizontal, 7)
+            .background(OrdinatioColor.surfaceElevated, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .padding(.bottom, 4)
+
+            DottedLine()
+                .stroke(style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .frame(width: 2.5, height: 25)
+                .foregroundStyle(accentColor)
+
+            Circle()
+                .stroke(OrdinatioColor.background, lineWidth: 2.5)
+                .background(Circle().fill(accentColor))
+                .frame(width: 14, height: 11)
         }
     }
 }
@@ -411,7 +614,7 @@ extension Int64 {
     }
 }
 
-private func formatAbsNumber(minorUnits: Int64, currencyCode: String, locale: Locale = .current) -> String {
+private func formatAbsNumber(minorUnits: Int64, currencyCode: String, locale: Locale) -> String {
     let absMinor = minorUnits.ordinatioSafeAbs
     let digits = MoneyFormat.fractionDigits(for: currencyCode)
     let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
