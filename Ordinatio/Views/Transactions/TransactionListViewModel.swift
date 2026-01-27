@@ -225,12 +225,10 @@ enum TransactionListComputation {
             var net: Int64 = 0
             var income: Int64 = 0
             var expenseAbs: Int64 = 0
-            var hasAny = false
 
             for row in rows where row.currencyCode.uppercased() == summaryCurrencyCode {
                 guard row.txnDate <= todayYyyymmdd else { continue }
                 if let summaryStartYyyymmdd, row.txnDate < summaryStartYyyymmdd { continue }
-                hasAny = true
                 net += row.amountMinor
                 if row.amountMinor > 0 {
                     income += row.amountMinor
@@ -239,11 +237,9 @@ enum TransactionListComputation {
                 }
             }
 
-            if hasAny {
-                netTotalMinor = net
-                incomeTotalMinor = income
-                expenseTotalAbsMinor = expenseAbs
-            }
+            netTotalMinor = net
+            incomeTotalMinor = income
+            expenseTotalAbsMinor = expenseAbs
         }
 
         var sections: [TransactionSection] = []
