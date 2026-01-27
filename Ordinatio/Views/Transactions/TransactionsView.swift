@@ -28,11 +28,51 @@ struct TransactionsView: View {
         return date.formatted(dateStyle: .medium)
     }
 
+    private var trendLineColor: Color {
+        if viewModel.netTotalMinor > 0 { return OrdinatioColor.income }
+        if viewModel.netTotalMinor < 0 { return OrdinatioColor.expense }
+        return OrdinatioColor.textSecondary
+    }
+
+    private func dayTotalText(for section: TransactionSection) -> String {
+        guard let netTotalMinor = section.netTotalMinor else { return "—" }
+        let formatted = MoneyFormat.format(
+            minorUnits: abs(netTotalMinor),
+            currencyCode: viewModel.summaryCurrencyCode
+        )
+        if netTotalMinor > 0 { return "+\(formatted)" }
+        if netTotalMinor < 0 { return "-\(formatted)" }
+        return formatted
+    }
+
+    private func dayTotalColor(for section: TransactionSection) -> Color {
+        guard let netTotalMinor = section.netTotalMinor else { return OrdinatioColor.textSecondary }
+        if netTotalMinor > 0 { return OrdinatioColor.income }
+        if netTotalMinor < 0 { return OrdinatioColor.expense }
+        return OrdinatioColor.textSecondary
+    }
+
     private var summaryHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Net total · this week")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(OrdinatioColor.textSecondary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("Net total")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+
+                Text("All time")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background {
+                        Capsule(style: .continuous)
+                            .fill(OrdinatioColor.surfaceElevated)
+                    }
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .strokeBorder(OrdinatioColor.separator.opacity(0.7), lineWidth: 1)
+                    }
+            }
 
             Text(MoneyFormat.format(minorUnits: viewModel.netTotalMinor, currencyCode: viewModel.summaryCurrencyCode))
                 .font(.system(size: 40, weight: .semibold, design: .rounded).monospacedDigit())
@@ -51,8 +91,11 @@ struct TransactionsView: View {
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(OrdinatioColor.expense)
             }
+
+            MiniTrendChart(values: viewModel.sparklineValues, lineColor: trendLineColor)
+                .accessibilityLabel("Net total trend")
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 
     var body: some View {
@@ -62,7 +105,7 @@ struct TransactionsView: View {
             List {
                 summaryHeader
                     .listRowSeparator(.hidden)
-                    .listRowInsets(.init(top: 0, leading: 16, bottom: 6, trailing: 16))
+                    .listRowInsets(.init(top: 0, leading: 16, bottom: 12, trailing: 16))
                     .listRowBackground(Color.clear)
 
                 if model.sections.isEmpty {
@@ -85,13 +128,21 @@ struct TransactionsView: View {
                                 .listRowBackground(OrdinatioColor.background)
                         }
                     } header: {
-                        Text(sectionTitle(for: section.date))
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(OrdinatioColor.textSecondary)
-                            .textCase(.uppercase)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.top, 10)
-                            .padding(.bottom, 4)
+                        HStack {
+                            Text(sectionTitle(for: section.date))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(OrdinatioColor.textSecondary)
+                                .textCase(.uppercase)
+
+                            Spacer()
+
+                            Text(dayTotalText(for: section))
+                                .font(.caption.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(dayTotalColor(for: section))
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 10)
+                        .padding(.bottom, 4)
                     }
                 }
             }
@@ -143,5 +194,77 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
+    }
+}
+
+private struct MiniTrendChart: View {
+    let values: [Int64]
+    let lineColor: Color
+    var baselineColor: Color = OrdinatioColor.separator.opacity(0.6)
+
+    var body: some View {
+        GeometryReader { proxy in
+            let layout = sparklineLayout(in: proxy.size)
+
+            ZStack {
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: layout.baselineY))
+                    path.addLine(to: CGPoint(x: proxy.size.width, y: layout.baselineY))
+                }
+                .stroke(baselineColor, lineWidth: 1)
+
+                if layout.points.count > 1 {
+                    Path { path in
+                        guard let first = layout.points.first else { return }
+                        path.move(to: first)
+                        for point in layout.points.dropFirst() {
+                            path.addLine(to: point)
+                        }
+                    }
+                    .stroke(lineColor, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                } else if let point = layout.points.first {
+                    Circle()
+                        .fill(lineColor)
+                        .frame(width: 4, height: 4)
+                        .position(point)
+                }
+            }
+        }
+        .frame(height: 48)
+    }
+
+    private func sparklineLayout(in size: CGSize) -> (points: [CGPoint], baselineY: CGFloat) {
+        guard !values.isEmpty else {
+            return ([], size.height * 0.7)
+        }
+
+        let minValue = values.min() ?? 0
+        let maxValue = values.max() ?? 0
+        let range = maxValue - minValue
+        let verticalPadding = size.height * 0.2
+        let drawableHeight = max(size.height - verticalPadding * 2, 1)
+
+        func yPosition(for value: Int64) -> CGFloat {
+            let normalized: CGFloat
+            if range == 0 {
+                normalized = 0.5
+            } else {
+                normalized = CGFloat(value - minValue) / CGFloat(range)
+            }
+            return size.height - verticalPadding - normalized * drawableHeight
+        }
+
+        if values.count == 1 {
+            let point = CGPoint(x: size.width * 0.5, y: yPosition(for: values[0]))
+            let baselineY = range == 0 ? point.y : size.height - verticalPadding
+            return ([point], baselineY)
+        }
+
+        let stepX = size.width / CGFloat(max(values.count - 1, 1))
+        let points = values.enumerated().map { index, value in
+            CGPoint(x: CGFloat(index) * stepX, y: yPosition(for: value))
+        }
+        let baselineY = range == 0 ? points.first?.y ?? size.height * 0.5 : size.height - verticalPadding
+        return (points, baselineY)
     }
 }

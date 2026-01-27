@@ -23,6 +23,7 @@ final class TransactionListViewModel {
     var netTotalMinor: Int64 = 0
     var incomeTotalMinor: Int64 = 0
     var expenseTotalAbsMinor: Int64 = 0
+    var sparklineValues: [Int64] = []
 
     private let db: DatabaseClient
     private let householdId: String
@@ -116,6 +117,7 @@ final class TransactionListViewModel {
                         self.netTotalMinor = computed.netTotalMinor
                         self.incomeTotalMinor = computed.incomeTotalMinor
                         self.expenseTotalAbsMinor = computed.expenseTotalAbsMinor
+                        self.sparklineValues = computed.sparklineValues
                     }
                 }
             } catch {
@@ -135,6 +137,7 @@ enum TransactionListComputation {
         var netTotalMinor: Int64
         var incomeTotalMinor: Int64
         var expenseTotalAbsMinor: Int64
+        var sparklineValues: [Int64]
     }
 
     static func compute(
@@ -164,22 +167,41 @@ enum TransactionListComputation {
         var sections: [TransactionSection] = []
         var currentDate: Int32?
         var currentRows: [TransactionListRow] = []
+        var currentNetTotalMinor: Int64 = 0
+        var currentNetHasSummaryCurrency = false
+
+        func finalizeSection() {
+            guard let currentDate else { return }
+            let netTotalMinor = currentNetHasSummaryCurrency ? currentNetTotalMinor : nil
+            sections.append(
+                TransactionSection(
+                    date: LocalDate(yyyymmdd: currentDate),
+                    rows: currentRows,
+                    netTotalMinor: netTotalMinor
+                )
+            )
+        }
 
         for row in rows {
             if currentDate != row.txnDate {
-                if let currentDate {
-                    sections.append(TransactionSection(date: LocalDate(yyyymmdd: currentDate), rows: currentRows))
-                }
+                finalizeSection()
                 currentDate = row.txnDate
                 currentRows = [row]
+                currentNetTotalMinor = 0
+                currentNetHasSummaryCurrency = false
             } else {
                 currentRows.append(row)
             }
+
+            if row.currencyCode.uppercased() == summaryCurrencyCode {
+                currentNetTotalMinor += row.amountMinor
+                currentNetHasSummaryCurrency = true
+            }
         }
 
-        if let currentDate {
-            sections.append(TransactionSection(date: LocalDate(yyyymmdd: currentDate), rows: currentRows))
-        }
+        finalizeSection()
+
+        let sparklineValues = sections.prefix(14).reversed().map { $0.netTotalMinor ?? 0 }
 
         return Result(
             sections: sections,
@@ -187,7 +209,8 @@ enum TransactionListComputation {
             summaryCurrencyCode: summaryCurrencyCode,
             netTotalMinor: netTotalMinor,
             incomeTotalMinor: incomeTotalMinor,
-            expenseTotalAbsMinor: expenseTotalAbsMinor
+            expenseTotalAbsMinor: expenseTotalAbsMinor,
+            sparklineValues: sparklineValues
         )
     }
 }
