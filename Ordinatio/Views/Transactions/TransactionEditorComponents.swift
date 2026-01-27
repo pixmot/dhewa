@@ -57,6 +57,33 @@ extension TransactionEditorView {
         @State private var showingCategoryCreator = false
         @State private var errorMessage: String?
         @State private var searchText = ""
+        @State private var scrollViewportHeight: CGFloat = 0
+        @State private var flowLayoutHeight: CGFloat = 0
+        @State private var detentSelection: PresentationDetent = .height(Layout.minDetentHeight)
+
+        private enum Layout {
+            static let flowSpacing: CGFloat = 10
+            static let flowPadding: CGFloat = 15
+            static let bottomInset: CGFloat = 24
+            static let bottomAnchorId = "category_bottom"
+            static let sheetChromeHeight: CGFloat = 220
+            static let minDetentHeight: CGFloat = 360
+            static let maxDetentHeight: CGFloat = 680
+        }
+
+        private struct ScrollViewportHeightKey: PreferenceKey {
+            static var defaultValue: CGFloat = 0
+            static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+                value = max(value, nextValue())
+            }
+        }
+
+        private struct FlowLayoutHeightKey: PreferenceKey {
+            static var defaultValue: CGFloat = 0
+            static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+                value = max(value, nextValue())
+            }
+        }
 
         private var availableCategoryOptions: [OrdinatioCore.Category] {
             categories.filter { $0.kind == kind }
@@ -81,83 +108,170 @@ extension TransactionEditorView {
             return availableCategoryOptions.filter { $0.name.lowercased().contains(query) }
         }
 
-        var body: some View {
-            NavigationStack {
-                VStack(spacing: 12) {
-                    if let emptyState {
-                        VStack(spacing: 12) {
-                            Image(systemName: emptyState.icon)
-                                .font(.system(.largeTitle, design: .rounded))
-                                .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
-                                .padding(.top, 20)
+        private var topSpacerHeight: CGFloat {
+            max(0, scrollViewportHeight - (flowLayoutHeight + Layout.bottomInset))
+        }
 
-                            Text(emptyState.message)
-                                .font(.system(.title3, design: .rounded).weight(.medium))
-                                .multilineTextAlignment(.center)
-                                .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
-                                .padding(.bottom, 20)
-                        }
-                        .frame(maxHeight: .infinity)
-                    } else {
-                        ScrollView(showsIndicators: false) {
-                            VStack(spacing: 0) {
-                                Spacer(minLength: 0)
+        private var preferredDetentHeight: CGFloat? {
+            let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard query.isEmpty else { return nil }
+            guard flowLayoutHeight > 0 else { return nil }
 
-                                BudgetComposerView.FlowLayout(spacing: 10) {
-                                    ForEach(filteredCategoryOptions) { category in
-                                        BudgetComposerView.BudgetCategoryChip(
-                                            category: category,
-                                            selected: selection == category.id,
-                                            dimmed: selection != nil && selection != category.id
-                                        ) {
-                                            if selection == category.id {
-                                                selection = nil
-                                            } else {
-                                                selection = category.id
-                                            }
-                                            dismiss()
-                                        }
+            let height = flowLayoutHeight + Layout.sheetChromeHeight
+            return min(max(height, Layout.minDetentHeight), Layout.maxDetentHeight)
+        }
+
+        private var heightDetent: PresentationDetent {
+            .height(preferredDetentHeight ?? Layout.minDetentHeight)
+        }
+
+        private var detents: Set<PresentationDetent> {
+            [heightDetent, .large]
+        }
+
+        private struct ScrollToBottomTaskID: Equatable {
+            var optionCount: Int
+            var isSearchEmpty: Bool
+        }
+
+        private func emptyStateView(icon: String, message: String) -> some View {
+            VStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(.largeTitle, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
+                    .padding(.top, 20)
+
+                Text(message)
+                    .font(.system(.title3, design: .rounded).weight(.medium))
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(OrdinatioColor.textSecondary.opacity(0.7))
+                    .padding(.bottom, 20)
+            }
+            .frame(maxHeight: .infinity)
+        }
+
+        private var categoryScrollView: some View {
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Color.clear
+                            .frame(height: topSpacerHeight)
+
+                        BudgetComposerView.FlowLayout(spacing: Layout.flowSpacing) {
+                            ForEach(filteredCategoryOptions) { category in
+                                BudgetComposerView.BudgetCategoryChip(
+                                    category: category,
+                                    selected: selection == category.id,
+                                    dimmed: selection != nil && selection != category.id
+                                ) {
+                                    if selection == category.id {
+                                        selection = nil
+                                    } else {
+                                        selection = category.id
                                     }
+                                    dismiss()
                                 }
-                                .padding(15)
                             }
-                            .containerRelativeFrame(.vertical, alignment: .bottom)
                         }
-                        .scrollDismissesKeyboard(.immediately)
-                        .scrollIndicators(.hidden)
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(20)
-                .background(OrdinatioColor.background)
-                .navigationTitle("Category")
-                .searchable(text: $searchText, prompt: "Search categories")
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            showingCategoryCreator = true
-                        } label: {
-                            Image(systemName: "plus")
+                        .padding(Layout.flowPadding)
+                        .background {
+                            GeometryReader { geometry in
+                                Color.clear.preference(
+                                    key: FlowLayoutHeightKey.self,
+                                    value: geometry.size.height
+                                )
+                            }
                         }
-                        .accessibilityLabel("Create Category")
+
+                        Color.clear
+                            .frame(height: Layout.bottomInset)
+                            .id(Layout.bottomAnchorId)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: ScrollViewportHeightKey.self,
+                            value: geometry.size.height
+                        )
                     }
                 }
-                .sheet(isPresented: $showingCategoryCreator) {
-                    CategoryEditorView(mode: .create) { name, iconIndex in
-                        createCategory(name: name, iconIndex: iconIndex)
-                    }
-                }
-                .alert(
-                    "Couldn't create category",
-                    isPresented: Binding(
-                        get: { errorMessage != nil },
-                        set: { newValue in if !newValue { errorMessage = nil } }
+                .task(
+                    id: ScrollToBottomTaskID(
+                        optionCount: filteredCategoryOptions.count,
+                        isSearchEmpty: searchText.isEmpty
                     )
                 ) {
-                    Button("OK", role: .cancel) {}
+                    let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard query.isEmpty else { return }
+                    await Task.yield()
+                    try? await Task.sleep(for: .milliseconds(80))
+                    proxy.scrollTo(Layout.bottomAnchorId, anchor: .bottom)
+                }
+                .onPreferenceChange(ScrollViewportHeightKey.self) { scrollViewportHeight = $0 }
+                .onPreferenceChange(FlowLayoutHeightKey.self) { flowLayoutHeight = $0 }
+            }
+            .scrollDismissesKeyboard(.immediately)
+            .scrollIndicators(.hidden)
+            .frame(maxWidth: .infinity)
+        }
+
+        @ViewBuilder
+        private var sheetContent: some View {
+            VStack(spacing: 12) {
+                if let emptyState {
+                    emptyStateView(icon: emptyState.icon, message: emptyState.message)
+                } else {
+                    categoryScrollView
+                }
+            }
+        }
+
+        var body: some View {
+            NavigationStack {
+                sheetContent
+                    .padding(20)
+                    .background(OrdinatioColor.background)
+                    .navigationTitle("Category")
+                    .searchable(text: $searchText, prompt: "Search categories")
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") { dismiss() }
+                        }
+                        ToolbarItem(placement: .primaryAction) {
+                            Button {
+                                showingCategoryCreator = true
+                            } label: {
+                                Image(systemName: "plus")
+                            }
+                            .accessibilityLabel("Create Category")
+                        }
+                    }
+                    .presentationDetents(detents, selection: $detentSelection)
+                    .presentationContentInteraction(.scrolls)
+                    .presentationDragIndicator(.visible)
+                    .sheet(isPresented: $showingCategoryCreator) {
+                        CategoryEditorView(mode: .create) { name, iconIndex in
+                            createCategory(name: name, iconIndex: iconIndex)
+                        }
+                    }
+                    .alert(
+                        "Couldn't create category",
+                        isPresented: Binding(
+                            get: { errorMessage != nil },
+                            set: { newValue in if !newValue { errorMessage = nil } }
+                        )
+                    ) {
+                        Button("OK", role: .cancel) {}
+                    }
+            }
+            .onAppear {
+                detentSelection = heightDetent
+            }
+            .onChange(of: heightDetent) { _, newValue in
+                if detentSelection != .large {
+                    detentSelection = newValue
                 }
             }
         }
