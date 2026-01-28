@@ -375,6 +375,10 @@ private struct DeleteTransactionBottomBar: View {
         RoundedRectangle(cornerRadius: 12, style: .continuous)
     }
 
+    private var handleShape: Capsule {
+        Capsule()
+    }
+
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
         if let name = row.categoryName, !name.isEmpty { return name }
@@ -398,7 +402,12 @@ private struct DeleteTransactionBottomBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
+            handleShape
+                .fill(OrdinatioColor.separator)
+                .frame(width: 44, height: 5)
+                .padding(.top, 2)
+
             HStack(alignment: .center, spacing: 14) {
                 ZStack {
                     iconShape
@@ -415,11 +424,11 @@ private struct DeleteTransactionBottomBar: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Delete transaction?")
+                    Text("Delete transaction")
                         .font(.system(.title3, design: .rounded).weight(.semibold))
                         .foregroundStyle(OrdinatioColor.textPrimary)
 
-                    Text("This action can’t be undone.")
+                    Text("This action can’t be undone")
                         .font(.system(.subheadline, design: .rounded).weight(.medium))
                         .foregroundStyle(OrdinatioColor.textSecondary)
                 }
@@ -454,6 +463,12 @@ private struct DeleteTransactionBottomBar: View {
                     .foregroundStyle(OrdinatioColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(.horizontal, 2)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(OrdinatioColor.surface)
+            )
 
             HStack(spacing: 12) {
                 Button {
@@ -475,7 +490,7 @@ private struct DeleteTransactionBottomBar: View {
                 Button(role: .destructive) {
                     onConfirm()
                 } label: {
-                    Text("Delete")
+                    Label("Delete", systemImage: "trash.fill")
                         .font(.system(.body, design: .rounded).weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
