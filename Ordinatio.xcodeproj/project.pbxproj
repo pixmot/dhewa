@@ -18,6 +18,7 @@
 		3B1776B23B1F396C8379329C /* TransactionFiltersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7D94F2A4359A5BEC920A7CB /* TransactionFiltersView.swift */; };
 		46E79D4E5DC349BF0123E43E /* OrdinatioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10214EF3F1AA650DD48DFB8 /* OrdinatioApp.swift */; };
 		4E355B5C1E497E77CFDD5646 /* TransactionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0683CCB132CED99871D6D3C4 /* TransactionsView.swift */; };
+		B1A0F3C6E8D94F7B8F59D1A1 /* TransactionsTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4D6E2A9B5F4472D8E7C6B11 /* TransactionsTableView.swift */; };
 		53249C7562234DD084FAAF48 /* OrdinatioTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A21C8C2089754AC18CE4EB91 /* OrdinatioTabBar.swift */; };
 		55CBB47B0D6839037EC74CCF /* PreferencesKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCF98F870A6BE240AF7F0ECB /* PreferencesKeys.swift */; };
 		55D26F511B078E93BFB5CF01 /* BudgetEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7E526C1A3FB83C92E0FE2C /* BudgetEditorView.swift */; };
@@ -61,6 +62,7 @@
 
 /* Begin PBXFileReference section */
 		0683CCB132CED99871D6D3C4 /* TransactionsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionsView.swift; path = Ordinatio/Views/Transactions/TransactionsView.swift; sourceTree = "<group>"; };
+		C4D6E2A9B5F4472D8E7C6B11 /* TransactionsTableView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionsTableView.swift; path = Ordinatio/Views/Transactions/TransactionsTableView.swift; sourceTree = "<group>"; };
 		132F37C5B63843E4B2708A8F /* OrdinatioDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioDesignSystem.swift; path = Ordinatio/DesignSystem/OrdinatioDesignSystem.swift; sourceTree = "<group>"; };
 		16DFC1B7BC8EA3EAA50563DF /* OrdinatioUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OrdinatioUITests.swift; path = OrdinatioUITests/OrdinatioUITests.swift; sourceTree = "<group>"; };
 		1FB9775F89CF397F6A6D9074 /* TransactionEditorView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TransactionEditorView.swift; path = Ordinatio/Views/Transactions/TransactionEditorView.swift; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				276564BB119D28FBF8D020E7 /* TransactionRowView.swift */,
 				65AEE467EA8F237DD3EB2A48 /* TransactionSection.swift */,
 				0683CCB132CED99871D6D3C4 /* TransactionsView.swift */,
+				C4D6E2A9B5F4472D8E7C6B11 /* TransactionsTableView.swift */,
 				AA068AF33369D8111517766B /* Assets.xcassets */,
 				F855B598B0D962344637ADD4 /* Info.plist */,
 			);
@@ -377,6 +380,7 @@
 				87CF52B74200C173A11F1CBF /* TransactionRowView.swift in Sources */,
 				F081B0CDB665894B52C0D9B8 /* TransactionSection.swift in Sources */,
 				4E355B5C1E497E77CFDD5646 /* TransactionsView.swift in Sources */,
+				B1A0F3C6E8D94F7B8F59D1A1 /* TransactionsTableView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

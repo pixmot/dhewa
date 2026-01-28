@@ -52,12 +52,6 @@ struct TransactionsView: View {
         generator.impactOccurred(intensity: 0.9)
     }
 
-    private func playSwipeActionHaptic() {
-        let generator = UIImpactFeedbackGenerator(style: .rigid)
-        generator.prepare()
-        generator.impactOccurred(intensity: 0.75)
-    }
-
     private func deleteTransaction(row: TransactionListRow) {
         Task { @MainActor in
             do {
@@ -234,67 +228,54 @@ struct TransactionsView: View {
     var body: some View {
         @Bindable var model = viewModel
 
+        let headerModels = model.sections.map {
+            TransactionSectionHeaderModel(
+                title: sectionTitle(for: $0.date),
+                totalText: dayTotalText(for: $0)
+            )
+        }
+
+        let summaryHeaderView = AnyView(
+            summaryHeader
+                .padding(.horizontal, 20)
+                .padding(.top, 2)
+                .padding(.bottom, 10)
+                .background(OrdinatioColor.background)
+        )
+
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    summaryHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 2)
-                        .padding(.bottom, 10)
-
-                    if model.sections.isEmpty {
-                        ContentUnavailableView(
-                            "No Transactions",
-                            systemImage: "tray",
-                            description: Text("Add your first transaction to get started.")
-                        )
-                        .padding(.top, 48)
-                    } else {
-                        ForEach(model.sections) { section in
-                            VStack(spacing: 0) {
-                                dayHeader(for: section)
-
-                                ForEach(section.rows) { row in
-                                    SwipeActionRow(
-                                        onTap: {
-                                            playOpenTransactionHaptic()
-                                            editingRow = row
-                                        },
-                                        onEdit: {
-                                            playOpenTransactionHaptic()
-                                            editingRow = row
-                                        },
-                                        onDelete: {
-                                            deleteCandidate = row
-                                        },
-                                        onSwipeHaptic: playSwipeActionHaptic,
-                                        editIdentifier: "TransactionRowEdit.\(row.id)",
-                                        deleteIdentifier: "TransactionRowDelete.\(row.id)"
-                                    ) {
-                                        TransactionRowView(row: row)
-                                            .contextMenu {
-                                                Button {
-                                                    playOpenTransactionHaptic()
-                                                    editingRow = row
-                                                } label: {
-                                                    Label("Edit", systemImage: "pencil")
-                                                }
-                                                Button(role: .destructive) {
-                                                    deleteCandidate = row
-                                                } label: {
-                                                    Label("Delete", systemImage: "trash")
-                                                }
-                                            }
-                                            .accessibilityIdentifier("TransactionRow.\(row.id)")
-                                    }
-                                }
-                            }
-                            .padding(.bottom, 18)
-                        }
+            ZStack(alignment: .top) {
+                TransactionsTableView(
+                    sections: model.sections,
+                    headerModels: headerModels,
+                    summaryHeader: summaryHeaderView,
+                    onSelectRow: { row in
+                        playOpenTransactionHaptic()
+                        editingRow = row
+                    },
+                    onEdit: { row in
+                        playOpenTransactionHaptic()
+                        editingRow = row
+                    },
+                    onDelete: { row in
+                        deleteCandidate = row
+                    },
+                    onSwipeHaptic: {
+                        let generator = UIImpactFeedbackGenerator(style: .rigid)
+                        generator.prepare()
+                        generator.impactOccurred(intensity: 0.75)
                     }
+                )
+
+                if model.sections.isEmpty {
+                    ContentUnavailableView(
+                        "No Transactions",
+                        systemImage: "tray",
+                        description: Text("Add your first transaction to get started.")
+                    )
+                    .padding(.top, 48)
+                    .allowsHitTesting(false)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 12)
             }
             .background(OrdinatioColor.background)
             .navigationTitle("Log")
@@ -361,170 +342,6 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
-    }
-}
-
-private struct SwipeActionRow<Content: View>: View {
-    let onTap: () -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-    let onSwipeHaptic: () -> Void
-    let editIdentifier: String
-    let deleteIdentifier: String
-    let content: Content
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var offset: CGFloat = 0
-    @State private var gestureStartOffset: CGFloat = 0
-    @State private var dragDirection: DragDirection?
-    @State private var didTriggerHaptic = false
-
-    private let actionWidth: CGFloat = 84
-    private var totalActionWidth: CGFloat { actionWidth * 2 }
-
-    private enum DragDirection {
-        case horizontal
-        case vertical
-    }
-
-    init(
-        onTap: @escaping () -> Void,
-        onEdit: @escaping () -> Void,
-        onDelete: @escaping () -> Void,
-        onSwipeHaptic: @escaping () -> Void,
-        editIdentifier: String,
-        deleteIdentifier: String,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.onTap = onTap
-        self.onEdit = onEdit
-        self.onDelete = onDelete
-        self.onSwipeHaptic = onSwipeHaptic
-        self.editIdentifier = editIdentifier
-        self.deleteIdentifier = deleteIdentifier
-        self.content = content()
-    }
-
-    var body: some View {
-        ZStack(alignment: .trailing) {
-            actionButtons
-
-            content
-                .contentShape(Rectangle())
-                .offset(x: offset)
-                .onTapGesture {
-                    if offset != 0 {
-                        resetOffset()
-                    } else {
-                        onTap()
-                    }
-                }
-        }
-        .clipped()
-        .simultaneousGesture(dragGesture)
-    }
-
-    private var actionButtons: some View {
-        HStack(spacing: 0) {
-            actionButton(
-                title: "Edit",
-                systemImage: "pencil",
-                background: OrdinatioColor.actionBlue
-            ) {
-                onEdit()
-                resetOffset()
-            }
-            .accessibilityIdentifier(editIdentifier)
-
-            actionButton(
-                title: "Delete",
-                systemImage: "trash",
-                background: OrdinatioColor.expense
-            ) {
-                onDelete()
-                resetOffset()
-            }
-            .accessibilityIdentifier(deleteIdentifier)
-        }
-        .frame(width: totalActionWidth, alignment: .trailing)
-    }
-
-    private func actionButton(
-        title: String,
-        systemImage: String,
-        background: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .symbolRenderingMode(.hierarchical)
-                Text(title)
-                    .font(.system(.footnote, design: .rounded).weight(.semibold))
-            }
-            .foregroundStyle(OrdinatioColor.lightIcon)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(.plain)
-        .frame(width: actionWidth)
-        .background(background)
-    }
-
-    private var dragGesture: some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                if dragDirection == nil {
-                    let horizontal = abs(value.translation.width)
-                    let vertical = abs(value.translation.height)
-                    guard max(horizontal, vertical) > 6 else { return }
-                    dragDirection = horizontal > vertical ? .horizontal : .vertical
-                    if dragDirection == .horizontal {
-                        gestureStartOffset = offset
-                        didTriggerHaptic = false
-                    }
-                }
-
-                guard dragDirection == .horizontal else { return }
-                let proposed = gestureStartOffset + value.translation.width
-                offset = clampOffset(proposed)
-
-                if !didTriggerHaptic, offset < -24 {
-                    didTriggerHaptic = true
-                    onSwipeHaptic()
-                }
-            }
-            .onEnded { value in
-                defer {
-                    dragDirection = nil
-                    didTriggerHaptic = false
-                }
-
-                guard dragDirection == .horizontal else { return }
-                let predicted = gestureStartOffset + value.predictedEndTranslation.width
-                let shouldOpen = predicted < -totalActionWidth * 0.6 || offset < -totalActionWidth * 0.4
-                setOffset(shouldOpen ? -totalActionWidth : 0)
-            }
-    }
-
-    private func clampOffset(_ value: CGFloat) -> CGFloat {
-        min(0, max(value, -totalActionWidth))
-    }
-
-    private func setOffset(_ value: CGFloat) {
-        let clamped = clampOffset(value)
-        if reduceMotion {
-            offset = clamped
-        } else {
-            withAnimation(.easeOut(duration: 0.2)) {
-                offset = clamped
-            }
-        }
-    }
-
-    private func resetOffset() {
-        setOffset(0)
     }
 }
 
