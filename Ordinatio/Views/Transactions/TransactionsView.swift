@@ -284,15 +284,19 @@ struct TransactionsView: View {
                             deleteCandidate = nil
                         }
 
-                    DeleteTransactionBottomBar(
-                        row: row,
-                        onConfirm: { deleteTransaction(row: row) },
-                        onCancel: { deleteCandidate = nil }
-                    )
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        DeleteTransactionBottomBar(
+                            row: row,
+                            onConfirm: { deleteTransaction(row: row) },
+                            onCancel: { deleteCandidate = nil }
+                        )
+                        .padding(.horizontal, OrdinatioMetric.screenPadding)
+                        .padding(.bottom, 12)
+                        .frame(maxWidth: 520)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .frame(maxWidth: 520)
                 }
             }
             .background(OrdinatioColor.background)
@@ -351,6 +355,11 @@ private struct DeleteTransactionBottomBar: View {
     let onCancel: () -> Void
 
     @Environment(\.locale) private var locale
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var cardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: OrdinatioMetric.cardCornerRadius, style: .continuous)
+    }
 
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
@@ -375,38 +384,44 @@ private struct DeleteTransactionBottomBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(spacing: 16) {
+            HStack(alignment: .center, spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(OrdinatioColor.expense.opacity(0.14))
-                        .frame(width: 40, height: 40)
+                        .fill(OrdinatioColor.expense.opacity(0.16))
+                        .frame(width: 48, height: 48)
 
                     Image(systemName: "trash")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
                         .foregroundStyle(OrdinatioColor.expense)
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Delete transaction?")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .font(.system(.title3, design: .rounded).weight(.semibold))
                         .foregroundStyle(OrdinatioColor.textPrimary)
 
                     Text("This action can’t be undone.")
-                        .font(.system(.footnote, design: .rounded).weight(.medium))
+                        .font(.system(.subheadline, design: .rounded).weight(.medium))
                         .foregroundStyle(OrdinatioColor.textSecondary)
                 }
 
                 Spacer(minLength: 0)
 
                 Text(amountText)
-                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
                     .foregroundStyle(amountColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(OrdinatioColor.surface)
+                    )
             }
 
             VStack(spacing: 6) {
                 Text(titleText)
-                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
                     .foregroundStyle(OrdinatioColor.textPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -418,15 +433,20 @@ private struct DeleteTransactionBottomBar: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Button {
                     onCancel()
                 } label: {
                     Text("Cancel")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 12)
                         .background(OrdinatioColor.surface)
                         .foregroundStyle(OrdinatioColor.textPrimary)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(OrdinatioColor.separator, lineWidth: 1)
+                        }
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
@@ -434,8 +454,9 @@ private struct DeleteTransactionBottomBar: View {
                     onConfirm()
                 } label: {
                     Text("Delete")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 12)
                         .background(OrdinatioColor.expense)
                         .foregroundStyle(OrdinatioColor.lightIcon)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -443,12 +464,22 @@ private struct DeleteTransactionBottomBar: View {
                 .accessibilityIdentifier("TransactionDeleteConfirm")
             }
         }
-        .padding(16)
+        .padding(18)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            cardShape
                 .fill(OrdinatioColor.surfaceElevated)
-                .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
+                .shadow(
+                    color: colorScheme == .dark
+                        ? Color.black.opacity(0.35)
+                        : Color.black.opacity(0.14),
+                    radius: 12,
+                    x: 0,
+                    y: 8
+                )
         )
+        .overlay {
+            cardShape.stroke(OrdinatioColor.separator, lineWidth: 1)
+        }
     }
 }
 
