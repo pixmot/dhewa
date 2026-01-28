@@ -259,6 +259,16 @@ extension TransactionEditorView {
                 sheetContent
                     .padding(20)
                     .background(OrdinatioColor.background)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(role: .cancel) {
+                                dismiss()
+                            } label: {
+                                Image(systemName: "xmark")
+                            }
+                            .accessibilityLabel("Close")
+                        }
+                    }
                     .overlay(alignment: .bottomTrailing) {
                         addCategoryButton
                             .padding(.trailing, Layout.addButtonPadding)
