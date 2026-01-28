@@ -10,19 +10,12 @@ struct TransactionsView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.timeZone) private var timeZone
-    @Environment(\.colorScheme) private var colorScheme
 
     @State private var viewModel: TransactionListViewModel
 
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
     @State private var deleteCandidate: TransactionListRow?
-    @State private var isDeletePopperVisible = false
-    @State private var deletePopperDismissTask: Task<Void, Never>?
-
-    private var deletePopperAnimation: Animation {
-        .easeInOut(duration: 0.3)
-    }
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
@@ -63,30 +56,10 @@ struct TransactionsView: View {
         Task { @MainActor in
             do {
                 try await db.deleteTransaction(transactionId: row.id)
-                dismissDeletePopper()
+                deleteCandidate = nil
             } catch {
                 viewModel.errorMessage = ErrorDisplay.message(error)
             }
-        }
-    }
-
-    private func presentDeletePopper(row: TransactionListRow) {
-        deletePopperDismissTask?.cancel()
-        deleteCandidate = row
-        withAnimation(deletePopperAnimation) {
-            isDeletePopperVisible = true
-        }
-    }
-
-    private func dismissDeletePopper() {
-        deletePopperDismissTask?.cancel()
-        withAnimation(deletePopperAnimation) {
-            isDeletePopperVisible = false
-        }
-        deletePopperDismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(320))
-            if Task.isCancelled { return }
-            deleteCandidate = nil
         }
     }
 
@@ -271,7 +244,7 @@ struct TransactionsView: View {
         )
 
         NavigationStack {
-            ZStack {
+            ZStack(alignment: .top) {
                 TransactionsTableView(
                     sections: model.sections,
                     headerModels: headerModels,
@@ -285,7 +258,7 @@ struct TransactionsView: View {
                         editingRow = row
                     },
                     onDelete: { row in
-                        presentDeletePopper(row: row)
+                        deleteCandidate = row
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -303,35 +276,8 @@ struct TransactionsView: View {
                     .padding(.top, 48)
                     .allowsHitTesting(false)
                 }
-
-                if let row = deleteCandidate {
-                    Color.black.opacity(colorScheme == .dark ? 0.38 : 0.2)
-                        .ignoresSafeArea()
-                        .opacity(isDeletePopperVisible ? 1 : 0)
-                        .animation(deletePopperAnimation, value: isDeletePopperVisible)
-                        .allowsHitTesting(isDeletePopperVisible)
-                        .onTapGesture {
-                            dismissDeletePopper()
-                        }
-                }
             }
             .background(OrdinatioColor.background)
-            .overlay(alignment: .bottom) {
-                if let row = deleteCandidate {
-                    DeleteTransactionBottomBar(
-                        row: row,
-                        onConfirm: { deleteTransaction(row: row) },
-                        onCancel: {
-                            dismissDeletePopper()
-                        }
-                    )
-                    .padding(.horizontal, 17)
-                    .safeAreaPadding(.bottom, 12)
-                    .frame(maxWidth: 520)
-                    .offset(y: isDeletePopperVisible ? 0 : 300)
-                    .animation(deletePopperAnimation, value: isDeletePopperVisible)
-                }
-            }
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -362,6 +308,25 @@ struct TransactionsView: View {
                     mode: .edit(row)
                 )
             }
+            .confirmationDialog(
+                "Delete this transaction?",
+                isPresented: Binding(
+                    get: { deleteCandidate != nil },
+                    set: { isPresented in
+                        if !isPresented { deleteCandidate = nil }
+                    }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    guard let row = deleteCandidate else { return }
+                    deleteTransaction(row: row)
+                }
+                .accessibilityIdentifier("TransactionDeleteConfirm")
+                Button("Cancel", role: .cancel) {
+                    deleteCandidate = nil
+                }
+            }
             .alert(
                 "Error",
                 isPresented: Binding(
@@ -376,82 +341,6 @@ struct TransactionsView: View {
             } message: {
                 Text(model.errorMessage ?? "")
             }
-        }
-    }
-}
-
-private struct DeleteTransactionBottomBar: View {
-    let row: TransactionListRow
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    @Environment(\.colorScheme) private var colorScheme
-
-    private var titleText: String {
-        if let note = row.note, !note.isEmpty { return note }
-        if let name = row.categoryName, !name.isEmpty { return name }
-        return "transaction"
-    }
-
-    private var titleLine: String {
-        if titleText == "transaction" {
-            return "Delete this transaction?"
-        }
-        return "Delete \"\(titleText)\"?"
-    }
-
-    private func actionButton(text: String, destructive: Bool) -> some View {
-        Text(text)
-            .font(.system(.title3, design: .rounded).weight(.semibold))
-            .foregroundStyle(destructive ? OrdinatioColor.lightIcon : OrdinatioColor.textPrimary.opacity(0.9))
-            .frame(height: 48)
-            .frame(maxWidth: .infinity)
-            .background(
-                destructive ? OrdinatioColor.expense : OrdinatioColor.surface,
-                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-            )
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(titleLine)
-                .font(.system(.title2, design: .rounded).weight(.medium))
-                .foregroundStyle(OrdinatioColor.textPrimary)
-                .lineLimit(2)
-
-            Text("This action cannot be undone.")
-                .font(.system(.title3, design: .rounded).weight(.medium))
-                .foregroundStyle(OrdinatioColor.textSecondary)
-                .padding(.bottom, 14)
-
-            Button {
-                onConfirm()
-            } label: {
-                actionButton(text: "Delete", destructive: true)
-            }
-            .padding(.bottom, 8)
-            .accessibilityIdentifier("TransactionDeleteConfirm")
-
-            Button {
-                onCancel()
-            } label: {
-                actionButton(text: "Cancel", destructive: false)
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(OrdinatioColor.surfaceElevated)
-                .shadow(
-                    color: colorScheme == .dark ? Color.black.opacity(0.28) : Color.black.opacity(0.2),
-                    radius: 10,
-                    x: 0,
-                    y: 6
-                )
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(OrdinatioColor.separator.opacity(colorScheme == .dark ? 0.35 : 0.7), lineWidth: 1)
         }
     }
 }
