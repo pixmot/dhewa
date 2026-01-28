@@ -229,54 +229,70 @@ struct TransactionsView: View {
         @Bindable var model = viewModel
 
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    summaryHeader
-                        .padding(.horizontal, 20)
-                        .padding(.top, 2)
-                        .padding(.bottom, 10)
+            List {
+                summaryHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 2)
+                    .padding(.bottom, 10)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(OrdinatioColor.background)
 
-                    if model.sections.isEmpty {
-                        ContentUnavailableView(
-                            "No Transactions",
-                            systemImage: "tray",
-                            description: Text("Add your first transaction to get started.")
-                        )
-                        .padding(.top, 48)
-                    } else {
-                        ForEach(model.sections) { section in
-                            VStack(spacing: 0) {
-                                dayHeader(for: section)
-
-                                ForEach(section.rows) { row in
-                                    TransactionRowView(row: row)
-                                        .onTapGesture {
+                if model.sections.isEmpty {
+                    ContentUnavailableView(
+                        "No Transactions",
+                        systemImage: "tray",
+                        description: Text("Add your first transaction to get started.")
+                    )
+                    .padding(.top, 48)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(OrdinatioColor.background)
+                } else {
+                    ForEach(model.sections) { section in
+                        Section {
+                            ForEach(section.rows) { row in
+                                TransactionRowView(row: row)
+                                    .onTapGesture {
+                                        playOpenTransactionHaptic()
+                                        editingRow = row
+                                    }
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                        Button("Edit") {
                                             playOpenTransactionHaptic()
                                             editingRow = row
                                         }
-                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                            Button("Edit") {
-                                                playOpenTransactionHaptic()
-                                                editingRow = row
-                                            }
-                                            .accessibilityLabel("Edit transaction")
-                                            .accessibilityIdentifier("TransactionRowEdit.\(row.id)")
+                                        .accessibilityLabel("Edit transaction")
+                                        .accessibilityIdentifier("TransactionRowEdit.\(row.id)")
 
-                                            Button("Delete", role: .destructive) {
-                                                deleteCandidate = row
-                                            }
-                                            .accessibilityLabel("Delete transaction")
-                                            .accessibilityIdentifier("TransactionRowDelete.\(row.id)")
+                                        Button("Delete", role: .destructive) {
+                                            deleteCandidate = row
                                         }
-                                }
+                                        .accessibilityLabel("Delete transaction")
+                                        .accessibilityIdentifier("TransactionRowDelete.\(row.id)")
+                                    }
+                                    .listRowInsets(EdgeInsets())
+                                    .listRowSeparator(.hidden)
+                                    .listRowBackground(OrdinatioColor.background)
                             }
-                            .padding(.bottom, 18)
+                        } header: {
+                            dayHeader(for: section)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
+                        } footer: {
+                            Color.clear
+                                .frame(height: 18)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
                         }
+                        .listRowBackground(OrdinatioColor.background)
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.bottom, 12)
             }
+            .listStyle(.plain)
+            .listSectionSeparator(.hidden)
+            .listSectionSpacing(0)
+            .scrollContentBackground(.hidden)
             .background(OrdinatioColor.background)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
