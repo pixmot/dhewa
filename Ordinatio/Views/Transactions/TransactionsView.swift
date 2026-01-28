@@ -16,12 +16,12 @@ struct TransactionsView: View {
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
     @State private var deleteCandidate: TransactionListRow?
-    @State private var isDeleteSheetVisible = false
-    @State private var deleteSheetDismissTask: Task<Void, Never>?
-    @State private var deleteSheetHeight: CGFloat = 0
+    @State private var isDeletePopoverVisible = false
+    @State private var deletePopoverDismissTask: Task<Void, Never>?
+    @State private var deletePopoverHeight: CGFloat = 0
 
-    private var deleteSheetAnimation: Animation {
-        .easeInOut(duration: 0.3)
+    private var deletePopoverAnimation: Animation {
+        .easeInOut(duration: 0.28)
     }
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
@@ -69,21 +69,21 @@ struct TransactionsView: View {
         }
     }
 
-    private func presentDeleteSheet(row: TransactionListRow) {
-        deleteSheetDismissTask?.cancel()
+    private func presentDeletePopover(row: TransactionListRow) {
+        deletePopoverDismissTask?.cancel()
         deleteCandidate = row
-        withAnimation(deleteSheetAnimation) {
-            isDeleteSheetVisible = true
+        withAnimation(deletePopoverAnimation) {
+            isDeletePopoverVisible = true
         }
     }
 
-    private func dismissDeleteSheet() {
-        deleteSheetDismissTask?.cancel()
-        withAnimation(deleteSheetAnimation) {
-            isDeleteSheetVisible = false
+    private func dismissDeletePopover() {
+        deletePopoverDismissTask?.cancel()
+        withAnimation(deletePopoverAnimation) {
+            isDeletePopoverVisible = false
         }
-        deleteSheetDismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(320))
+        deletePopoverDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
             if Task.isCancelled { return }
             deleteCandidate = nil
         }
@@ -284,7 +284,7 @@ struct TransactionsView: View {
                         editingRow = row
                     },
                     onDelete: { row in
-                        presentDeleteSheet(row: row)
+                        presentDeletePopover(row: row)
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -306,41 +306,44 @@ struct TransactionsView: View {
                 if deleteCandidate != nil {
                     OrdinatioColor.actionSheetBackdrop
                         .ignoresSafeArea()
-                        .opacity(isDeleteSheetVisible ? 1 : 0)
-                        .animation(deleteSheetAnimation, value: isDeleteSheetVisible)
-                        .allowsHitTesting(isDeleteSheetVisible)
+                        .opacity(isDeletePopoverVisible ? 1 : 0)
+                        .animation(deletePopoverAnimation, value: isDeletePopoverVisible)
+                        .allowsHitTesting(isDeletePopoverVisible)
                         .onTapGesture {
-                            dismissDeleteSheet()
+                            dismissDeletePopover()
                         }
                 }
             }
             .background(OrdinatioColor.background)
             .overlay(alignment: .bottom) {
                 if let row = deleteCandidate {
-                    SignalDeleteActionSheet(
-                        title: "Delete transaction?",
-                        message: "This action cannot be undone.",
+                    DeleteTransactionPopover(
+                        row: row,
                         onDelete: {
-                            dismissDeleteSheet()
+                            dismissDeletePopover()
                             deleteTransaction(row: row)
                         },
                         onCancel: {
-                            dismissDeleteSheet()
+                            dismissDeletePopover()
                         }
                     )
                     .frame(maxWidth: 414)
-                    .padding(.horizontal, actionSheetSideInset)
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
                     .safeAreaPadding(.bottom, 12)
-                    .offset(y: isDeleteSheetVisible ? 0 : max(deleteSheetHeight + 40, 320))
-                    .animation(deleteSheetAnimation, value: isDeleteSheetVisible)
+                    .offset(y: isDeletePopoverVisible ? 0 : max(deletePopoverHeight + 32, 260))
+                    .opacity(isDeletePopoverVisible ? 1 : 0)
+                    .animation(deletePopoverAnimation, value: isDeletePopoverVisible)
                     .background(
                         GeometryReader { proxy in
-                            Color.clear.preference(key: ActionSheetHeightPreferenceKey.self, value: proxy.size.height)
+                            Color.clear.preference(
+                                key: DeletePopoverHeightPreferenceKey.self,
+                                value: proxy.size.height
+                            )
                         }
                     )
-                    .onPreferenceChange(ActionSheetHeightPreferenceKey.self) { height in
-                        if height > 0, height != deleteSheetHeight {
-                            deleteSheetHeight = height
+                    .onPreferenceChange(DeletePopoverHeightPreferenceKey.self) { height in
+                        if height > 0, height != deletePopoverHeight {
+                            deletePopoverHeight = height
                         }
                     }
                 }
@@ -392,15 +395,9 @@ struct TransactionsView: View {
         }
     }
 
-    private var actionSheetSideInset: CGFloat {
-        if #available(iOS 26, *) {
-            return 8
-        }
-        return 0
-    }
 }
 
-private struct ActionSheetHeightPreferenceKey: PreferenceKey {
+private struct DeletePopoverHeightPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -408,69 +405,158 @@ private struct ActionSheetHeightPreferenceKey: PreferenceKey {
     }
 }
 
-private struct SignalDeleteActionSheet: View {
-    let title: String
-    let message: String
+private struct DeleteTransactionPopover: View {
+    let row: TransactionListRow
     let onDelete: () -> Void
     let onCancel: () -> Void
 
-    private var cornerShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+    @Environment(\.locale) private var locale
+
+    private var titleText: String {
+        "Delete transaction?"
     }
 
-    private var buttonShape: Capsule {
-        Capsule()
+    private var subtitleText: String {
+        "This action can’t be undone."
     }
 
-    private func actionButton(text: String, destructive: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(text)
-                .font(.system(.body, design: .rounded).weight(.medium))
-                .foregroundStyle(destructive ? OrdinatioColor.expense : OrdinatioColor.textPrimary)
-                .frame(maxWidth: .infinity)
-                .frame(height: 45)
+    private var detailTitle: String {
+        if let note = row.note, !note.isEmpty { return note }
+        if let name = row.categoryName, !name.isEmpty { return name }
+        return "Uncategorized"
+    }
+
+    private var detailSubtitle: String {
+        let dateText = row.createdAt.formatted(date: .abbreviated, time: .shortened)
+        if let name = row.categoryName, !name.isEmpty, row.note?.isEmpty == false {
+            return "\(name) · \(dateText)"
         }
-        .background(OrdinatioColor.actionSheetButtonFill, in: buttonShape)
+        return dateText
+    }
+
+    private var amountText: String {
+        let absMinor = row.amountMinor.ordinatioSafeAbs
+        let formatted = MoneyFormat.format(minorUnits: absMinor, currencyCode: row.currencyCode, locale: locale)
+        if row.amountMinor > 0 { return "+\(formatted)" }
+        if row.amountMinor < 0 { return "-\(formatted)" }
+        return formatted
+    }
+
+    private var amountColor: Color {
+        row.amountMinor > 0 ? OrdinatioColor.income : OrdinatioColor.textPrimary
+    }
+
+    private var categoryTitle: String {
+        if let name = row.categoryName, !name.isEmpty { return name }
+        return "Uncategorized"
+    }
+
+    private var categoryEmoji: String {
+        OrdinatioCategoryVisuals.emoji(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
+    private var categoryColor: Color {
+        OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(OrdinatioColor.textPrimary)
-                    .multilineTextAlignment(.leading)
+        VStack(spacing: 14) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(OrdinatioColor.expense.opacity(0.16))
+                        .frame(width: 40, height: 40)
 
-                Text(message)
-                    .font(.system(.body, design: .rounded))
-                    .foregroundStyle(OrdinatioColor.textPrimary)
-                    .multilineTextAlignment(.leading)
+                    Image(systemName: "trash")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OrdinatioColor.expense)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(titleText)
+                        .font(.system(.headline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .lineLimit(2)
+
+                    Text(subtitleText)
+                        .font(.system(.subheadline, design: .rounded).weight(.medium))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
             }
-            .padding(.top, 8)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 12)
 
-            VStack(spacing: 8) {
-                actionButton(text: "Delete", destructive: true, action: onDelete)
-                    .accessibilityIdentifier("TransactionDeleteConfirm")
-                actionButton(text: "Cancel", destructive: false, action: onCancel)
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(categoryColor.opacity(0.24))
+
+                    Text(categoryEmoji)
+                        .font(.system(.title3, design: .rounded))
+                }
+                .frame(width: 44, height: 44)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(detailTitle)
+                        .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .lineLimit(2)
+
+                    Text(detailSubtitle)
+                        .font(.system(.footnote, design: .rounded).weight(.medium))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+
+                Text(amountText)
+                    .font(.system(.callout, design: .rounded).weight(.semibold))
+                    .foregroundStyle(amountColor)
+            }
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(OrdinatioColor.surface)
+            )
+
+            HStack(spacing: 10) {
+                Button {
+                    onCancel()
+                } label: {
+                    Text("Cancel")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(OrdinatioColor.surface)
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Text("Delete")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background(OrdinatioColor.expense)
+                        .foregroundStyle(OrdinatioColor.lightIcon)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .accessibilityIdentifier("TransactionDeleteConfirm")
             }
         }
         .padding(16)
-        .background(VisualEffectBlur(style: .prominent).clipShape(cornerShape))
-        .clipShape(cornerShape)
-    }
-}
-
-private struct VisualEffectBlur: UIViewRepresentable {
-    let style: UIBlurEffect.Style
-
-    func makeUIView(context: Context) -> UIVisualEffectView {
-        UIVisualEffectView(effect: UIBlurEffect(style: style))
-    }
-
-    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
-        uiView.effect = UIBlurEffect(style: style)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(OrdinatioColor.surfaceElevated)
+                .shadow(color: Color.black.opacity(0.16), radius: 12, x: 0, y: 6)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(OrdinatioColor.separator, lineWidth: 1)
+        }
     }
 }
 

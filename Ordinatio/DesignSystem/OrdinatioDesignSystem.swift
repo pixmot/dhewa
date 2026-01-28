@@ -34,12 +34,6 @@ enum OrdinatioColor {
         })
     }
 
-    static var actionSheetButtonFill: Color {
-        Color(uiColor: UIColor { traitCollection in
-            let alpha: CGFloat = traitCollection.userInterfaceStyle == .dark ? 0.32 : 0.16
-            return UIColor(red: 0x78 / 255, green: 0x78 / 255, blue: 0x80 / 255, alpha: alpha)
-        })
-    }
 }
 
 enum OrdinatioCategoryVisuals {
