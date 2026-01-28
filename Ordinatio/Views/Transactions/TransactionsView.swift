@@ -56,7 +56,9 @@ struct TransactionsView: View {
         Task { @MainActor in
             do {
                 try await db.deleteTransaction(transactionId: row.id)
-                deleteCandidate = nil
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                    deleteCandidate = nil
+                }
             } catch {
                 viewModel.errorMessage = ErrorDisplay.message(error)
             }
@@ -258,7 +260,9 @@ struct TransactionsView: View {
                         editingRow = row
                     },
                     onDelete: { row in
-                        deleteCandidate = row
+                        withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                            deleteCandidate = row
+                        }
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -280,27 +284,33 @@ struct TransactionsView: View {
                 if let row = deleteCandidate {
                     Color.black.opacity(0.18)
                         .ignoresSafeArea()
+                        .transition(.opacity)
                         .onTapGesture {
-                            deleteCandidate = nil
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                                deleteCandidate = nil
+                            }
                         }
-
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        DeleteTransactionBottomBar(
-                            row: row,
-                            onConfirm: { deleteTransaction(row: row) },
-                            onCancel: { deleteCandidate = nil }
-                        )
-                        .padding(.horizontal, OrdinatioMetric.screenPadding)
-                        .padding(.bottom, 12)
-                        .frame(maxWidth: 520)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
             .background(OrdinatioColor.background)
-            .animation(.easeInOut(duration: 0.2), value: deleteCandidate != nil)
+            .overlay(alignment: .bottom) {
+                if let row = deleteCandidate {
+                    DeleteTransactionBottomBar(
+                        row: row,
+                        onConfirm: { deleteTransaction(row: row) },
+                        onCancel: {
+                            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
+                                deleteCandidate = nil
+                            }
+                        }
+                    )
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .safeAreaPadding(.bottom, 12)
+                    .frame(maxWidth: 520)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.32, dampingFraction: 0.88), value: deleteCandidate != nil)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -361,6 +371,10 @@ private struct DeleteTransactionBottomBar: View {
         RoundedRectangle(cornerRadius: OrdinatioMetric.cardCornerRadius, style: .continuous)
     }
 
+    private var iconShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+    }
+
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
         if let name = row.categoryName, !name.isEmpty { return name }
@@ -387,9 +401,13 @@ private struct DeleteTransactionBottomBar: View {
         VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 14) {
                 ZStack {
-                    Circle()
-                        .fill(OrdinatioColor.expense.opacity(0.16))
+                    iconShape
+                        .fill(OrdinatioColor.expense.opacity(0.12))
                         .frame(width: 48, height: 48)
+                        .overlay {
+                            iconShape
+                                .stroke(OrdinatioColor.expense.opacity(0.35), lineWidth: 1)
+                        }
 
                     Image(systemName: "trash")
                         .font(.system(.title3, design: .rounded).weight(.semibold))
@@ -417,6 +435,10 @@ private struct DeleteTransactionBottomBar: View {
                         Capsule(style: .continuous)
                             .fill(OrdinatioColor.surface)
                     )
+                    .overlay {
+                        Capsule(style: .continuous)
+                            .stroke(OrdinatioColor.separator, lineWidth: 1)
+                    }
             }
 
             VStack(spacing: 6) {
