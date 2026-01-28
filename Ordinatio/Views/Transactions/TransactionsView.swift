@@ -19,6 +19,10 @@ struct TransactionsView: View {
     @State private var isDeletePopperVisible = false
     @State private var deletePopperDismissTask: Task<Void, Never>?
 
+    private var deletePopperAnimation: Animation {
+        .easeInOut(duration: 0.3)
+    }
+
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
         self.householdId = householdId
@@ -68,18 +72,18 @@ struct TransactionsView: View {
     private func presentDeletePopper(row: TransactionListRow) {
         deletePopperDismissTask?.cancel()
         deleteCandidate = row
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(deletePopperAnimation) {
             isDeletePopperVisible = true
         }
     }
 
     private func dismissDeletePopper() {
         deletePopperDismissTask?.cancel()
-        withAnimation(.easeInOut(duration: 0.25)) {
+        withAnimation(deletePopperAnimation) {
             isDeletePopperVisible = false
         }
         deletePopperDismissTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(260))
+            try? await Task.sleep(for: .milliseconds(320))
             if Task.isCancelled { return }
             deleteCandidate = nil
         }
@@ -300,10 +304,11 @@ struct TransactionsView: View {
                 }
 
                 if let row = deleteCandidate {
-                    Color.black.opacity(0.18)
+                    Rectangle()
+                        .fill(Color.clear)
                         .ignoresSafeArea()
                         .opacity(isDeletePopperVisible ? 1 : 0)
-                        .animation(.easeInOut(duration: 0.25), value: isDeletePopperVisible)
+                        .animation(deletePopperAnimation, value: isDeletePopperVisible)
                         .allowsHitTesting(isDeletePopperVisible)
                         .onTapGesture {
                             dismissDeletePopper()
@@ -320,12 +325,11 @@ struct TransactionsView: View {
                             dismissDeletePopper()
                         }
                     )
-                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.horizontal, 17)
                     .safeAreaPadding(.bottom, 12)
                     .frame(maxWidth: 520)
                     .offset(y: isDeletePopperVisible ? 0 : 280)
-                    .opacity(isDeletePopperVisible ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.25), value: isDeletePopperVisible)
+                    .animation(deletePopperAnimation, value: isDeletePopperVisible)
                 }
             }
             .navigationTitle("Log")
@@ -381,189 +385,73 @@ private struct DeleteTransactionBottomBar: View {
     let onConfirm: () -> Void
     let onCancel: () -> Void
 
-    @Environment(\.locale) private var locale
     @Environment(\.colorScheme) private var colorScheme
-
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: OrdinatioMetric.cardCornerRadius, style: .continuous)
-    }
-
-    private var iconShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 12, style: .continuous)
-    }
-
-    private var handleShape: Capsule {
-        Capsule()
-    }
-
-    private var categoryTitle: String {
-        if let name = row.categoryName, !name.isEmpty { return name }
-        return "Uncategorized"
-    }
-
-    private var categoryEmoji: String {
-        OrdinatioCategoryVisuals.emoji(for: categoryTitle, iconIndex: row.categoryIconIndex)
-    }
-
-    private var categoryColor: Color {
-        OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex)
-    }
 
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
         if let name = row.categoryName, !name.isEmpty { return name }
-        return "Uncategorized"
+        return "transaction"
     }
 
-    private var subtitleText: String {
-        let dateText = row.createdAt.formatted(date: .abbreviated, time: .shortened)
-        if let note = row.note, !note.isEmpty {
-            return "\(categoryTitle) · \(dateText)"
+    private var titleLine: String {
+        if titleText == "transaction" {
+            return "Delete this transaction?"
         }
-        return dateText
+        return "Delete \"\(titleText)\"?"
     }
 
-    private var amountText: String {
-        let absMinor = row.amountMinor.ordinatioSafeAbs
-        let formatted = MoneyFormat.format(minorUnits: absMinor, currencyCode: row.currencyCode, locale: locale)
-        if row.amountMinor > 0 { return "+\(formatted)" }
-        if row.amountMinor < 0 { return "-\(formatted)" }
-        return formatted
-    }
-
-    private var amountColor: Color {
-        row.amountMinor > 0 ? OrdinatioColor.income : OrdinatioColor.textPrimary
+    private func actionButton(text: String, destructive: Bool) -> some View {
+        Text(text)
+            .font(.system(.title3, design: .rounded).weight(.semibold))
+            .foregroundStyle(destructive ? OrdinatioColor.lightIcon : OrdinatioColor.textPrimary.opacity(0.9))
+            .frame(height: 45)
+            .frame(maxWidth: .infinity)
+            .background(
+                destructive ? OrdinatioColor.expense : OrdinatioColor.surface,
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
     }
 
     var body: some View {
-        VStack(spacing: 16) {
-            handleShape
-                .fill(OrdinatioColor.separator.opacity(0.7))
-                .frame(width: 46, height: 5)
-                .padding(.top, 2)
+        VStack(alignment: .leading, spacing: 1.5) {
+            Text(titleLine)
+                .font(.system(.title2, design: .rounded).weight(.medium))
+                .foregroundStyle(OrdinatioColor.textPrimary)
 
-            HStack(alignment: .center, spacing: 14) {
-                ZStack {
-                    iconShape
-                        .fill(OrdinatioColor.expense.opacity(0.12))
-                        .frame(width: 48, height: 48)
-                        .overlay {
-                            iconShape
-                                .stroke(OrdinatioColor.expense.opacity(0.35), lineWidth: 1)
-                        }
+            Text("This action cannot be undone.")
+                .font(.system(.title3, design: .rounded).weight(.medium))
+                .foregroundStyle(OrdinatioColor.textSecondary)
+                .padding(.bottom, 25)
 
-                    Image(systemName: "trash")
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.expense)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Delete transaction")
-                        .font(.system(.title3, design: .rounded).weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.textPrimary)
-
-                    Text("This action can’t be undone")
-                        .font(.system(.subheadline, design: .rounded).weight(.medium))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                }
-
-                Spacer(minLength: 0)
-
-                Text(amountText)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(amountColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(OrdinatioColor.surface)
-                    )
-                    .overlay {
-                        Capsule(style: .continuous)
-                            .stroke(OrdinatioColor.separator, lineWidth: 1)
-                    }
+            Button {
+                onConfirm()
+            } label: {
+                actionButton(text: "Delete", destructive: true)
             }
+            .padding(.bottom, 8)
+            .accessibilityIdentifier("TransactionDeleteConfirm")
 
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(categoryColor.opacity(0.2))
-
-                    Text(categoryEmoji)
-                        .font(.system(.title3, design: .rounded))
-                }
-                .frame(width: 46, height: 46)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(titleText)
-                        .font(.system(.headline, design: .rounded).weight(.semibold))
-                        .foregroundStyle(OrdinatioColor.textPrimary)
-                        .lineLimit(2)
-
-                    Text(subtitleText)
-                        .font(.system(.footnote, design: .rounded).weight(.medium))
-                        .foregroundStyle(OrdinatioColor.textSecondary)
-                        .lineLimit(1)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(OrdinatioColor.surface)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(OrdinatioColor.separator, lineWidth: 1)
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    onCancel()
-                } label: {
-                    Text("Cancel")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(OrdinatioColor.surface)
-                        .foregroundStyle(OrdinatioColor.textPrimary)
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(OrdinatioColor.separator, lineWidth: 1)
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-
-                Button(role: .destructive) {
-                    onConfirm()
-                } label: {
-                    Label("Delete", systemImage: "trash.fill")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(OrdinatioColor.expense)
-                        .foregroundStyle(OrdinatioColor.lightIcon)
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-                .accessibilityIdentifier("TransactionDeleteConfirm")
+            Button {
+                onCancel()
+            } label: {
+                actionButton(text: "Cancel", destructive: false)
             }
         }
-        .padding(18)
+        .padding(13)
         .background(
-            cardShape
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
                 .fill(OrdinatioColor.surfaceElevated)
                 .shadow(
-                    color: colorScheme == .dark
-                        ? Color.black.opacity(0.35)
-                        : Color.black.opacity(0.12),
-                    radius: 16,
-                    x: 0,
-                    y: 8
+                    color: colorScheme == .dark ? Color.clear : Color.black.opacity(0.18),
+                    radius: 6
                 )
         )
         .overlay {
-            cardShape.stroke(OrdinatioColor.separator, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(
+                    colorScheme == .dark ? OrdinatioColor.separator.opacity(0.35) : Color.clear,
+                    lineWidth: 1.3
+                )
         }
     }
 }
