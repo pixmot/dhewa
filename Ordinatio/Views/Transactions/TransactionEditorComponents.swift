@@ -64,7 +64,9 @@ extension TransactionEditorView {
         private enum Layout {
             static let flowSpacing: CGFloat = 10
             static let flowPadding: CGFloat = 15
-            static let bottomInset: CGFloat = 24
+            static let addButtonSize: CGFloat = 46
+            static let addButtonPadding: CGFloat = 16
+            static let bottomInset: CGFloat = addButtonSize + (addButtonPadding * 2)
             static let bottomAnchorId = "category_bottom"
             static let sheetChromeHeight: CGFloat = 220
             static let minDetentHeight: CGFloat = 360
@@ -217,6 +219,28 @@ extension TransactionEditorView {
             .frame(maxWidth: .infinity)
         }
 
+        private var addCategoryButton: some View {
+            Button {
+                showingCategoryCreator = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textPrimary)
+                    .frame(width: Layout.addButtonSize, height: Layout.addButtonSize)
+                    .background {
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay {
+                                Circle()
+                                    .strokeBorder(OrdinatioColor.separator.opacity(0.6), lineWidth: 1)
+                            }
+                    }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Create Category")
+            .accessibilityIdentifier("CategoryAddButton")
+        }
+
         @ViewBuilder
         private var sheetContent: some View {
             VStack(spacing: 12) {
@@ -233,21 +257,12 @@ extension TransactionEditorView {
                 sheetContent
                     .padding(20)
                     .background(OrdinatioColor.background)
-                    .navigationTitle("Category")
-                    .searchable(text: $searchText, prompt: "Search categories")
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") { dismiss() }
-                        }
-                        ToolbarItem(placement: .primaryAction) {
-                            Button {
-                                showingCategoryCreator = true
-                            } label: {
-                                Image(systemName: "plus")
-                            }
-                            .accessibilityLabel("Create Category")
-                        }
+                    .overlay(alignment: .bottomTrailing) {
+                        addCategoryButton
+                            .padding(.trailing, Layout.addButtonPadding)
+                            .padding(.bottom, Layout.addButtonPadding)
                     }
+                    .searchable(text: $searchText, prompt: "Search categories")
                     .presentationDetents(detents, selection: $detentSelection)
                     .presentationContentInteraction(.scrolls)
                     .presentationDragIndicator(.visible)

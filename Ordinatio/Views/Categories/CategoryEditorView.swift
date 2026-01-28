@@ -65,21 +65,40 @@ struct CategoryEditorView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    headerCard
-                    iconPicker
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        headerCard
+                        iconPicker
+                    }
+                    .padding(20)
                 }
-                .padding(20)
+                .scrollDismissesKeyboard(.immediately)
+
+                Spacer(minLength: 0)
+
+                Button {
+                    save()
+                } label: {
+                    Text("Save")
+                        .font(.headline)
+                        .foregroundStyle(OrdinatioColor.background)
+                        .frame(maxWidth: .infinity, minHeight: 52)
+                        .background {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(OrdinatioColor.textPrimary)
+                        }
+                }
+                .buttonStyle(.plain)
+                .disabled(!canSave)
+                .opacity(canSave ? 1 : 0.5)
+                .padding(.horizontal, OrdinatioMetric.screenPadding)
+                .padding(.bottom, 16)
+                .accessibilityIdentifier("CategoryEditorSaveButton")
             }
-            .scrollDismissesKeyboard(.immediately)
             .background(OrdinatioColor.background)
             .navigationTitle(title)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                        .disabled(!canSave)
-                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
