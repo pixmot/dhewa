@@ -10,6 +10,7 @@ struct TransactionsView: View {
     @Environment(\.calendar) private var calendar
     @Environment(\.locale) private var locale
     @Environment(\.timeZone) private var timeZone
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var viewModel: TransactionListViewModel
 
@@ -304,8 +305,7 @@ struct TransactionsView: View {
                 }
 
                 if let row = deleteCandidate {
-                    Rectangle()
-                        .fill(Color.clear)
+                    Color.black.opacity(colorScheme == .dark ? 0.38 : 0.2)
                         .ignoresSafeArea()
                         .opacity(isDeletePopperVisible ? 1 : 0)
                         .animation(deletePopperAnimation, value: isDeletePopperVisible)
@@ -328,7 +328,7 @@ struct TransactionsView: View {
                     .padding(.horizontal, 17)
                     .safeAreaPadding(.bottom, 12)
                     .frame(maxWidth: 520)
-                    .offset(y: isDeletePopperVisible ? 0 : 280)
+                    .offset(y: isDeletePopperVisible ? 0 : 300)
                     .animation(deletePopperAnimation, value: isDeletePopperVisible)
                 }
             }
@@ -404,7 +404,7 @@ private struct DeleteTransactionBottomBar: View {
         Text(text)
             .font(.system(.title3, design: .rounded).weight(.semibold))
             .foregroundStyle(destructive ? OrdinatioColor.lightIcon : OrdinatioColor.textPrimary.opacity(0.9))
-            .frame(height: 45)
+            .frame(height: 48)
             .frame(maxWidth: .infinity)
             .background(
                 destructive ? OrdinatioColor.expense : OrdinatioColor.surface,
@@ -413,15 +413,16 @@ private struct DeleteTransactionBottomBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1.5) {
+        VStack(alignment: .leading, spacing: 10) {
             Text(titleLine)
                 .font(.system(.title2, design: .rounded).weight(.medium))
                 .foregroundStyle(OrdinatioColor.textPrimary)
+                .lineLimit(2)
 
             Text("This action cannot be undone.")
                 .font(.system(.title3, design: .rounded).weight(.medium))
                 .foregroundStyle(OrdinatioColor.textSecondary)
-                .padding(.bottom, 25)
+                .padding(.bottom, 14)
 
             Button {
                 onConfirm()
@@ -437,21 +438,20 @@ private struct DeleteTransactionBottomBar: View {
                 actionButton(text: "Cancel", destructive: false)
             }
         }
-        .padding(13)
+        .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(OrdinatioColor.surfaceElevated)
                 .shadow(
-                    color: colorScheme == .dark ? Color.clear : Color.black.opacity(0.18),
-                    radius: 6
+                    color: colorScheme == .dark ? Color.black.opacity(0.28) : Color.black.opacity(0.2),
+                    radius: 10,
+                    x: 0,
+                    y: 6
                 )
         )
         .overlay {
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .stroke(
-                    colorScheme == .dark ? OrdinatioColor.separator.opacity(0.35) : Color.clear,
-                    lineWidth: 1.3
-                )
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(OrdinatioColor.separator.opacity(colorScheme == .dark ? 0.35 : 0.7), lineWidth: 1)
         }
     }
 }
