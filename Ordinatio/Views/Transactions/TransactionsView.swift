@@ -18,6 +18,7 @@ struct TransactionsView: View {
     @State private var deleteCandidate: TransactionListRow?
     @State private var isDeleteSheetVisible = false
     @State private var deleteSheetDismissTask: Task<Void, Never>?
+    @State private var deleteSheetHeight: CGFloat = 0
 
     private var deleteSheetAnimation: Animation {
         .easeInOut(duration: 0.3)
@@ -330,8 +331,18 @@ struct TransactionsView: View {
                     .frame(maxWidth: 414)
                     .padding(.horizontal, actionSheetSideInset)
                     .safeAreaPadding(.bottom, 12)
-                    .offset(y: isDeleteSheetVisible ? 0 : 320)
+                    .offset(y: isDeleteSheetVisible ? 0 : max(deleteSheetHeight + 40, 320))
                     .animation(deleteSheetAnimation, value: isDeleteSheetVisible)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(key: ActionSheetHeightPreferenceKey.self, value: proxy.size.height)
+                        }
+                    )
+                    .onPreferenceChange(ActionSheetHeightPreferenceKey.self) { height in
+                        if height > 0, height != deleteSheetHeight {
+                            deleteSheetHeight = height
+                        }
+                    }
                 }
             }
             .navigationTitle("Log")
@@ -389,6 +400,14 @@ struct TransactionsView: View {
     }
 }
 
+private struct ActionSheetHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 private struct SignalDeleteActionSheet: View {
     let title: String
     let message: String
@@ -415,7 +434,7 @@ private struct SignalDeleteActionSheet: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.system(.headline, design: .rounded).weight(.semibold))
@@ -429,6 +448,7 @@ private struct SignalDeleteActionSheet: View {
             }
             .padding(.top, 8)
             .padding(.horizontal, 12)
+            .padding(.bottom, 12)
 
             VStack(spacing: 8) {
                 actionButton(text: "Delete", destructive: true, action: onDelete)
