@@ -15,6 +15,7 @@ struct TransactionsView: View {
 
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
+    @State private var deleteCandidate: TransactionListRow?
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
@@ -49,6 +50,17 @@ struct TransactionsView: View {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.prepare()
         generator.impactOccurred(intensity: 0.9)
+    }
+
+    private func deleteTransaction(row: TransactionListRow) {
+        Task { @MainActor in
+            do {
+                try await db.deleteTransaction(transactionId: row.id)
+                deleteCandidate = nil
+            } catch {
+                viewModel.errorMessage = ErrorDisplay.message(error)
+            }
+        }
     }
 
     private func dayHeader(for section: TransactionSection) -> some View {
@@ -242,6 +254,20 @@ struct TransactionsView: View {
                                             playOpenTransactionHaptic()
                                             editingRow = row
                                         }
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                            Button("Edit") {
+                                                playOpenTransactionHaptic()
+                                                editingRow = row
+                                            }
+                                            .accessibilityLabel("Edit transaction")
+                                            .accessibilityIdentifier("TransactionRowEdit.\(row.id)")
+
+                                            Button("Delete", role: .destructive) {
+                                                deleteCandidate = row
+                                            }
+                                            .accessibilityLabel("Delete transaction")
+                                            .accessibilityIdentifier("TransactionRowDelete.\(row.id)")
+                                        }
                                 }
                             }
                             .padding(.bottom, 18)
@@ -281,6 +307,25 @@ struct TransactionsView: View {
                     defaultCurrencyCode: defaultCurrencyCode,
                     mode: .edit(row)
                 )
+            }
+            .confirmationDialog(
+                "Delete this transaction?",
+                isPresented: Binding(
+                    get: { deleteCandidate != nil },
+                    set: { isPresented in
+                        if !isPresented { deleteCandidate = nil }
+                    }
+                ),
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    guard let row = deleteCandidate else { return }
+                    deleteTransaction(row: row)
+                }
+                .accessibilityIdentifier("TransactionDeleteConfirm")
+                Button("Cancel", role: .cancel) {
+                    deleteCandidate = nil
+                }
             }
             .alert(
                 "Error",
