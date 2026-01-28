@@ -509,14 +509,26 @@ extension TransactionEditorView {
                         .padding(.horizontal, OrdinatioMetric.screenPadding)
 
                     Spacer(minLength: 0)
+
+                    Button {
+                        dismiss()
+                    } label: {
+                        Text("Done")
+                            .font(.headline)
+                            .foregroundStyle(OrdinatioColor.background)
+                            .frame(maxWidth: .infinity, minHeight: 52)
+                            .background {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(OrdinatioColor.textPrimary)
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, OrdinatioMetric.screenPadding)
+                    .padding(.bottom, 16)
+                    .accessibilityIdentifier("DateAndTimeDoneButton")
                 }
                 .background(OrdinatioColor.background)
                 .navigationTitle("Date & Time")
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }
-                    }
-                }
             }
             .presentationDetents([.large])
         }
