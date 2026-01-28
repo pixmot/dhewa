@@ -1,5 +1,6 @@
 import OrdinatioCore
 import SwiftUI
+import UIKit
 
 struct TransactionsView: View {
     let db: DatabaseClient
@@ -42,6 +43,12 @@ struct TransactionsView: View {
         if netTotalMinor > 0 { return "+\(formatted)" }
         if netTotalMinor < 0 { return "-\(formatted)" }
         return formatted
+    }
+
+    private func playOpenTransactionHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.9)
     }
 
     private func dayHeader(for section: TransactionSection) -> some View {
@@ -127,12 +134,6 @@ struct TransactionsView: View {
                             MoneyFormat.format(minorUnits: netTotalMinor, currencyCode: currencyCode)
                         )
                 } else if viewModel.availableCurrencyCodes.count > 1 {
-                    Text("Multiple currencies")
-                        .font(.system(.title3, design: .rounded).weight(.medium))
-                        .foregroundStyle(OrdinatioColor.textPrimary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
                     if multiCurrencyNetTotals.isEmpty {
                         Text(currencySummaryText)
                             .font(.system(.body, design: .rounded).weight(.medium))
@@ -237,7 +238,10 @@ struct TransactionsView: View {
 
                                 ForEach(section.rows) { row in
                                     TransactionRowView(row: row)
-                                        .onTapGesture { editingRow = row }
+                                        .onTapGesture {
+                                            playOpenTransactionHaptic()
+                                            editingRow = row
+                                        }
                                 }
                             }
                             .padding(.bottom, 18)
