@@ -16,6 +16,8 @@ struct TransactionsView: View {
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
     @State private var deleteCandidate: TransactionListRow?
+    @State private var isDeletePopperVisible = false
+    @State private var deletePopperDismissTask: Task<Void, Never>?
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
@@ -56,12 +58,30 @@ struct TransactionsView: View {
         Task { @MainActor in
             do {
                 try await db.deleteTransaction(transactionId: row.id)
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                    deleteCandidate = nil
-                }
+                dismissDeletePopper()
             } catch {
                 viewModel.errorMessage = ErrorDisplay.message(error)
             }
+        }
+    }
+
+    private func presentDeletePopper(row: TransactionListRow) {
+        deletePopperDismissTask?.cancel()
+        deleteCandidate = row
+        withAnimation(.easeInOut(duration: 0.25)) {
+            isDeletePopperVisible = true
+        }
+    }
+
+    private func dismissDeletePopper() {
+        deletePopperDismissTask?.cancel()
+        withAnimation(.easeInOut(duration: 0.25)) {
+            isDeletePopperVisible = false
+        }
+        deletePopperDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(260))
+            if Task.isCancelled { return }
+            deleteCandidate = nil
         }
     }
 
@@ -260,9 +280,7 @@ struct TransactionsView: View {
                         editingRow = row
                     },
                     onDelete: { row in
-                        withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                            deleteCandidate = row
-                        }
+                        presentDeletePopper(row: row)
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -284,11 +302,11 @@ struct TransactionsView: View {
                 if let row = deleteCandidate {
                     Color.black.opacity(0.18)
                         .ignoresSafeArea()
-                        .transition(.opacity)
+                        .opacity(isDeletePopperVisible ? 1 : 0)
+                        .animation(.easeInOut(duration: 0.25), value: isDeletePopperVisible)
+                        .allowsHitTesting(isDeletePopperVisible)
                         .onTapGesture {
-                            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                                deleteCandidate = nil
-                            }
+                            dismissDeletePopper()
                         }
                 }
             }
@@ -299,18 +317,17 @@ struct TransactionsView: View {
                         row: row,
                         onConfirm: { deleteTransaction(row: row) },
                         onCancel: {
-                            withAnimation(.spring(response: 0.32, dampingFraction: 0.88)) {
-                                deleteCandidate = nil
-                            }
+                            dismissDeletePopper()
                         }
                     )
                     .padding(.horizontal, OrdinatioMetric.screenPadding)
                     .safeAreaPadding(.bottom, 12)
                     .frame(maxWidth: 520)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .offset(y: isDeletePopperVisible ? 0 : 280)
+                    .opacity(isDeletePopperVisible ? 1 : 0)
+                    .animation(.easeInOut(duration: 0.25), value: isDeletePopperVisible)
                 }
             }
-            .animation(.spring(response: 0.32, dampingFraction: 0.88), value: deleteCandidate != nil)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -379,6 +396,19 @@ private struct DeleteTransactionBottomBar: View {
         Capsule()
     }
 
+    private var categoryTitle: String {
+        if let name = row.categoryName, !name.isEmpty { return name }
+        return "Uncategorized"
+    }
+
+    private var categoryEmoji: String {
+        OrdinatioCategoryVisuals.emoji(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
+    private var categoryColor: Color {
+        OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
     private var titleText: String {
         if let note = row.note, !note.isEmpty { return note }
         if let name = row.categoryName, !name.isEmpty { return name }
@@ -386,7 +416,11 @@ private struct DeleteTransactionBottomBar: View {
     }
 
     private var subtitleText: String {
-        row.createdAt.formatted(date: .abbreviated, time: .shortened)
+        let dateText = row.createdAt.formatted(date: .abbreviated, time: .shortened)
+        if let note = row.note, !note.isEmpty {
+            return "\(categoryTitle) · \(dateText)"
+        }
+        return dateText
     }
 
     private var amountText: String {
@@ -402,10 +436,10 @@ private struct DeleteTransactionBottomBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             handleShape
-                .fill(OrdinatioColor.separator)
-                .frame(width: 44, height: 5)
+                .fill(OrdinatioColor.separator.opacity(0.7))
+                .frame(width: 46, height: 5)
                 .padding(.top, 2)
 
             HStack(alignment: .center, spacing: 14) {
@@ -450,25 +484,39 @@ private struct DeleteTransactionBottomBar: View {
                     }
             }
 
-            VStack(spacing: 6) {
-                Text(titleText)
-                    .font(.system(.headline, design: .rounded).weight(.semibold))
-                    .foregroundStyle(OrdinatioColor.textPrimary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(categoryColor.opacity(0.2))
 
-                Text(subtitleText)
-                    .font(.system(.footnote, design: .rounded).weight(.medium))
-                    .foregroundStyle(OrdinatioColor.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(categoryEmoji)
+                        .font(.system(.title3, design: .rounded))
+                }
+                .frame(width: 46, height: 46)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(titleText)
+                        .font(.system(.headline, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .lineLimit(2)
+
+                    Text(subtitleText)
+                        .font(.system(.footnote, design: .rounded).weight(.medium))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 2)
-            .padding(.vertical, 10)
+            .padding(12)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(OrdinatioColor.surface)
             )
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(OrdinatioColor.separator, lineWidth: 1)
+            }
 
             HStack(spacing: 12) {
                 Button {
@@ -508,8 +556,8 @@ private struct DeleteTransactionBottomBar: View {
                 .shadow(
                     color: colorScheme == .dark
                         ? Color.black.opacity(0.35)
-                        : Color.black.opacity(0.14),
-                    radius: 12,
+                        : Color.black.opacity(0.12),
+                    radius: 16,
                     x: 0,
                     y: 8
                 )
