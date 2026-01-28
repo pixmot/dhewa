@@ -52,12 +52,6 @@ struct TransactionsView: View {
         generator.impactOccurred(intensity: 0.9)
     }
 
-    private func playSwipeActionHaptic() {
-        let generator = UIImpactFeedbackGenerator(style: .rigid)
-        generator.prepare()
-        generator.impactOccurred(intensity: 0.75)
-    }
-
     private func deleteTransaction(row: TransactionListRow) {
         Task { @MainActor in
             do {
@@ -235,82 +229,54 @@ struct TransactionsView: View {
         @Bindable var model = viewModel
 
         NavigationStack {
-            List {
-                summaryHeader
-                    .padding(.horizontal, 20)
-                    .padding(.top, 2)
-                    .padding(.bottom, 10)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(OrdinatioColor.background)
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    summaryHeader
+                        .padding(.horizontal, 20)
+                        .padding(.top, 2)
+                        .padding(.bottom, 10)
 
-                if model.sections.isEmpty {
-                    ContentUnavailableView(
-                        "No Transactions",
-                        systemImage: "tray",
-                        description: Text("Add your first transaction to get started.")
-                    )
-                    .padding(.top, 48)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(OrdinatioColor.background)
-                } else {
-                    ForEach(model.sections) { section in
-                        Section {
-                            ForEach(section.rows) { row in
-                                SwipeHapticRow(onTrigger: playSwipeActionHaptic) {
+                    if model.sections.isEmpty {
+                        ContentUnavailableView(
+                            "No Transactions",
+                            systemImage: "tray",
+                            description: Text("Add your first transaction to get started.")
+                        )
+                        .padding(.top, 48)
+                    } else {
+                        ForEach(model.sections) { section in
+                            VStack(spacing: 0) {
+                                dayHeader(for: section)
+
+                                ForEach(section.rows) { row in
                                     TransactionRowView(row: row)
-                                }
-                                    .onTapGesture {
-                                        playOpenTransactionHaptic()
-                                        editingRow = row
-                                    }
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button {
+                                        .onTapGesture {
                                             playOpenTransactionHaptic()
                                             editingRow = row
-                                        } label: {
-                                            Label("Edit", systemImage: "pencil")
-                                                .font(.system(.body, design: .rounded).weight(.semibold))
-                                                .symbolRenderingMode(.hierarchical)
                                         }
-                                        .accessibilityLabel("Edit transaction")
-                                        .accessibilityIdentifier("TransactionRowEdit.\(row.id)")
-                                        .tint(OrdinatioColor.actionBlue)
-
-                                        Button(role: .destructive) {
-                                            deleteCandidate = row
-                                        } label: {
-                                            Label("Delete", systemImage: "trash")
-                                                .font(.system(.body, design: .rounded).weight(.semibold))
-                                                .symbolRenderingMode(.hierarchical)
+                                        .contextMenu {
+                                            Button {
+                                                playOpenTransactionHaptic()
+                                                editingRow = row
+                                            } label: {
+                                                Label("Edit", systemImage: "pencil")
+                                            }
+                                            Button(role: .destructive) {
+                                                deleteCandidate = row
+                                            } label: {
+                                                Label("Delete", systemImage: "trash")
+                                            }
                                         }
-                                        .accessibilityLabel("Delete transaction")
-                                        .accessibilityIdentifier("TransactionRowDelete.\(row.id)")
-                                        .tint(OrdinatioColor.expense)
-                                    }
-                                    .listRowInsets(EdgeInsets())
-                                    .listRowSeparator(.hidden)
-                                    .listRowBackground(OrdinatioColor.background)
+                                        .accessibilityIdentifier("TransactionRow.\(row.id)")
+                                }
                             }
-                        } header: {
-                            dayHeader(for: section)
-                                .listRowInsets(EdgeInsets())
-                                .listRowSeparator(.hidden)
-                        } footer: {
-                            Color.clear
-                                .frame(height: 18)
-                                .listRowInsets(EdgeInsets())
-                                .listRowSeparator(.hidden)
+                            .padding(.bottom, 18)
                         }
-                        .listRowBackground(OrdinatioColor.background)
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.bottom, 12)
             }
-            .listStyle(.plain)
-            .listSectionSeparator(.hidden)
-            .listSectionSpacing(0)
-            .scrollContentBackground(.hidden)
             .background(OrdinatioColor.background)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
@@ -376,36 +342,6 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
-    }
-}
-
-private struct SwipeHapticRow<Content: View>: View {
-    let onTrigger: () -> Void
-    let content: Content
-
-    @State private var didTrigger = false
-
-    init(onTrigger: @escaping () -> Void, @ViewBuilder content: () -> Content) {
-        self.onTrigger = onTrigger
-        self.content = content()
-    }
-
-    var body: some View {
-        content
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 12)
-                    .onChanged { value in
-                        guard !didTrigger else { return }
-                        let horizontal = value.translation.width
-                        let vertical = value.translation.height
-                        guard horizontal < -28, abs(horizontal) > abs(vertical) else { return }
-                        didTrigger = true
-                        onTrigger()
-                    }
-                    .onEnded { _ in
-                        didTrigger = false
-                    }
-            )
     }
 }
 
