@@ -39,7 +39,7 @@ public enum MoneyFormat {
         let code = currencyCode.uppercased()
         let digits = fractionDigits(for: code)
         let decimal = decimal(fromMinorUnits: minorUnits, fractionDigits: digits)
-        return decimal.formatted(.currency(code: code).locale(locale))
+        return decimal.formatted(.currency(code: code).precision(.fractionLength(0...digits)).locale(locale))
     }
 
     public static func parseMinorUnits(

@@ -329,7 +329,7 @@ private struct NetTotalAmountText: View {
         let absMinor = valueMinor.ordinatioSafeAbs
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
         let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-        return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+        return decimal.formatted(.number.precision(.fractionLength(0...digits)).locale(locale))
     }
 
     private var numberFontSize: CGFloat {
@@ -373,7 +373,7 @@ private struct NetTotalCompactLine: View {
         let absMinor = valueMinor.ordinatioSafeAbs
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
         let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-        return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+        return decimal.formatted(.number.precision(.fractionLength(0...digits)).locale(locale))
     }
 
     var body: some View {
@@ -549,7 +549,7 @@ private struct MiniLineGraph: View {
         let absMinor = valueMinor.ordinatioSafeAbs
         let digits = MoneyFormat.fractionDigits(for: currencyCode)
         let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-        let number = decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+        let number = decimal.formatted(.number.precision(.fractionLength(0...digits)).locale(locale))
         let prefix = valueMinor >= 0 ? "+\(currencyCode)" : "-\(currencyCode)"
         return "\(prefix) \(number)"
     }
@@ -618,5 +618,5 @@ private func formatAbsNumber(minorUnits: Int64, currencyCode: String, locale: Lo
     let absMinor = minorUnits.ordinatioSafeAbs
     let digits = MoneyFormat.fractionDigits(for: currencyCode)
     let decimal = MoneyFormat.decimal(fromMinorUnits: absMinor, currencyCode: currencyCode)
-    return decimal.formatted(.number.precision(.fractionLength(digits)).locale(locale))
+    return decimal.formatted(.number.precision(.fractionLength(0...digits)).locale(locale))
 }

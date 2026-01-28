@@ -69,10 +69,11 @@ final class TransactionEditorModel {
     }
 
     var formattedAmount: String {
-        guard let parsedAbsMinor else {
-            return fractionDigits == 0 ? "0" : "0." + String(repeating: "0", count: fractionDigits)
-        }
-        return Self.format(absMinor: parsedAbsMinor, fractionDigits: fractionDigits)
+        let cleaned =
+            amountText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: ",", with: "")
+        return cleaned.isEmpty ? "0" : cleaned
     }
 
     private static let currencySymbolFormatter: NumberFormatter = {
@@ -183,7 +184,19 @@ final class TransactionEditorModel {
         let fraction = absMinor % multiplier
         let fractionText = String(fraction)
         let zeros = String(repeating: "0", count: max(0, fractionDigits - fractionText.count))
-        return "\(whole).\(zeros)\(fractionText)"
+        return trimTrailingZeros("\(whole).\(zeros)\(fractionText)")
+    }
+
+    private static func trimTrailingZeros(_ value: String) -> String {
+        guard value.contains(".") else { return value }
+        var trimmed = value
+        while trimmed.last == "0" {
+            trimmed.removeLast()
+        }
+        if trimmed.last == "." {
+            trimmed.removeLast()
+        }
+        return trimmed.isEmpty ? "0" : trimmed
     }
 
     private static func parseAbsMinor(from input: String, fractionDigits: Int) -> Int64? {
