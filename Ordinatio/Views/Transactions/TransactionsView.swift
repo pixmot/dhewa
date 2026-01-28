@@ -16,6 +16,12 @@ struct TransactionsView: View {
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
     @State private var deleteCandidate: TransactionListRow?
+    @State private var isDeleteSheetVisible = false
+    @State private var deleteSheetDismissTask: Task<Void, Never>?
+
+    private var deleteSheetAnimation: Animation {
+        .easeInOut(duration: 0.3)
+    }
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
@@ -56,10 +62,29 @@ struct TransactionsView: View {
         Task { @MainActor in
             do {
                 try await db.deleteTransaction(transactionId: row.id)
-                deleteCandidate = nil
             } catch {
                 viewModel.errorMessage = ErrorDisplay.message(error)
             }
+        }
+    }
+
+    private func presentDeleteSheet(row: TransactionListRow) {
+        deleteSheetDismissTask?.cancel()
+        deleteCandidate = row
+        withAnimation(deleteSheetAnimation) {
+            isDeleteSheetVisible = true
+        }
+    }
+
+    private func dismissDeleteSheet() {
+        deleteSheetDismissTask?.cancel()
+        withAnimation(deleteSheetAnimation) {
+            isDeleteSheetVisible = false
+        }
+        deleteSheetDismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(320))
+            if Task.isCancelled { return }
+            deleteCandidate = nil
         }
     }
 
@@ -258,7 +283,7 @@ struct TransactionsView: View {
                         editingRow = row
                     },
                     onDelete: { row in
-                        deleteCandidate = row
+                        presentDeleteSheet(row: row)
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -276,8 +301,39 @@ struct TransactionsView: View {
                     .padding(.top, 48)
                     .allowsHitTesting(false)
                 }
+
+                if deleteCandidate != nil {
+                    OrdinatioColor.actionSheetBackdrop
+                        .ignoresSafeArea()
+                        .opacity(isDeleteSheetVisible ? 1 : 0)
+                        .animation(deleteSheetAnimation, value: isDeleteSheetVisible)
+                        .allowsHitTesting(isDeleteSheetVisible)
+                        .onTapGesture {
+                            dismissDeleteSheet()
+                        }
+                }
             }
             .background(OrdinatioColor.background)
+            .overlay(alignment: .bottom) {
+                if let row = deleteCandidate {
+                    SignalDeleteActionSheet(
+                        title: "Delete transaction?",
+                        message: "This action cannot be undone.",
+                        onDelete: {
+                            dismissDeleteSheet()
+                            deleteTransaction(row: row)
+                        },
+                        onCancel: {
+                            dismissDeleteSheet()
+                        }
+                    )
+                    .frame(maxWidth: 414)
+                    .padding(.horizontal, actionSheetSideInset)
+                    .safeAreaPadding(.bottom, 12)
+                    .offset(y: isDeleteSheetVisible ? 0 : 320)
+                    .animation(deleteSheetAnimation, value: isDeleteSheetVisible)
+                }
+            }
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -308,25 +364,6 @@ struct TransactionsView: View {
                     mode: .edit(row)
                 )
             }
-            .confirmationDialog(
-                "Delete this transaction?",
-                isPresented: Binding(
-                    get: { deleteCandidate != nil },
-                    set: { isPresented in
-                        if !isPresented { deleteCandidate = nil }
-                    }
-                ),
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    guard let row = deleteCandidate else { return }
-                    deleteTransaction(row: row)
-                }
-                .accessibilityIdentifier("TransactionDeleteConfirm")
-                Button("Cancel", role: .cancel) {
-                    deleteCandidate = nil
-                }
-            }
             .alert(
                 "Error",
                 isPresented: Binding(
@@ -342,6 +379,78 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
+    }
+
+    private var actionSheetSideInset: CGFloat {
+        if #available(iOS 26, *) {
+            return 8
+        }
+        return 0
+    }
+}
+
+private struct SignalDeleteActionSheet: View {
+    let title: String
+    let message: String
+    let onDelete: () -> Void
+    let onCancel: () -> Void
+
+    private var cornerShape: UnevenRoundedRectangle {
+        UnevenRoundedRectangle(topLeadingRadius: 24, topTrailingRadius: 24)
+    }
+
+    private var buttonShape: Capsule {
+        Capsule()
+    }
+
+    private func actionButton(text: String, destructive: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(text)
+                .font(.system(.body, design: .rounded).weight(.medium))
+                .foregroundStyle(destructive ? OrdinatioColor.expense : OrdinatioColor.textPrimary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 45)
+        }
+        .background(OrdinatioColor.actionSheetButtonFill, in: buttonShape)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(.headline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(OrdinatioColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+
+                Text(message)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(OrdinatioColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.top, 8)
+            .padding(.horizontal, 12)
+
+            VStack(spacing: 8) {
+                actionButton(text: "Delete", destructive: true, action: onDelete)
+                    .accessibilityIdentifier("TransactionDeleteConfirm")
+                actionButton(text: "Cancel", destructive: false, action: onCancel)
+            }
+        }
+        .padding(16)
+        .background(VisualEffectBlur(style: .prominent).clipShape(cornerShape))
+        .clipShape(cornerShape)
+    }
+}
+
+private struct VisualEffectBlur: UIViewRepresentable {
+    let style: UIBlurEffect.Style
+
+    func makeUIView(context: Context) -> UIVisualEffectView {
+        UIVisualEffectView(effect: UIBlurEffect(style: style))
+    }
+
+    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {
+        uiView.effect = UIBlurEffect(style: style)
     }
 }
 

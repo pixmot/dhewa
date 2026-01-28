@@ -23,6 +23,23 @@ enum OrdinatioColor {
 
     static var actionBlue: Color { Color(red: 0.416, green: 0.486, blue: 0.976) }
     static var actionOrange: Color { Color(red: 0.992, green: 0.737, blue: 0.231) }
+
+    static var actionSheetBackdrop: Color {
+        Color(uiColor: UIColor { traitCollection in
+            if traitCollection.userInterfaceStyle == .dark {
+                return UIColor(white: 0, alpha: 0.48)
+            } else {
+                return UIColor(white: 0, alpha: 0.2)
+            }
+        })
+    }
+
+    static var actionSheetButtonFill: Color {
+        Color(uiColor: UIColor { traitCollection in
+            let alpha: CGFloat = traitCollection.userInterfaceStyle == .dark ? 0.32 : 0.16
+            return UIColor(red: 0x78 / 255, green: 0x78 / 255, blue: 0x80 / 255, alpha: alpha)
+        })
+    }
 }
 
 enum OrdinatioCategoryVisuals {
