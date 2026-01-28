@@ -52,6 +52,12 @@ struct TransactionsView: View {
         generator.impactOccurred(intensity: 0.9)
     }
 
+    private func playSwipeActionHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .rigid)
+        generator.prepare()
+        generator.impactOccurred(intensity: 0.75)
+    }
+
     private func deleteTransaction(row: TransactionListRow) {
         Task { @MainActor in
             do {
@@ -252,24 +258,36 @@ struct TransactionsView: View {
                     ForEach(model.sections) { section in
                         Section {
                             ForEach(section.rows) { row in
-                                TransactionRowView(row: row)
+                                SwipeHapticRow(onTrigger: playSwipeActionHaptic) {
+                                    TransactionRowView(row: row)
+                                }
                                     .onTapGesture {
                                         playOpenTransactionHaptic()
                                         editingRow = row
                                     }
                                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                        Button("Edit") {
+                                        Button {
                                             playOpenTransactionHaptic()
                                             editingRow = row
+                                        } label: {
+                                            Label("Edit", systemImage: "pencil")
+                                                .font(.system(.body, design: .rounded).weight(.semibold))
+                                                .symbolRenderingMode(.hierarchical)
                                         }
                                         .accessibilityLabel("Edit transaction")
                                         .accessibilityIdentifier("TransactionRowEdit.\(row.id)")
+                                        .tint(OrdinatioColor.actionBlue)
 
-                                        Button("Delete", role: .destructive) {
+                                        Button(role: .destructive) {
                                             deleteCandidate = row
+                                        } label: {
+                                            Label("Delete", systemImage: "trash")
+                                                .font(.system(.body, design: .rounded).weight(.semibold))
+                                                .symbolRenderingMode(.hierarchical)
                                         }
                                         .accessibilityLabel("Delete transaction")
                                         .accessibilityIdentifier("TransactionRowDelete.\(row.id)")
+                                        .tint(OrdinatioColor.expense)
                                     }
                                     .listRowInsets(EdgeInsets())
                                     .listRowSeparator(.hidden)
@@ -358,6 +376,36 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
+    }
+}
+
+private struct SwipeHapticRow<Content: View>: View {
+    let onTrigger: () -> Void
+    let content: Content
+
+    @State private var didTrigger = false
+
+    init(onTrigger: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+        self.onTrigger = onTrigger
+        self.content = content()
+    }
+
+    var body: some View {
+        content
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 12)
+                    .onChanged { value in
+                        guard !didTrigger else { return }
+                        let horizontal = value.translation.width
+                        let vertical = value.translation.height
+                        guard horizontal < -28, abs(horizontal) > abs(vertical) else { return }
+                        didTrigger = true
+                        onTrigger()
+                    }
+                    .onEnded { _ in
+                        didTrigger = false
+                    }
+            )
     }
 }
 
