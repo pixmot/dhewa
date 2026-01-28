@@ -40,6 +40,7 @@
 
 ## Git
 - Do not modify `AGENTS.md` unless the user explicitly asks.
+- Commit after each change.
 - Safe by default: `git status/diff/log`. Push only when the user asks.
 - `git checkout` ok for PR review / explicit request.
 - Branch changes require user consent.
