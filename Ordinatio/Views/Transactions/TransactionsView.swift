@@ -244,7 +244,7 @@ struct TransactionsView: View {
         )
 
         NavigationStack {
-            ZStack(alignment: .top) {
+            ZStack {
                 TransactionsTableView(
                     sections: model.sections,
                     headerModels: headerModels,
@@ -276,8 +276,32 @@ struct TransactionsView: View {
                     .padding(.top, 48)
                     .allowsHitTesting(false)
                 }
+
+                if let row = deleteCandidate {
+                    Color.black.opacity(0.16)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            deleteCandidate = nil
+                        }
+
+                    DeleteTransactionBottomBar(
+                        row: row,
+                        onConfirm: {
+                            deleteCandidate = nil
+                            deleteTransaction(row: row)
+                        },
+                        onCancel: {
+                            deleteCandidate = nil
+                        }
+                    )
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: 520)
+                }
             }
             .background(OrdinatioColor.background)
+            .animation(.easeInOut(duration: 0.2), value: deleteCandidate != nil)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -308,25 +332,6 @@ struct TransactionsView: View {
                     mode: .edit(row)
                 )
             }
-            .confirmationDialog(
-                "Delete this transaction?",
-                isPresented: Binding(
-                    get: { deleteCandidate != nil },
-                    set: { isPresented in
-                        if !isPresented { deleteCandidate = nil }
-                    }
-                ),
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    guard let row = deleteCandidate else { return }
-                    deleteTransaction(row: row)
-                }
-                .accessibilityIdentifier("TransactionDeleteConfirm")
-                Button("Cancel", role: .cancel) {
-                    deleteCandidate = nil
-                }
-            }
             .alert(
                 "Error",
                 isPresented: Binding(
@@ -342,6 +347,113 @@ struct TransactionsView: View {
                 Text(model.errorMessage ?? "")
             }
         }
+    }
+}
+
+private struct DeleteTransactionBottomBar: View {
+    let row: TransactionListRow
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    @Environment(\.locale) private var locale
+
+    private var titleText: String {
+        if let note = row.note, !note.isEmpty { return note }
+        if let name = row.categoryName, !name.isEmpty { return name }
+        return "Uncategorized"
+    }
+
+    private var subtitleText: String {
+        row.createdAt.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private var amountText: String {
+        let absMinor = row.amountMinor.ordinatioSafeAbs
+        let formatted = MoneyFormat.format(minorUnits: absMinor, currencyCode: row.currencyCode, locale: locale)
+        if row.amountMinor > 0 { return "+\(formatted)" }
+        if row.amountMinor < 0 { return "-\(formatted)" }
+        return formatted
+    }
+
+    private var amountColor: Color {
+        row.amountMinor > 0 ? OrdinatioColor.income : OrdinatioColor.textPrimary
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(OrdinatioColor.expense.opacity(0.14))
+                        .frame(width: 40, height: 40)
+
+                    Image(systemName: "trash")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(OrdinatioColor.expense)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Delete transaction?")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+
+                    Text("This action can’t be undone.")
+                        .font(.system(.footnote, design: .rounded).weight(.medium))
+                        .foregroundStyle(OrdinatioColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Text(amountText)
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .foregroundStyle(amountColor)
+            }
+
+            VStack(spacing: 6) {
+                Text(titleText)
+                    .font(.system(.subheadline, design: .rounded).weight(.semibold))
+                    .foregroundStyle(OrdinatioColor.textPrimary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Text(subtitleText)
+                    .font(.system(.footnote, design: .rounded).weight(.medium))
+                    .foregroundStyle(OrdinatioColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    onCancel()
+                } label: {
+                    Text("Cancel")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(OrdinatioColor.surface)
+                        .foregroundStyle(OrdinatioColor.textPrimary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                Button(role: .destructive) {
+                    onConfirm()
+                } label: {
+                    Text("Delete")
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(OrdinatioColor.expense)
+                        .foregroundStyle(OrdinatioColor.lightIcon)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .accessibilityIdentifier("TransactionDeleteConfirm")
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(OrdinatioColor.surfaceElevated)
+                .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
+        )
     }
 }
 
