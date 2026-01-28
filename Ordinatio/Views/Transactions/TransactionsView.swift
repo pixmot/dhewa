@@ -462,7 +462,7 @@ private struct MiniLineGraph: View {
                 progress = 1
             }
         }
-        .onChange(of: isDragging) { dragging in
+        .onChange(of: isDragging) { _, dragging in
             if !dragging { showIndicator = false }
         }
     }
