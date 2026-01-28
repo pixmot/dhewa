@@ -71,6 +71,7 @@ extension TransactionEditorView {
             static let sheetChromeHeight: CGFloat = 220
             static let minDetentHeight: CGFloat = 360
             static let maxDetentHeight: CGFloat = 680
+            static let maxTopSpacer: CGFloat = 24
         }
 
         private struct ScrollViewportHeightKey: PreferenceKey {
@@ -111,7 +112,8 @@ extension TransactionEditorView {
         }
 
         private var topSpacerHeight: CGFloat {
-            max(0, scrollViewportHeight - (flowLayoutHeight + Layout.bottomInset))
+            let available = scrollViewportHeight - (flowLayoutHeight + Layout.bottomInset)
+            return max(0, min(available, Layout.maxTopSpacer))
         }
 
         private var preferredDetentHeight: CGFloat? {
