@@ -179,7 +179,7 @@ struct CategoryEditorView: View {
         let strokeColor = selected ? accent.opacity(0.9) : OrdinatioColor.separator.opacity(0.7)
         let strokeWidth: CGFloat = selected ? 2 : 1
 
-        return Button(action: action) {
+        Button(action: action) {
             VStack(spacing: 6) {
                 if let emoji {
                     Text(emoji)
