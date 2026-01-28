@@ -16,6 +16,9 @@ struct TransactionsView: View {
     @State private var showFilters = false
     @State private var editingRow: TransactionListRow?
     @State private var deleteCandidate: TransactionListRow?
+    @State private var deleteOrigin: CGRect?
+    @State private var showDeletePopper = false
+    @Namespace private var deletePopperNamespace
 
     init(db: DatabaseClient, householdId: String, defaultCurrencyCode: String) {
         self.db = db
@@ -56,10 +59,32 @@ struct TransactionsView: View {
         Task { @MainActor in
             do {
                 try await db.deleteTransaction(transactionId: row.id)
-                deleteCandidate = nil
             } catch {
                 viewModel.errorMessage = ErrorDisplay.message(error)
             }
+        }
+    }
+
+    private func presentDeletePopper(row: TransactionListRow, origin: CGRect?) {
+        deleteOrigin = origin
+        deleteCandidate = row
+        showDeletePopper = false
+        Task { @MainActor in
+            await Task.yield()
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
+                showDeletePopper = true
+            }
+        }
+    }
+
+    private func dismissDeletePopper() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            showDeletePopper = false
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            deleteCandidate = nil
+            deleteOrigin = nil
         }
     }
 
@@ -257,8 +282,8 @@ struct TransactionsView: View {
                         playOpenTransactionHaptic()
                         editingRow = row
                     },
-                    onDelete: { row in
-                        deleteCandidate = row
+                    onDelete: { row, origin in
+                        presentDeletePopper(row: row, origin: origin)
                     },
                     onSwipeHaptic: {
                         let generator = UIImpactFeedbackGenerator(style: .rigid)
@@ -278,30 +303,22 @@ struct TransactionsView: View {
                 }
 
                 if let row = deleteCandidate {
-                    Color.black.opacity(0.16)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            deleteCandidate = nil
-                        }
-
-                    DeleteTransactionBottomBar(
+                    DeletePopperOverlay(
                         row: row,
+                        origin: deleteOrigin,
+                        isPresented: showDeletePopper,
+                        namespace: deletePopperNamespace,
                         onConfirm: {
-                            deleteCandidate = nil
                             deleteTransaction(row: row)
+                            dismissDeletePopper()
                         },
                         onCancel: {
-                            deleteCandidate = nil
+                            dismissDeletePopper()
                         }
                     )
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 12)
-                    .frame(maxWidth: 520)
                 }
             }
             .background(OrdinatioColor.background)
-            .animation(.easeInOut(duration: 0.2), value: deleteCandidate != nil)
             .navigationTitle("Log")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $model.searchText, prompt: "Search notes")
@@ -454,6 +471,63 @@ private struct DeleteTransactionBottomBar: View {
                 .fill(OrdinatioColor.surfaceElevated)
                 .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
         )
+    }
+}
+
+private struct DeletePopperOverlay: View {
+    let row: TransactionListRow
+    let origin: CGRect?
+    let isPresented: Bool
+    let namespace: Namespace.ID
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        GeometryReader { proxy in
+            let rootFrame = proxy.frame(in: .global)
+            ZStack(alignment: .bottom) {
+                if isPresented {
+                    Color.black.opacity(colorScheme == .dark ? 0.32 : 0.18)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            onCancel()
+                        }
+                }
+
+                if let origin, !isPresented {
+                    let local = CGRect(
+                        x: origin.minX - rootFrame.minX,
+                        y: origin.minY - rootFrame.minY,
+                        width: origin.width,
+                        height: origin.height
+                    )
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(OrdinatioColor.expense)
+                        .frame(width: local.width, height: local.height)
+                        .position(x: local.midX, y: local.midY)
+                        .matchedGeometryEffect(id: "deletePopper", in: namespace)
+                }
+
+                if isPresented {
+                    if origin != nil {
+                        DeleteTransactionBottomBar(row: row, onConfirm: onConfirm, onCancel: onCancel)
+                            .matchedGeometryEffect(id: "deletePopper", in: namespace)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                            .frame(maxWidth: 520)
+                    } else {
+                        DeleteTransactionBottomBar(row: row, onConfirm: onConfirm, onCancel: onCancel)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 12)
+                            .frame(maxWidth: 520)
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(isPresented)
     }
 }
 

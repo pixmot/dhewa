@@ -13,7 +13,7 @@ struct TransactionsTableView: UIViewRepresentable {
     let summaryHeader: AnyView
     let onSelectRow: (TransactionListRow) -> Void
     let onEdit: (TransactionListRow) -> Void
-    let onDelete: (TransactionListRow) -> Void
+    let onDelete: (TransactionListRow, CGRect?) -> Void
     let onSwipeHaptic: () -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -78,7 +78,7 @@ struct TransactionsTableView: UIViewRepresentable {
         private var summaryHeader: AnyView
         private var onSelectRow: (TransactionListRow) -> Void
         private var onEdit: (TransactionListRow) -> Void
-        private var onDelete: (TransactionListRow) -> Void
+        private var onDelete: (TransactionListRow, CGRect?) -> Void
         private var onSwipeHaptic: () -> Void
         private var headerHost: UIHostingController<AnyView>?
 
@@ -88,7 +88,7 @@ struct TransactionsTableView: UIViewRepresentable {
             summaryHeader: AnyView,
             onSelectRow: @escaping (TransactionListRow) -> Void,
             onEdit: @escaping (TransactionListRow) -> Void,
-            onDelete: @escaping (TransactionListRow) -> Void,
+            onDelete: @escaping (TransactionListRow, CGRect?) -> Void,
             onSwipeHaptic: @escaping () -> Void
         ) {
             self.sections = sections
@@ -106,7 +106,7 @@ struct TransactionsTableView: UIViewRepresentable {
             summaryHeader: AnyView,
             onSelectRow: @escaping (TransactionListRow) -> Void,
             onEdit: @escaping (TransactionListRow) -> Void,
-            onDelete: @escaping (TransactionListRow) -> Void,
+            onDelete: @escaping (TransactionListRow, CGRect?) -> Void,
             onSwipeHaptic: @escaping () -> Void
         ) {
             self.sections = sections
@@ -143,7 +143,7 @@ struct TransactionsTableView: UIViewRepresentable {
                             Label("Edit", systemImage: "pencil")
                         }
                         Button(role: .destructive) {
-                            self.onDelete(row)
+                            self.onDelete(row, nil)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -187,7 +187,21 @@ struct TransactionsTableView: UIViewRepresentable {
             edit.backgroundColor = UIColor(OrdinatioColor.actionBlue)
 
             let delete = UIContextualAction(style: .destructive, title: "Delete") { [weak self] _, _, completion in
-                self?.onDelete(row)
+                if let tableView = self?.tableView {
+                    let rowRect = tableView.rectForRow(at: indexPath)
+                    let originWidth: CGFloat = 72
+                    let originHeight = min(44, rowRect.height)
+                    let originRect = CGRect(
+                        x: rowRect.maxX - originWidth - 8,
+                        y: rowRect.midY - originHeight / 2,
+                        width: originWidth,
+                        height: originHeight
+                    )
+                    let windowRect = tableView.convert(originRect, to: nil)
+                    self?.onDelete(row, windowRect)
+                } else {
+                    self?.onDelete(row, nil)
+                }
                 completion(true)
             }
             delete.image = UIImage(
