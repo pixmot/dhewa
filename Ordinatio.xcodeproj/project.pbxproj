@@ -287,8 +287,8 @@
 		D0ECF7F7DAF384F144779A42 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastSwiftUpdateCheck = 1600;
-				LastUpgradeCheck = 1600;
+				LastSwiftUpdateCheck = 1700;
+				LastUpgradeCheck = 1700;
 				ORGANIZATIONNAME = Ordinatio;
 			};
 			buildConfigurationList = C8960AD3C2AA936ED56D52DC /* Build configuration list for PBXProject "Ordinatio" */;
