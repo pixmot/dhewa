@@ -410,6 +410,7 @@ private struct DeleteTransactionPopover: View {
     let onDelete: () -> Void
     let onCancel: () -> Void
 
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.locale) private var locale
 
     private var titleText: String {
@@ -457,6 +458,18 @@ private struct DeleteTransactionPopover: View {
 
     private var categoryColor: Color {
         OrdinatioCategoryVisuals.color(for: categoryTitle, iconIndex: row.categoryIconIndex)
+    }
+
+    private var popoverBackground: Color {
+        OrdinatioColor.background
+    }
+
+    private var cardBackground: Color {
+        OrdinatioColor.surfaceElevated
+    }
+
+    private var secondaryButtonBackground: Color {
+        OrdinatioColor.surfaceElevated
     }
 
     var body: some View {
@@ -517,7 +530,7 @@ private struct DeleteTransactionPopover: View {
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(OrdinatioColor.surface)
+                    .fill(cardBackground)
             )
 
             HStack(spacing: 10) {
@@ -528,7 +541,7 @@ private struct DeleteTransactionPopover: View {
                         .font(.system(.body, design: .rounded).weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 46)
-                        .background(OrdinatioColor.surface)
+                        .background(secondaryButtonBackground)
                         .foregroundStyle(OrdinatioColor.textPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
@@ -550,8 +563,13 @@ private struct DeleteTransactionPopover: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(OrdinatioColor.surfaceElevated)
-                .shadow(color: Color.black.opacity(0.16), radius: 12, x: 0, y: 6)
+                .fill(popoverBackground)
+                .shadow(
+                    color: Color.black.opacity(colorScheme == .dark ? 0.35 : 0.14),
+                    radius: 12,
+                    x: 0,
+                    y: 6
+                )
         )
         .overlay {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
