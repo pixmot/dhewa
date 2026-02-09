@@ -559,15 +559,18 @@ struct SettingsView: View {
   }
 
   func exportData() {
+    dataController.save()
+
     let fetchRequest = dataController.fetchRequestForExport()
     let transactions = dataController.results(for: fetchRequest)
 
     let fileName = "export.csv"
     let path = NSURL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(fileName)
-    var csvText = "Date,Note,Amount,Category,Type\n"
+    var csvLines = ["Date,Note,Amount,Category,Type"]
+    let dateFormatter = ISO8601DateFormatter()
+    dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 
     for transaction in transactions {
-      var string = transaction.wrappedNote
       let type: String
 
       if transaction.income {
@@ -576,11 +579,18 @@ struct SettingsView: View {
         type = "Expense"
       }
 
-      string.removeAll(where: { $0 == "," })
+      let row = [
+        csvEscaped(dateFormatter.string(from: transaction.wrappedDate)),
+        csvEscaped(transaction.wrappedNote),
+        csvEscaped(String(format: "%.2f", transaction.wrappedAmount)),
+        csvEscaped(transaction.category?.wrappedName ?? ""),
+        csvEscaped(type)
+      ].joined(separator: ",")
 
-      csvText +=
-        "\(transaction.wrappedDate),\(string),\(String(format: "%.2f", transaction.wrappedAmount)),\(transaction.category?.wrappedName ?? ""),\(type)\n"
+      csvLines.append(row)
     }
+
+    let csvText = csvLines.joined(separator: "\n")
 
     do {
       try csvText.write(to: path!, atomically: true, encoding: String.Encoding.utf8)
@@ -599,6 +609,13 @@ struct SettingsView: View {
     if let windowScene = scene as? UIWindowScene {
       windowScene.keyWindow?.rootViewController?.present(av, animated: true, completion: nil)
     }
+  }
+
+  func csvEscaped(_ value: String) -> String {
+    let normalizedValue = value.replacingOccurrences(of: "\r\n", with: "\n")
+      .replacingOccurrences(of: "\r", with: "\n")
+    let escapedValue = normalizedValue.replacingOccurrences(of: "\"", with: "\"\"")
+    return "\"\(escapedValue)\""
   }
 }
 
