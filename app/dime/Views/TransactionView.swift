@@ -1096,7 +1096,7 @@ struct TransactionView: View {
             dataController.updateRecurringTransaction(transaction: transaction)
         }
 
-        try? moc.save()
+        dataController.save()
 
         dismiss()
     }

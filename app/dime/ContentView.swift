@@ -161,6 +161,8 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .background || newPhase == .inactive {
+                dataController.save()
+
                 if appLockVM.isAppLockEnabled {
                     appLockVM.isAppUnLocked = false
                 }
