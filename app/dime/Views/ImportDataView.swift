@@ -775,22 +775,25 @@ struct ImportDataView: View {
             switch result {
             case let .success(file):
                 do {
-                    if file.startAccessingSecurityScopedResource() {
-                        guard let message = try String(data: Data(contentsOf: file), encoding: .utf8) else {
-                            showToast = true
-                            toastMessage = "Invalid File"
-                            return
-                        }
-
-                        data = message
-
-                        processCSV()
-
-                        do {
+                    let didStartAccessing = file.startAccessingSecurityScopedResource()
+                    defer {
+                        if didStartAccessing {
                             file.stopAccessingSecurityScopedResource()
                         }
                     }
-                } catch {}
+
+                    guard let message = try String(data: Data(contentsOf: file), encoding: .utf8) else {
+                        showToast = true
+                        toastMessage = "Invalid File"
+                        return
+                    }
+
+                    data = message
+                    processCSV()
+                } catch {
+                    showToast = true
+                    toastMessage = "Invalid File"
+                }
             case let .failure(error):
                 print(error.localizedDescription)
             }
