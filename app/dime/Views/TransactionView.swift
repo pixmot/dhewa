@@ -1034,10 +1034,9 @@ struct TransactionView: View {
                     editedTransaction.date = date
                     editedTransaction.income = income
 
-                    let calendar = Calendar(identifier: .gregorian)
+                    let calendar = Calendar.current
 
-                    editedTransaction.day =
-                    calendar.date(bySettingHour: 0, minute: 0, second: 0, of: date) ?? Date.now
+                    editedTransaction.day = calendar.startOfDay(for: date)
 
                     let dateComponents = calendar.dateComponents([.month, .year], from: date)
 
@@ -1082,9 +1081,9 @@ struct TransactionView: View {
         transaction.date = date
         transaction.id = UUID()
 
-        let calendar = Calendar(identifier: .gregorian)
+        let calendar = Calendar.current
 
-        transaction.day = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: date) ?? Date.now
+        transaction.day = calendar.startOfDay(for: date)
 
         let dateComponents = calendar.dateComponents([.month, .year], from: date)
 

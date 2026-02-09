@@ -69,6 +69,7 @@ class DataController: ObservableObject {
             }
 
             self.container.viewContext.automaticallyMergesChangesFromParent = true
+            self.normalizeTransactionDateBuckets()
         }
 
 //        #if DEBUG
@@ -135,6 +136,33 @@ class DataController: ObservableObject {
         }
     }
 
+    private func normalizeTransactionDateBuckets() {
+        let request: NSFetchRequest<Transaction> = Transaction.fetchRequest()
+        let transactions = results(for: request)
+        let calendar = Calendar.current
+        var didChange = false
+
+        for transaction in transactions {
+            let normalizedDay = calendar.startOfDay(for: transaction.wrappedDate)
+            let monthComponents = calendar.dateComponents([.month, .year], from: transaction.wrappedDate)
+            let normalizedMonth = calendar.date(from: monthComponents) ?? transaction.wrappedDate
+
+            if transaction.day != normalizedDay {
+                transaction.day = normalizedDay
+                didChange = true
+            }
+
+            if transaction.month != normalizedMonth {
+                transaction.month = normalizedMonth
+                didChange = true
+            }
+        }
+
+        if didChange {
+            save()
+        }
+    }
+
     func updateRecurringTransaction(transaction: Transaction) {
         if transaction.nextTransactionDate < Calendar.current.startOfDay(for: Date.now) {
             var holdingDate = transaction.nextTransactionDate
@@ -147,13 +175,13 @@ class DataController: ObservableObject {
                 newTransaction.date = holdingDate
                 newTransaction.id = UUID()
                 newTransaction.income = transaction.income
-                newTransaction.day = holdingDate
+                let calendar = Calendar.current
 
-                let calendar = Calendar(identifier: .gregorian)
+                newTransaction.day = calendar.startOfDay(for: holdingDate)
 
                 let dateComponents = calendar.dateComponents([.month, .year], from: holdingDate)
 
-                newTransaction.month = calendar.date(from: dateComponents)!
+                newTransaction.month = calendar.date(from: dateComponents) ?? holdingDate
 
                 newTransaction.onceRecurring = true
 
@@ -189,13 +217,13 @@ class DataController: ObservableObject {
             newTransaction.date = transaction.nextTransactionDate
             newTransaction.id = UUID()
             newTransaction.income = transaction.income
-            newTransaction.day = transaction.nextTransactionDate
+            let calendar = Calendar.current
 
-            let calendar = Calendar(identifier: .gregorian)
+            newTransaction.day = calendar.startOfDay(for: transaction.nextTransactionDate)
 
             let dateComponents = calendar.dateComponents([.month, .year], from: transaction.nextTransactionDate)
 
-            newTransaction.month = calendar.date(from: dateComponents)!
+            newTransaction.month = calendar.date(from: dateComponents) ?? transaction.nextTransactionDate
 
             newTransaction.onceRecurring = true
             newTransaction.recurringType = transaction.recurringType
@@ -253,9 +281,9 @@ class DataController: ObservableObject {
         transaction.date = date
         transaction.id = UUID()
 
-        let calendar = Calendar(identifier: .gregorian)
+        let calendar = Calendar.current
 
-        transaction.day = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: date) ?? Date.now
+        transaction.day = calendar.startOfDay(for: date)
 
         let dateComponents = calendar.dateComponents([.month, .year], from: date)
 
