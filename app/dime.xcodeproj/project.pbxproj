@@ -863,10 +863,11 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
+				"$(DERIVED_FILE_DIR)/swiftlint.done",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which swiftlint >/dev/null; then\n  swiftlint --fix\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+			shellScript = "if which swiftlint >/dev/null; then\n  swiftlint --fix\nfi\ntouch \"$SCRIPT_OUTPUT_FILE_0\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -1522,7 +1523,7 @@
 			repositoryURL = "https://github.com/Alamofire/Alamofire";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.8.0;
+				minimumVersion = 5.11.1;
 			};
 		};
 		538D10732A5AB7E7008F1AFB /* XCRemoteSwiftPackageReference "IsScrolling" */ = {
@@ -1530,7 +1531,7 @@
 			repositoryURL = "https://github.com/fatbobman/IsScrolling.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.1.2;
+				minimumVersion = 1.2.0;
 			};
 		};
 		53A4147E28B7DA4C008C30E7 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
@@ -1538,7 +1539,7 @@
 			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				minimumVersion = 1.1.0;
 			};
 		};
 		53B1D1A6289A60D500E28062 /* XCRemoteSwiftPackageReference "CrookedText" */ = {
@@ -1554,7 +1555,7 @@
 			repositoryURL = "https://github.com/ggruen/CloudKitSyncMonitor.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.1;
+				minimumVersion = 1.4.1;
 			};
 		};
 		D6A4DE1E2D61744400F7F751 /* XCRemoteSwiftPackageReference "SwiftUI-Introspect" */ = {

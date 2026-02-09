@@ -7,6 +7,10 @@
 
 import Foundation
 import SwiftUI
+import UIKit
+#if canImport(ObjectiveC)
+    import ObjectiveC
+#endif
 
 #if canImport(UIKit)
     extension View {
@@ -37,14 +41,26 @@ extension HorizontalAlignment {
     static let moneySubtitle = HorizontalAlignment(MoneySubtitle.self)
 }
 
-extension UINavigationController: UIGestureRecognizerDelegate {
-    override open func viewDidLoad() {
-        super.viewDidLoad()
-        interactivePopGestureRecognizer?.delegate = self
+private var popGestureDelegateKey: UInt8 = 0
+
+private final class InteractivePopGestureDelegate: NSObject, UIGestureRecognizerDelegate {
+    weak var navigationController: UINavigationController?
+
+    init(navigationController: UINavigationController) {
+        self.navigationController = navigationController
     }
 
-    public func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
-        return viewControllers.count > 1
+    func gestureRecognizerShouldBegin(_: UIGestureRecognizer) -> Bool {
+        (navigationController?.viewControllers.count ?? 0) > 1
+    }
+}
+
+extension UINavigationController {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        let delegate = InteractivePopGestureDelegate(navigationController: self)
+        interactivePopGestureRecognizer?.delegate = delegate
+        objc_setAssociatedObject(self, &popGestureDelegateKey, delegate, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
     }
 }
 

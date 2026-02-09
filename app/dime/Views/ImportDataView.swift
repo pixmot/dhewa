@@ -362,7 +362,7 @@ struct ImportDataView: View {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 0) {
                                 VStack(spacing: 0) {
-                                    ForEach(0 ..< (numberOfRows + 1)) { number in
+                                    ForEach(Array(0 ..< (numberOfRows + 1)), id: \.self) { number in
                                         if number == 0 {
                                             Rectangle()
                                                 .fill(Color.PrimaryBackground)
