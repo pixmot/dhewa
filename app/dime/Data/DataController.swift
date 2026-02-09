@@ -40,19 +40,17 @@ class DataController: ObservableObject {
         description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
 
-//        let keyValueStore = NSUbiquitousKeyValueStore.default
-//
-//        if keyValueStore.object(forKey: "icloud_sync") == nil {
-//            keyValueStore.set(true, forKey: "icloud_sync")
-//        }
-//
-//        if !keyValueStore.bool(forKey: "icloud_sync") {
-//            description.cloudKitContainerOptions = nil
-//        } else {
-//            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.rafaelsoh.dime")
-//        }
+        let keyValueStore = NSUbiquitousKeyValueStore.default
 
-        description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.rafaelsoh.dime")
+        if keyValueStore.object(forKey: "icloud_sync") == nil {
+            keyValueStore.set(true, forKey: "icloud_sync")
+        }
+
+        if keyValueStore.bool(forKey: "icloud_sync") {
+            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: "iCloud.com.rafaelsoh.dime")
+        } else {
+            description.cloudKitContainerOptions = nil
+        }
 
         let groupID = "group.com.rafaelsoh.dime"
 
@@ -68,6 +66,7 @@ class DataController: ObservableObject {
                 fatalError("Unresolved error \(error), \(error.userInfo) for \(description)")
             }
 
+            self.container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
             self.container.viewContext.automaticallyMergesChangesFromParent = true
             self.normalizeTransactionDateBuckets()
         }
@@ -129,10 +128,29 @@ class DataController: ObservableObject {
         _ = try? container.viewContext.executeAndMergeChanges(using: batchDeleteRequest4)
     }
 
-    func save() {
-        if container.viewContext.hasChanges {
-            try? container.viewContext.save()
+    @discardableResult
+    func save() -> Bool {
+        if !container.viewContext.hasChanges {
+            return true
+        }
+
+        do {
+            try container.viewContext.save()
             WidgetCenter.shared.reloadAllTimelines()
+            return true
+        } catch {
+            container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
+
+            do {
+                try container.viewContext.save()
+                WidgetCenter.shared.reloadAllTimelines()
+                return true
+            } catch {
+                #if DEBUG
+                    print("Failed to save Core Data context: \(error.localizedDescription)")
+                #endif
+                return false
+            }
         }
     }
 
