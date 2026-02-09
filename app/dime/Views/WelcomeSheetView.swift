@@ -68,13 +68,17 @@ struct WelcomeSheetView: View {
                                     VStack(alignment: .leading, spacing: 5) {
                                         Text(LocalizedStringKey(welcomeFeatures[rowIndex].header))
                                             .font(.system(size: 18, weight: .medium, design: .rounded))
+                                            .lineLimit(2)
+                                            .fixedSize(horizontal: false, vertical: true)
                                             .foregroundColor(Color.PrimaryText)
 
                                         Text(LocalizedStringKey(welcomeFeatures[rowIndex].subtitle))
                                             .font(.system(size: 16, weight: .regular, design: .rounded))
+                                            .lineLimit(3)
                                             .fixedSize(horizontal: false, vertical: true)
                                             .foregroundColor(Color.SubtitleText)
                                     }
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .transition(AnyTransition.opacity.combined(with: .move(edge: .leading)))
                             }
