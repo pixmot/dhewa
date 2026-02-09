@@ -68,6 +68,7 @@ class DataController: ObservableObject {
 
             self.container.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
             self.container.viewContext.automaticallyMergesChangesFromParent = true
+            self.normalizeTransactionIdentifiers()
             self.normalizeTransactionDateBuckets()
         }
 
@@ -181,46 +182,122 @@ class DataController: ObservableObject {
         }
     }
 
+    private func normalizeTransactionIdentifiers() {
+        let request: NSFetchRequest<Transaction> = Transaction.fetchRequest()
+        let transactions = results(for: request).sorted { lhs, rhs in
+            lhs.wrappedDate > rhs.wrappedDate
+        }
+        var seenTransactions = [UUID: Transaction]()
+        var didChange = false
+
+        for transaction in transactions {
+            guard let identifier = transaction.id else {
+                transaction.id = UUID()
+                didChange = true
+                continue
+            }
+
+            if let seenTransaction = seenTransactions[identifier] {
+                if areEquivalent(transaction, seenTransaction) {
+                    container.viewContext.delete(transaction)
+                } else {
+                    transaction.id = UUID()
+                }
+
+                didChange = true
+            } else {
+                seenTransactions[identifier] = transaction
+            }
+        }
+
+        if didChange {
+            save()
+        }
+    }
+
+    private func areEquivalent(_ lhs: Transaction, _ rhs: Transaction) -> Bool {
+        lhs.wrappedDate == rhs.wrappedDate &&
+            lhs.wrappedNote == rhs.wrappedNote &&
+            lhs.wrappedAmount == rhs.wrappedAmount &&
+            lhs.income == rhs.income &&
+            lhs.category?.objectID == rhs.category?.objectID &&
+            lhs.recurringType == rhs.recurringType &&
+            lhs.recurringCoefficient == rhs.recurringCoefficient &&
+            lhs.onceRecurring == rhs.onceRecurring
+    }
+
+    private func nextRecurringDate(from date: Date, type: Int16, coefficient: Int16) -> Date? {
+        switch type {
+        case 1:
+            return Calendar.current.date(byAdding: .day, value: Int(coefficient), to: date)
+        case 2:
+            return Calendar.current.date(byAdding: .day, value: Int(coefficient * 7), to: date)
+        case 3:
+            return Calendar.current.date(byAdding: .month, value: Int(coefficient), to: date)
+        default:
+            return nil
+        }
+    }
+
+    private func recurringOccurrenceExists(for transaction: Transaction, at date: Date) -> Bool {
+        let request: NSFetchRequest<Transaction> = Transaction.fetchRequest()
+        request.fetchLimit = 1
+
+        var predicates = [
+            NSPredicate(format: "%K == %@", #keyPath(Transaction.onceRecurring), NSNumber(value: true)),
+            NSPredicate(format: "%K == %@", #keyPath(Transaction.date), date as CVarArg),
+            NSPredicate(format: "%K == %@", #keyPath(Transaction.note), transaction.wrappedNote),
+            NSPredicate(format: "%K == %@", #keyPath(Transaction.amount), NSNumber(value: transaction.wrappedAmount)),
+            NSPredicate(format: "%K == %@", #keyPath(Transaction.income), NSNumber(value: transaction.income))
+        ]
+
+        if let category = transaction.category {
+            predicates.append(NSPredicate(format: "%K == %@", #keyPath(Transaction.category), category))
+        } else {
+            predicates.append(NSPredicate(format: "%K == nil", #keyPath(Transaction.category)))
+        }
+
+        request.predicate = NSCompoundPredicate(type: .and, subpredicates: predicates)
+        return !results(for: request).isEmpty
+    }
+
     func updateRecurringTransaction(transaction: Transaction) {
-        if transaction.nextTransactionDate < Calendar.current.startOfDay(for: Date.now) {
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date.now)
+
+        if transaction.nextTransactionDate < startOfToday {
             var holdingDate = transaction.nextTransactionDate
 
-            while holdingDate <= Calendar.current.startOfDay(for: Date.now) {
-                let newTransaction = Transaction(context: container.viewContext)
-                newTransaction.note = transaction.wrappedNote
-                newTransaction.category = transaction.category
-                newTransaction.amount = transaction.wrappedAmount
-                newTransaction.date = holdingDate
-                newTransaction.id = UUID()
-                newTransaction.income = transaction.income
-                let calendar = Calendar.current
-
-                newTransaction.day = calendar.startOfDay(for: holdingDate)
-
-                let dateComponents = calendar.dateComponents([.month, .year], from: holdingDate)
-
-                newTransaction.month = calendar.date(from: dateComponents) ?? holdingDate
-
-                newTransaction.onceRecurring = true
-
-                var newDate: Date?
-
-                if transaction.recurringType == 1 {
-                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient), to: holdingDate)!
-                } else if transaction.recurringType == 2 {
-                    newDate = Calendar.current.date(byAdding: .day, value: Int(transaction.recurringCoefficient * 7), to: holdingDate)!
-                } else if transaction.recurringType == 3 {
-                    newDate = Calendar.current.date(byAdding: .month, value: Int(transaction.recurringCoefficient), to: holdingDate)!
+            while holdingDate <= startOfToday {
+                guard let newDate = nextRecurringDate(from: holdingDate, type: transaction.recurringType, coefficient: transaction.recurringCoefficient) else {
+                    break
                 }
 
-                if newDate! > Calendar.current.startOfDay(for: Date.now) {
-                    newTransaction.recurringType = transaction.recurringType
-                    newTransaction.recurringCoefficient = transaction.recurringCoefficient
-                } else {
-                    newTransaction.recurringType = 0
+                if !recurringOccurrenceExists(for: transaction, at: holdingDate) {
+                    let newTransaction = Transaction(context: container.viewContext)
+                    newTransaction.note = transaction.wrappedNote
+                    newTransaction.category = transaction.category
+                    newTransaction.amount = transaction.wrappedAmount
+                    newTransaction.date = holdingDate
+                    newTransaction.id = UUID()
+                    newTransaction.income = transaction.income
+
+                    newTransaction.day = calendar.startOfDay(for: holdingDate)
+
+                    let dateComponents = calendar.dateComponents([.month, .year], from: holdingDate)
+                    newTransaction.month = calendar.date(from: dateComponents) ?? holdingDate
+
+                    newTransaction.onceRecurring = true
+
+                    if newDate > startOfToday {
+                        newTransaction.recurringType = transaction.recurringType
+                        newTransaction.recurringCoefficient = transaction.recurringCoefficient
+                    } else {
+                        newTransaction.recurringType = 0
+                    }
                 }
 
-                holdingDate = newDate!
+                holdingDate = newDate
             }
 
             transaction.recurringType = 0
@@ -228,24 +305,24 @@ class DataController: ObservableObject {
             save()
 
         } else if Calendar.current.isDateInToday(transaction.nextTransactionDate) {
-            let newTransaction = Transaction(context: container.viewContext)
-            newTransaction.note = transaction.wrappedNote
-            newTransaction.category = transaction.category
-            newTransaction.amount = transaction.wrappedAmount
-            newTransaction.date = transaction.nextTransactionDate
-            newTransaction.id = UUID()
-            newTransaction.income = transaction.income
-            let calendar = Calendar.current
+            if !recurringOccurrenceExists(for: transaction, at: transaction.nextTransactionDate) {
+                let newTransaction = Transaction(context: container.viewContext)
+                newTransaction.note = transaction.wrappedNote
+                newTransaction.category = transaction.category
+                newTransaction.amount = transaction.wrappedAmount
+                newTransaction.date = transaction.nextTransactionDate
+                newTransaction.id = UUID()
+                newTransaction.income = transaction.income
 
-            newTransaction.day = calendar.startOfDay(for: transaction.nextTransactionDate)
+                newTransaction.day = calendar.startOfDay(for: transaction.nextTransactionDate)
 
-            let dateComponents = calendar.dateComponents([.month, .year], from: transaction.nextTransactionDate)
+                let dateComponents = calendar.dateComponents([.month, .year], from: transaction.nextTransactionDate)
+                newTransaction.month = calendar.date(from: dateComponents) ?? transaction.nextTransactionDate
 
-            newTransaction.month = calendar.date(from: dateComponents) ?? transaction.nextTransactionDate
-
-            newTransaction.onceRecurring = true
-            newTransaction.recurringType = transaction.recurringType
-            newTransaction.recurringCoefficient = transaction.recurringCoefficient
+                newTransaction.onceRecurring = true
+                newTransaction.recurringType = transaction.recurringType
+                newTransaction.recurringCoefficient = transaction.recurringCoefficient
+            }
 
             transaction.recurringType = 0
 
