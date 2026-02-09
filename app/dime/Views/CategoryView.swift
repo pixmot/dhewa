@@ -757,6 +757,13 @@ struct NewCategoryAlert: View {
     @FetchRequest(sortDescriptors: [SortDescriptor(\.order)], predicate: NSPredicate(format: "income = %d", true)) private var incomeCategories: FetchedResults<Category>
     @State private var availableColours: [String] = Color.colorArray
 
+    private let fallbackEmojiPool = [
+        "🍔", "🚆", "🏠", "🔄", "🛒", "👨‍👩‍👦", "💡", "👔", "🚑", "🐕", "👟", "🎁",
+        "💰", "🤑", "💼", "💹", "🧧", "🪙", "📚", "🎓", "✈️", "🚗", "🧾", "🧰",
+        "🪴", "🎮", "🎬", "🎵", "🍳", "☕️", "🍕", "🍣", "🍺", "⚽️", "🏋️", "🧴",
+        "🩺", "💊", "🛍️", "💻", "📱", "🧹", "🧺", "🛋️", "🛏️", "🏖️", "🎉", "🧸"
+    ]
+
     // state
     @State private var newName = ""
     @State private var newEmoji = ""
@@ -782,6 +789,15 @@ struct NewCategoryAlert: View {
 
     var addButtonDisabled: Bool {
         return newName.trimmingCharacters(in: .whitespacesAndNewlines) == "" || newEmoji == ""
+    }
+
+    var usedEmojis: Set<String> {
+        let categories = income ? incomeCategories : expenseCategories
+        return Set(categories.map(\.wrappedEmoji))
+    }
+
+    var fallbackEmoji: String {
+        fallbackEmojiPool.first(where: { !usedEmojis.contains($0) }) ?? "🧾"
     }
 
     @State var showNativePicker: Bool = false
@@ -1028,6 +1044,11 @@ struct NewCategoryAlert: View {
         .onChange(of: customSelectedColor) { _ in
             selectedColour = customSelectedColor.toHex() ?? "#FFFFFF"
         }
+        .onChange(of: income) { _ in
+            if newEmoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || usedEmojis.contains(newEmoji) {
+                newEmoji = fallbackEmoji
+            }
+        }
         .colorPickerSheet(isPresented: $showNativePicker, selection: $customSelectedColor, supportsAlpha: false, title: "")
         .onAppear {
             if expenseCategories.count == 24 {
@@ -1047,10 +1068,18 @@ struct NewCategoryAlert: View {
                     selectedColour = availableColours[0]
                 }
             }
+
+            if newEmoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                newEmoji = fallbackEmoji
+            }
         }
     }
 
     func verification() {
+        if newEmoji.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            newEmoji = fallbackEmoji
+        }
+
         let results = dataController.categoryCheck(name: newName, emoji: newEmoji, income: income)
 
         outcome = results.error
@@ -1111,7 +1140,7 @@ struct NewCategoryAlert: View {
                 dataController.save()
 
                 newName = ""
-                newEmoji = ""
+                newEmoji = fallbackEmoji
             } else {
                 let category = Category(context: moc)
                 category.name = newName.trimmingCharacters(in: .whitespaces).capitalized
@@ -1126,7 +1155,7 @@ struct NewCategoryAlert: View {
                 dataController.save()
 
                 newName = ""
-                newEmoji = ""
+                newEmoji = fallbackEmoji
 
                 availableColours = Color.colorArray
                 expenseCategories.forEach { category in
